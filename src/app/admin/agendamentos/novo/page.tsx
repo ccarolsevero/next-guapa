@@ -15,6 +15,8 @@ import {
   CheckCircle
 } from 'lucide-react'
 
+export const dynamic = 'force-dynamic'
+
 // Dados mockados
 const mockClients = [
   { id: 1, name: "Maria Silva", phone: "(11) 99999-0001", email: "maria@email.com" },
