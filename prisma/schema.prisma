@@ -1,0 +1,237 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      UserRole @default(ADMIN)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Client {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?  @unique
+  phone       String
+  birthDate   DateTime?
+  address     String?
+  password    String?
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  payments     Payment[]
+
+  @@map("clients")
+}
+
+model Professional {
+  id          String   @id @default(cuid())
+  name        String
+  email       String?  @unique
+  phone       String?
+  bio         String?
+  specialties String
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+  services     Service[]
+
+  @@map("professionals")
+}
+
+model Service {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  duration        Int      // em minutos
+  price           Float
+  category        String
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  appointments    Appointment[]
+  professionals   Professional[]
+  serviceTypes    ServiceType[]
+
+  @@map("services")
+}
+
+model ServiceType {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  duration    Int      // em minutos
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@map("service_types")
+}
+
+model Appointment {
+  id            String           @id @default(cuid())
+  clientId      String
+  client        Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional  Professional     @relation(fields: [professionalId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service          @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceTypeId String?
+  serviceType   ServiceType?     @relation(fields: [serviceTypeId], references: [id])
+  date          DateTime
+  startTime     String
+  endTime       String
+  status        AppointmentStatus @default(SCHEDULED)
+  notes         String?
+  totalPrice    Float
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  payments Payment[]
+
+  @@map("appointments")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  appointmentId String
+  appointment   Appointment   @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("payments")
+}
+
+enum UserRole {
+  ADMIN
+  PROFESSIONAL
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentMethod {
+  CASH
+  PIX
+  CREDIT_CARD
+  DEBIT_CARD
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  imageUrl    String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  salePrice   Float?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  imageUrl    String?
+  stock       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id          String        @id @default(cuid())
+  clientName  String
+  clientEmail String?
+  clientPhone String
+  totalAmount Float
+  status      OrderStatus   @default(PENDING)
+  notes       String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  items OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String @id @default(cuid())
+  orderId   String
+  order     Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("order_items")
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERED
+  CANCELLED
+}
