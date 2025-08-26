@@ -5,6 +5,7 @@ Sistema completo de gestão para salão de beleza especializado em cabelos natur
 ## ✨ Funcionalidades
 
 ### 🏠 **Site Público**
+
 - **Homepage**: Apresentação do salão com serviços e profissionais
 - **Serviços**: Catálogo completo de serviços oferecidos
 - **Profissionais**: Perfis detalhados da equipe
@@ -13,6 +14,7 @@ Sistema completo de gestão para salão de beleza especializado em cabelos natur
 - **Cadastro/Login**: Área do cliente com painel personalizado
 
 ### 🔧 **Painel Administrativo**
+
 - **Dashboard**: Visão geral com estatísticas e comissionamento
 - **Clientes**: Gestão completa de clientes com histórico
 - **Agendamentos**: Sistema de agendamento e comandas
@@ -22,6 +24,7 @@ Sistema completo de gestão para salão de beleza especializado em cabelos natur
 - **Importação**: Importação de clientes via Excel
 
 ### 👥 **Área do Cliente**
+
 - **Painel**: Dashboard personalizado
 - **Agendamentos**: Histórico e novos agendamentos
 - **Pedidos**: Acompanhamento de pedidos de produtos
@@ -39,41 +42,48 @@ Sistema completo de gestão para salão de beleza especializado em cabelos natur
 ## 🚀 Instalação
 
 ### Pré-requisitos
-- Node.js 18+ 
+
+- Node.js 18+
 - npm ou yarn
 - Git
 
 ### Passos
 
 1. **Clone o repositório**
+
 ```bash
 git clone https://github.com/ccarolsevero/next-guapa.git
 cd next-guapa
 ```
 
 2. **Instale as dependências**
+
 ```bash
 npm install
 ```
 
 3. **Configure as variáveis de ambiente**
+
 ```bash
 cp .env.example .env
 ```
 
 Edite o arquivo `.env` com suas configurações:
+
 ```env
 DATABASE_URL="file:./dev.db"
 JWT_SECRET="sua-chave-secreta-aqui"
 ```
 
 4. **Configure o banco de dados**
+
 ```bash
 npx prisma generate
 npx prisma db push
 ```
 
 5. **Execute o projeto**
+
 ```bash
 npm run dev
 ```
@@ -104,12 +114,14 @@ src/
 ## 🎨 Design System
 
 ### Cores Principais
+
 - **Coral/Rosa**: `#D15556`
 - **Bege/Dourado**: `#EED7B6`
 - **Verde**: `#006D5B`
 - **Fundo**: `#F5F0E8`
 
 ### Tipografia
+
 - **Títulos**: Font Light
 - **Corpo**: Font Medium
 - **Hierarquia**: Tamanhos responsivos
@@ -117,24 +129,28 @@ src/
 ## 📋 Funcionalidades Detalhadas
 
 ### Sistema de Agendamento
+
 - Agendamento online com seleção de profissional
 - Confirmação via WhatsApp
 - Sistema de comandas em tempo real
 - Finalização com pagamento
 
 ### Gestão de Clientes
+
 - Cadastro completo com histórico
 - Importação via Excel com dados históricos
 - Sistema de fidelidade
 - Histórico de serviços e gastos
 
 ### Comissionamento
+
 - Cálculo automático de comissões
 - Separação por serviços e produtos
 - Relatórios por profissional
 - Dashboard de vendas
 
 ### Loja Virtual
+
 - Catálogo de produtos
 - Sistema de pedidos
 - Categorização
@@ -143,10 +159,12 @@ src/
 ## 🔐 Autenticação
 
 ### Admin
+
 - **Email**: `admin@espacoguapa.com`
 - **Senha**: `123456`
 
 ### Cliente
+
 - Cadastro via site público
 - Login com email e senha
 - Recuperação de senha (futuro)
@@ -154,6 +172,7 @@ src/
 ## 📱 Responsividade
 
 O sistema é totalmente responsivo e funciona em:
+
 - 📱 Smartphones
 - 📱 Tablets
 - 💻 Desktops
@@ -162,11 +181,13 @@ O sistema é totalmente responsivo e funciona em:
 ## 🚀 Deploy
 
 ### Vercel (Recomendado)
+
 1. Conecte seu repositório ao Vercel
 2. Configure as variáveis de ambiente
 3. Deploy automático a cada push
 
 ### Outras Plataformas
+
 - Netlify
 - Railway
 - Heroku
@@ -187,12 +208,14 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 ## 👨‍💻 Desenvolvedor
 
 **Ana Carolina Severo**
+
 - GitHub: [@ccarolsevero](https://github.com/ccarolsevero)
 - Email: ccarolsevero@gmail.com
 
 ## 📞 Suporte
 
 Para suporte, entre em contato:
+
 - Email: ccarolsevero@gmail.com
 - WhatsApp: (11) 99999-9999
 
