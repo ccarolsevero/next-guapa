@@ -34,6 +34,12 @@ interface Product {
   description: string
 }
 
+interface HomePhoto {
+  id: string
+  imageUrl: string
+  order: number
+}
+
 // Dados reais dos depoimentos
 const testimonials = [
   {
@@ -91,23 +97,54 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [homePhotos, setHomePhotos] = useState<HomePhoto[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Array de fotos para o slide
-  const homePhotos = [
-    '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg',
-    '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg',
-    '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg',
-    '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg',
-  ]
+  // Buscar fotos da home do banco de dados
+  useEffect(() => {
+    const fetchHomePhotos = async () => {
+      try {
+        const response = await fetch('/api/home-gallery')
+        if (response.ok) {
+          const photos = await response.json()
+          setHomePhotos(photos)
+        } else {
+          console.error('Erro ao buscar fotos da home')
+          // Fallback para imagens estáticas se não conseguir buscar do banco
+          setHomePhotos([
+            { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
+            { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
+            { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
+            { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
+          ])
+        }
+      } catch (error) {
+        console.error('Erro ao buscar fotos da home:', error)
+        // Fallback para imagens estáticas
+        setHomePhotos([
+          { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
+          { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
+          { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
+          { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
+        ])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchHomePhotos()
+  }, [])
 
   // Auto slide para as fotos da home
   useEffect(() => {
+    if (homePhotos.length === 0) return
+
     const interval = setInterval(() => {
       nextSlide()
     }, 4000) // Muda a cada 4 segundos
 
     return () => clearInterval(interval)
-  }, [])
+  }, [homePhotos])
 
   const openModal = (product: Product) => {
     setSelectedProduct(product)
@@ -121,10 +158,12 @@ export default function HomePage() {
 
   // Funções para controlar o slide
   const nextSlide = () => {
+    if (homePhotos.length === 0) return
     setCurrentSlide((prev) => (prev + 1) % homePhotos.length)
   }
 
   const prevSlide = () => {
+    if (homePhotos.length === 0) return
     setCurrentSlide((prev) => (prev - 1 + homePhotos.length) % homePhotos.length)
   }
 
@@ -145,6 +184,18 @@ export default function HomePage() {
         behavior: 'smooth'
       })
     }
+  }
+
+  // Se ainda está carregando, mostrar loading
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#022b28' }}>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D15556] mx-auto mb-4"></div>
+          <p className="text-[#f2dcbc]">Carregando...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -214,10 +265,16 @@ export default function HomePage() {
                 >
                   Serviços
                 </Link>
-                <Link href="/profissionais" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
+                <Link 
+                  href="/profissionais"
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium"
+                >
                   Nosso Time
                 </Link>
-                <Link href="/produtos" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
+                <Link 
+                  href="/produtos"
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium"
+                >
                   Produtos
                 </Link>
                 <button 
@@ -227,8 +284,6 @@ export default function HomePage() {
                   Contato
                 </button>
               </nav>
-              
-              {/* Botão Agendar e Menu Mobile */}
               <div className="flex items-center space-x-3 md:space-x-0">
                 <Link 
                   href="/login-cliente"
@@ -236,23 +291,80 @@ export default function HomePage() {
                 >
                   Agendar
                 </Link>
-                
-                {/* Menu Mobile */}
-                <button
+                <button 
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="md:hidden text-[#d34d4c] p-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    {isMobileMenuOpen ? (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    ) : (
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    )}
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                   </svg>
                 </button>
               </div>
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <nav className="md:hidden bg-white/95 border-t border-[#e6d1b8] absolute top-full left-0 right-0 z-50">
+              <div className="px-4 py-4 space-y-2">
+                <button 
+                  onClick={() => {
+                    smoothScrollTo('inicio')
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer text-left py-2 w-full"
+                >
+                  Início
+                </button>
+                <button 
+                  onClick={() => {
+                    smoothScrollTo('sobre')
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer text-left py-2 w-full"
+                >
+                  Sobre
+                </button>
+                <Link 
+                  href="/servicos"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-left py-2 block"
+                >
+                  Serviços
+                </Link>
+                <Link 
+                  href="/profissionais"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-left py-2 block"
+                >
+                  Nosso Time
+                </Link>
+                <Link 
+                  href="/produtos"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-left py-2 block"
+                >
+                  Produtos
+                </Link>
+                <button 
+                  onClick={() => {
+                    smoothScrollTo('contato')
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer text-left py-2 w-full"
+                >
+                  Contato
+                </button>
+                <Link 
+                  href="/login-cliente"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-center mt-4 block"
+                >
+                  Agendar
+                </Link>
+              </div>
+            </nav>
+          )}
         </header>
 
         {/* Spacer para compensar navbar fixa */}
@@ -356,71 +468,81 @@ export default function HomePage() {
                 <div className="relative w-full max-w-lg">
                   {/* Container do carrossel */}
                   <div className="relative overflow-hidden rounded-lg shadow-2xl">
-                                      <div 
-                    className="flex transition-transform duration-500 ease-in-out"
-                    style={{ 
-                      transform: `translateX(-${currentSlide * (100 / homePhotos.length)}%)`,
-                      width: `${homePhotos.length * 100}%`
-                    }}
-                  >
-                      {homePhotos.map((photo, index) => (
-                        <div 
-                          key={index} 
-                          className="w-full"
-                          style={{ width: `${100 / homePhotos.length}%` }}
-                        >
-                          <img 
-                            src={photo} 
-                            alt={`Espaço Guapa - Slide ${index + 1}`} 
-                            className="w-full h-auto object-cover"
-                            style={{ maxHeight: '400px', width: '100%' }}
-                            onError={(e) => {
-                              console.log('Erro ao carregar imagem:', photo);
-                              e.currentTarget.style.display = 'none';
-                            }}
-                            onLoad={(e) => {
-                              console.log('Imagem carregada com sucesso:', photo);
-                            }}
-                          />
-                        </div>
-                      ))}
-                    </div>
+                    {homePhotos.length > 0 ? (
+                      <div 
+                        className="flex transition-transform duration-500 ease-in-out"
+                        style={{ 
+                          transform: `translateX(-${currentSlide * (100 / homePhotos.length)}%)`,
+                          width: `${homePhotos.length * 100}%`
+                        }}
+                      >
+                        {homePhotos.map((photo, index) => (
+                          <div 
+                            key={photo.id} 
+                            className="w-full"
+                            style={{ width: `${100 / homePhotos.length}%` }}
+                          >
+                            <img 
+                              src={photo.imageUrl} 
+                              alt={`Espaço Guapa - Slide ${index + 1}`} 
+                              className="w-full h-auto object-cover"
+                              style={{ maxHeight: '400px', width: '100%' }}
+                              onError={(e) => {
+                                console.log('Erro ao carregar imagem:', photo.imageUrl);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                              onLoad={(e) => {
+                                console.log('Imagem carregada com sucesso:', photo.imageUrl);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="w-full h-64 bg-gray-200 flex items-center justify-center">
+                        <p className="text-gray-500">Nenhuma foto disponível</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Botões de navegação */}
-                  <button
-                    onClick={prevSlide}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
-                    aria-label="Foto anterior"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  
-                  <button
-                    onClick={nextSlide}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
-                    aria-label="Próxima foto"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-
-                  {/* Indicadores */}
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-                    {homePhotos.map((_, index) => (
+                  {homePhotos.length > 1 && (
+                    <>
                       <button
-                        key={index}
-                        onClick={() => goToSlide(index)}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          index === currentSlide ? 'bg-white' : 'bg-white/50'
-                        }`}
-                        aria-label={`Ir para foto ${index + 1}`}
-                      />
-                    ))}
-                  </div>
+                        onClick={prevSlide}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+                        aria-label="Foto anterior"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+                      
+                      <button
+                        onClick={nextSlide}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+                        aria-label="Próxima foto"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+
+                      {/* Indicadores */}
+                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                        {homePhotos.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => goToSlide(index)}
+                            className={`w-2 h-2 rounded-full transition-colors ${
+                              index === currentSlide ? 'bg-white' : 'bg-white/50'
+                            }`}
+                            aria-label={`Ir para foto ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
