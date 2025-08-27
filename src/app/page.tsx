@@ -89,9 +89,6 @@ const testimonials = [
 export default function HomePage() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
-  const [animatedSections, setAnimatedSections] = useState<Set<string>>(new Set())
-  const [currentSection, setCurrentSection] = useState(0)
-  const [isScrolling, setIsScrolling] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
 
@@ -102,171 +99,6 @@ export default function HomePage() {
     '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg',
     '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg',
   ]
-
-  // Array das seções em ordem
-  const sections = ['inicio', 'sobre', 'servicos', 'equipe', 'parceiros', 'produtos', 'agendamento', 'depoimentos', 'contato']
-
-  // Função para ir para a próxima seção
-  const goToNextSection = () => {
-    if (isScrolling) return
-    
-    setIsScrolling(true)
-    
-    // Verificar se estamos na última seção ou próximo do footer
-    if (currentSection === sections.length - 1) {
-      // Se estiver na última seção, permitir scroll normal para o footer
-      setIsScrolling(false)
-      return
-    }
-    
-    const nextSectionIndex = currentSection + 1
-    const nextSectionId = sections[nextSectionIndex]
-    
-    setCurrentSection(nextSectionIndex)
-    smoothScrollTo(nextSectionId)
-    
-    setTimeout(() => {
-      setIsScrolling(false)
-    }, 1000)
-  }
-
-  // Função para ir para a seção anterior
-  const goToPreviousSection = () => {
-    if (isScrolling) return
-    
-    setIsScrolling(true)
-    
-    const prevSectionIndex = currentSection === 0 ? sections.length - 1 : currentSection - 1
-    const prevSectionId = sections[prevSectionIndex]
-    
-    setCurrentSection(prevSectionIndex)
-    smoothScrollTo(prevSectionId)
-    
-    setTimeout(() => {
-      setIsScrolling(false)
-    }, 1000)
-  }
-
-  // Função para scroll suave
-  const smoothScrollTo = (elementId: string) => {
-    const element = document.getElementById(elementId)
-    if (element) {
-      const offset = 120 // Altura da navbar + margem extra
-      const elementPosition = element.getBoundingClientRect().top
-      const offsetPosition = elementPosition + window.pageYOffset - offset
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      })
-    }
-  }
-
-  // Detectar scroll do usuário (apenas em desktop)
-  useEffect(() => {
-    // Verificar se é mobile
-    const isMobile = window.innerWidth < 768
-    
-    if (isMobile) {
-      return // Não aplicar scroll automático em mobile
-    }
-
-    let scrollTimeout: NodeJS.Timeout
-
-    const handleScroll = (e: WheelEvent) => {
-      // Verificar se o usuário está próximo do final da página (footer)
-      const scrollPosition = window.scrollY + window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
-      const footerThreshold = documentHeight - 200 // 200px antes do final
-      
-      if (scrollPosition >= footerThreshold) {
-        // Se estiver próximo do footer, permitir scroll normal
-        return
-      }
-
-      e.preventDefault()
-      
-      if (isScrolling) return
-      
-      // Determinar direção do scroll
-      if (e.deltaY > 0) {
-        // Scroll para baixo
-        goToNextSection()
-      } else {
-        // Scroll para cima
-        goToPreviousSection()
-      }
-    }
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Verificar se o usuário está próximo do final da página
-      const scrollPosition = window.scrollY + window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
-      const footerThreshold = documentHeight - 200 // 200px antes do final
-      
-      if (scrollPosition >= footerThreshold) {
-        return // Permitir navegação normal no footer
-      }
-
-      if (isScrolling) return
-      
-      if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-        e.preventDefault()
-        goToNextSection()
-      } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-        e.preventDefault()
-        goToPreviousSection()
-      }
-    }
-
-    // Adicionar event listeners apenas se não for mobile
-    const container = document.body
-    container.addEventListener('wheel', handleScroll, { passive: false })
-    document.addEventListener('keydown', handleKeyDown)
-
-    // Cleanup
-    return () => {
-      container.removeEventListener('wheel', handleScroll)
-      document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [currentSection, isScrolling])
-
-  // Intersection Observer para animações
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const sectionId = entry.target.id
-            setAnimatedSections(prev => new Set(prev).add(sectionId))
-            
-            // Atualizar seção atual baseado no que está visível
-            const sectionIndex = sections.indexOf(sectionId)
-            if (sectionIndex !== -1) {
-              setCurrentSection(sectionIndex)
-            }
-          }
-        })
-      },
-      {
-        threshold: 0.3, // Anima quando 30% da seção está visível
-        rootMargin: '-100px 0px' // Margem negativa para considerar o navbar
-      }
-    )
-
-    // Observar todas as seções principais
-    const sectionElements = document.querySelectorAll('section[id]')
-    sectionElements.forEach(section => {
-      observer.observe(section)
-    })
-
-    // Cleanup
-    return () => {
-      sectionElements.forEach(section => {
-        observer.unobserve(section)
-      })
-    }
-  }, [])
 
   // Auto slide para as fotos da home
   useEffect(() => {
@@ -300,12 +132,20 @@ export default function HomePage() {
     setCurrentSlide(index)
   }
 
-  // Obter os 3 serviços mais populares para destacar
-  const servicosDestaque = [
-    servicosEspacoGuapa.find(s => s.name === "Avaliação"),
-    servicosEspacoGuapa.find(s => s.name === "Back To Natural - P"),
-    servicosEspacoGuapa.find(s => s.name === "Corte")
-  ].filter(Boolean) as Product[]
+  // Função simples para scroll suave
+  const smoothScrollTo = (elementId: string) => {
+    const element = document.getElementById(elementId)
+    if (element) {
+      const offset = 120 // Altura da navbar + margem extra
+      const elementPosition = element.getBoundingClientRect().top
+      const offsetPosition = elementPosition + window.pageYOffset - offset
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
+    }
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden" style={{ backgroundColor: '#022b28' }}>
@@ -338,6 +178,7 @@ export default function HomePage() {
 
       {/* Content */}
       <div className="relative z-10">
+
         {/* Header */}
         <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -367,12 +208,12 @@ export default function HomePage() {
                 >
                   Sobre
                 </button>
-                <button 
-                  onClick={() => smoothScrollTo('servicos')}
-                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer"
+                <Link 
+                  href="/servicos"
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium"
                 >
                   Serviços
-                </button>
+                </Link>
                 <Link href="/profissionais" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
                   Nosso Time
                 </Link>
@@ -419,7 +260,7 @@ export default function HomePage() {
 
         {/* Menu Mobile Dropdown */}
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed top-20 left-0 right-0 z-40 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
+          <div className="md:hidden fixed top-16 left-0 right-0 z-50 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
             <nav className="flex flex-col space-y-4 p-6">
               <button 
                 onClick={() => {
@@ -439,15 +280,13 @@ export default function HomePage() {
               >
                 Sobre
               </button>
-              <button 
-                onClick={() => {
-                  smoothScrollTo('servicos')
-                  setIsMobileMenuOpen(false)
-                }}
-                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer text-left py-2"
+              <Link 
+                href="/servicos" 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-left py-2"
               >
                 Serviços
-              </button>
+              </Link>
               <Link 
                 href="/profissionais" 
                 onClick={() => setIsMobileMenuOpen(false)}
@@ -483,9 +322,7 @@ export default function HomePage() {
         )}
 
         {/* Hero Section */}
-        <section id="inicio" className={`py-0 md:py-24 relative transition-all duration-1000 ${
-          animatedSections.has('inicio') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="inicio" className="py-0 md:-mt-4 md:pb-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-8 items-center">
               {/* Texto à esquerda */}
@@ -515,8 +352,8 @@ export default function HomePage() {
               </div>
               
               {/* Carrossel de Fotos à direita */}
-              <div className="flex justify-center md:justify-end order-2 md:order-2 md:col-span-1">
-                <div className="relative w-full max-w-md">
+              <div className="flex justify-center md:justify-end order-2 md:order-2 md:col-span-1 md:mt-24">
+                <div className="relative w-full max-w-lg">
                   {/* Container do carrossel */}
                   <div className="relative overflow-hidden rounded-lg shadow-2xl">
                                       <div 
@@ -536,7 +373,7 @@ export default function HomePage() {
                             src={photo} 
                             alt={`Espaço Guapa - Slide ${index + 1}`} 
                             className="w-full h-auto object-cover"
-                            style={{ maxHeight: '300px', width: '100%' }}
+                            style={{ maxHeight: '400px', width: '100%' }}
                             onError={(e) => {
                               console.log('Erro ao carregar imagem:', photo);
                               e.currentTarget.style.display = 'none';
@@ -591,25 +428,21 @@ export default function HomePage() {
         </section>
 
         {/* Seção Sobre Nós */}
-        <section id="sobre" className={`py-12 md:py-24 relative transition-all duration-1000 ${
-          animatedSections.has('sobre') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="sobre" className="py-8 md:py-16 relative transition-all duration-1000">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl md:text-6xl font-bold mb-8 md:mb-12 font-heading" style={{ color: '#f2dcbc' }}>
               Sobre Nós
             </h2>
-            <p className="text-lg md:text-xl leading-relaxed font-body" style={{ color: '#f2dcbc' }}>
+            <p className="text-lg md:text-xl leading-relaxed font-body mb-0" style={{ color: '#f2dcbc' }}>
               No Espaço Guapa, nossa missão é ajudar você a descobrir e expressar a beleza natural dos seus cabelos. Sob o olhar atencioso das nossas cabeleireiras, unimos consultoria capilar, cortes personalizados e colorimetria, tudo com consciência e respeito à fibra capilar. A tricoterapeuta naturalista Cícera Canovas complementa esse cuidado com tratamentos naturais especializados que fortalecem e revitalizam desde a raiz, sem abrir mão da saúde do seu cabelo. Trabalhamos com produtos da Keune Haircosmetics, referência em qualidade e inovação.
             </p>
           </div>
         </section>
 
         {/* Serviços Destaque */}
-        <section id="servicos" className={`py-12 md:py-16 relative transition-all duration-1000 ${
-          animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="servicos-home" className="py-6 md:py-12 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12 md:mb-20">
+            <div className="text-center mb-8 md:mb-12">
               <h2 className="text-4xl md:text-6xl font-bold mb-4 md:mb-6 font-heading" style={{ color: '#f2dcbc' }}>Nossos Serviços</h2>
               <p className="text-base md:text-lg leading-relaxed font-body" style={{ color: '#f2dcbc' }}>Cuidamos de você com carinho e profissionalismo</p>
               <div className="w-24 h-1 bg-[#006D5B] mx-auto mt-6 md:mt-8"></div>
@@ -619,10 +452,7 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
               {/* Card Cortes */}
               <div 
-                className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                  animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                }`} 
-                style={{ transitionDelay: '0ms' }}
+                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
               >
                 <div className="text-center mb-4 md:mb-6">
                   <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -639,10 +469,7 @@ export default function HomePage() {
 
               {/* Card Coloração */}
               <div 
-                className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                  animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                }`} 
-                style={{ transitionDelay: '200ms' }}
+                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
               >
                 <div className="text-center mb-4 md:mb-6">
                   <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -659,10 +486,7 @@ export default function HomePage() {
 
               {/* Card Tratamentos */}
               <div 
-                className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                  animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                }`} 
-                style={{ transitionDelay: '400ms' }}
+                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
               >
                 <div className="text-center mb-4 md:mb-6">
                   <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
@@ -681,9 +505,7 @@ export default function HomePage() {
         </section>
 
         {/* Profissionais */}
-        <section id="equipe" className={`py-12 md:py-16 relative transition-all duration-1000 ${
-          animatedSections.has('equipe') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="equipe" className="py-12 md:py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12 md:mb-20">
               <h2 className="text-4xl md:text-6xl font-bold mb-4 md:mb-6 font-heading" style={{ color: '#f2dcbc' }}>Nosso Time</h2>
@@ -692,9 +514,7 @@ export default function HomePage() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('equipe') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`} style={{ transitionDelay: '200ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '200ms' }}>
                 <div className="text-center mb-4 md:mb-6">
                   <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
                     <img 
@@ -720,9 +540,7 @@ export default function HomePage() {
                 </div>
               </div>
               
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('equipe') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`} style={{ transitionDelay: '400ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
                 <div className="text-center mb-4 md:mb-6">
                   <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center">
                     <User className="w-12 h-12 md:w-16 md:h-16 text-white" />
@@ -748,9 +566,7 @@ export default function HomePage() {
         </section>
 
         {/* Parceiros */}
-        <section id="parceiros" className={`py-16 relative transition-all duration-1000 ${
-          animatedSections.has('parceiros') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="parceiros" className="py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Nossos Parceiros</h2>
@@ -759,20 +575,12 @@ export default function HomePage() {
             </div>
             
             <div className="flex justify-center items-center">
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('parceiros') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
                 <div className="text-center">
                   <div className="mb-6">
-                    <img 
-                      src="/assents/keune-logo.png" 
-                      alt="Keune Haircosmetics" 
-                      className="h-24 mx-auto mb-4"
-                      onError={(e) => {
-                        // Fallback se a imagem não existir
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
+                    <div className="h-24 w-24 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">K</span>
+                    </div>
                   </div>
                   <h3 className="text-3xl font-bold font-heading mb-4" style={{ color: '#f2dcbc' }}>
                     Keune Haircosmetics
@@ -799,9 +607,7 @@ export default function HomePage() {
         </section>
 
         {/* Produtos */}
-        <section id="produtos" className={`py-16 relative transition-all duration-1000 ${
-          animatedSections.has('produtos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="produtos" className="py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Nossa Lojinha</h2>
@@ -811,9 +617,7 @@ export default function HomePage() {
             
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
               {/* Produto 1 */}
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('produtos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '100ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '100ms' }}>
                 <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Package className="w-8 h-8 text-white" />
                 </div>
@@ -831,9 +635,7 @@ export default function HomePage() {
               </div>
 
               {/* Produto 2 */}
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('produtos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '200ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '200ms' }}>
                 <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Package className="w-8 h-8 text-white" />
                 </div>
@@ -851,9 +653,7 @@ export default function HomePage() {
               </div>
 
               {/* Produto 3 */}
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('produtos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '300ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '300ms' }}>
                 <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Package className="w-8 h-8 text-white" />
                 </div>
@@ -884,9 +684,7 @@ export default function HomePage() {
         </section>
 
         {/* Agendamento */}
-        <section id="agendamento" className={`py-16 relative transition-all duration-1000 ${
-          animatedSections.has('agendamento') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="agendamento" className="py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <h2 className="text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Agendamento</h2>
@@ -896,9 +694,7 @@ export default function HomePage() {
             
             <div className="grid md:grid-cols-2 gap-12 items-center">
               {/* Informações do endereço */}
-              <div className={`text-center md:text-left ${
-                animatedSections.has('agendamento') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`} style={{ transitionDelay: '200ms' }}>
+              <div className="text-center md:text-left" style={{ transitionDelay: '200ms' }}>
                 <div className="mb-8">
                   <h3 className="text-3xl font-bold font-heading mb-6" style={{ color: '#f2dcbc' }}>
                     Nosso Endereço
@@ -918,9 +714,7 @@ export default function HomePage() {
               </div>
               
               {/* Mapa do Google */}
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('agendamento') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`} style={{ transitionDelay: '400ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
                 <div className="text-center mb-4">
                   <h3 className="text-2xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>
                     Onde nos encontrar
@@ -949,9 +743,7 @@ export default function HomePage() {
         </section>
 
         {/* Depoimentos */}
-        <section id="depoimentos" className={`py-16 relative transition-all duration-1000 ${
-          animatedSections.has('depoimentos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="depoimentos" className="py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Depoimentos</h2>
@@ -966,10 +758,7 @@ export default function HomePage() {
                 {testimonials.map((testimonial, index) => (
                   <div 
                     key={testimonial.id} 
-                    className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 flex-shrink-0 w-80 snap-start border border-white/20 ${
-                      animatedSections.has('depoimentos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                    }`} 
-                    style={{ transitionDelay: `${index * 100}ms` }}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 flex-shrink-0 w-80 snap-start border border-white/20" 
                   >
                     <div className="flex items-center mb-4">
                       <div className="w-12 h-12 bg-[#d34d4c] rounded-full mr-4"></div>
@@ -1009,9 +798,7 @@ export default function HomePage() {
         </section>
 
         {/* Contato */}
-        <section id="contato" className={`py-16 relative transition-all duration-1000 ${
-          animatedSections.has('contato') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}>
+        <section id="contato" className="py-16 relative transition-all duration-1000">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-20">
               <h2 className="text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Entre em Contato</h2>
@@ -1020,19 +807,15 @@ export default function HomePage() {
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('contato') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '100ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '100ms' }}>
                 <div className="w-12 h-12 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <MapPin className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="text-lg font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>Endereço</h3>
-                <p className="text-lg font-body" style={{ color: '#f2dcbc' }}>Rua Dr. Gonçalves da Cunha, 682 – Centro, Leme — SP</p>
+                <p className="text-lg font-body" style={{ color: '#f2dcbc' }}>Rua Dr. Gonçalves da Cunha, 682 – Centro, Leme - SP</p>
               </div>
               
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('contato') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '250ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '250ms' }}>
                 <div className="w-12 h-12 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <Phone className="w-6 h-6 text-white" />
                 </div>
@@ -1040,9 +823,7 @@ export default function HomePage() {
                 <p className="text-lg font-body" style={{ color: '#f2dcbc' }}>+55 19 99153-1394</p>
               </div>
               
-              <div className={`bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20 ${
-                animatedSections.has('contato') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: '400ms' }}>
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 text-center shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
                 <div className="w-12 h-12 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
                   <WhatsAppIcon className="w-6 h-6 text-white" />
                 </div>
@@ -1109,26 +890,7 @@ export default function HomePage() {
           </div>
         </footer>
 
-        {/* Indicadores de Seção */}
-        <div className="fixed right-6 top-1/2 transform -translate-y-1/2 z-40 hidden lg:block">
-          <div className="flex flex-col space-y-3">
-            {sections.map((section, index) => (
-              <button
-                key={section}
-                onClick={() => {
-                  setCurrentSection(index)
-                  smoothScrollTo(section)
-                }}
-                className={`w-3 h-3 rounded-full transition-all duration-300 cursor-pointer ${
-                  currentSection === index 
-                    ? 'bg-[#D15556] scale-125' 
-                    : 'bg-gray-300 hover:bg-gray-400'
-                }`}
-                title={`Ir para ${section}`}
-              />
-            ))}
-          </div>
-        </div>
+
 
         {/* WhatsApp Fixo */}
         <div className="fixed bottom-6 right-6 z-50">

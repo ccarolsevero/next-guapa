@@ -3,21 +3,21 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Calendar, Scissors, Sparkles, User, MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
+import LayoutPublic from '../../layout-public'
 
 // Dados da Cicera
 const ciceraInfo = {
   name: "Cicera Canovas",
   title: "Tricoterapeuta",
-  bio: "Especialista em tratamentos naturais do couro cabeludo e fios com mais de 10 anos de experiência. Realiza tratamentos totalmente naturalistas, sem o uso de nenhum tipo de química, priorizando sempre a saúde capilar.",
+  bio: "Especialista em tratamentos naturais do couro cabeludo e fios com mais de 12 anos de experiência. Utiliza técnicas 100% naturalistas, sem química, priorizando a saúde capilar e o respeito à fibra natural dos cabelos.",
   services: [
     { name: "Avaliação Capilar", price: 60.00, description: "Avaliação completa do couro cabeludo e fios" },
-    { name: "Tratamento Keune SPA", price: 120.00, description: "Tratamento premium para hidratação profunda" },
-    { name: "Tratamento Reconstrução", price: 140.00, description: "Reconstrução de fios danificados" },
-    { name: "Tratamento Nutrição", price: 130.00, description: "Nutrição intensiva para cabelos ressecados" },
-    { name: "Tratamento Acidificação", price: 110.00, description: "Selagem da cutícula para brilho" },
-    { name: "Tratamento Couro Cabeludo", price: 100.00, description: "Limpeza e hidratação do couro cabeludo" },
-    { name: "Corte e Tratamento", price: 198.00, description: "Corte + tratamento personalizado Keune" },
-    { name: "Finalização Natural", price: 77.00, description: "Finalização ao natural com difusor" }
+    { name: "Limpeza de Couro Cabeludo", price: 100.00, description: "Limpeza profunda e desintoxicante" },
+    { name: "Hidratação Natural", price: 80.00, description: "Hidratação com produtos naturais Keune" },
+    { name: "Reconstrução Capilar", price: 120.00, description: "Reconstrução da estrutura dos fios" },
+    { name: "Tratamento Anti-Queda", price: 150.00, description: "Tratamento específico para queda de cabelo" },
+    { name: "Terapia Capilar Completa", price: 200.00, description: "Pacote completo de tratamentos" },
+    { name: "Avaliação + Tratamento", price: 140.00, description: "Avaliação + tratamento personalizado" }
   ]
 }
 
@@ -33,7 +33,6 @@ const galleryImages = [
 
 export default function CiceraPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [animatedSections, setAnimatedSections] = useState<Set<string>>(new Set())
 
   // Auto-play da galeria
   useEffect(() => {
@@ -42,35 +41,6 @@ export default function CiceraPage() {
     }, 4000) // Troca a cada 4 segundos
 
     return () => clearInterval(interval)
-  }, [])
-
-  // Intersection Observer para animações
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const sectionId = entry.target.id
-            setAnimatedSections(prev => new Set(prev).add(sectionId))
-          }
-        })
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '0px 0px -50px 0px'
-      }
-    )
-
-    const sections = document.querySelectorAll('section[id]')
-    sections.forEach(section => {
-      observer.observe(section)
-    })
-
-    return () => {
-      sections.forEach(section => {
-        observer.unobserve(section)
-      })
-    }
   }, [])
 
   const nextImage = () => {
@@ -82,82 +52,36 @@ export default function CiceraPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#022b28' }}>
-      {/* Header */}
-      <header className="bg-[#D15556] border-b border-[#c04546] fixed top-0 left-0 right-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-2">
-            <div className="flex items-center">
-              <Link href="/" className="flex items-center">
-                <img 
-                  src="/assents/logonavbar.svg" 
-                  alt="Espaço Guapa" 
-                  style={{ 
-                    height: '60px', 
-                    width: 'auto'
-                  }}
-                />
-              </Link>
-            </div>
-            <nav className="hidden md:flex space-x-12">
-              <Link href="/" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
-                Início
-              </Link>
-              <Link href="/servicos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
-                Serviços
-              </Link>
-              <Link href="/profissionais" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
-                Nosso Time
-              </Link>
-              <Link href="/produtos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
-                Produtos
-              </Link>
-              
-            </nav>
-            <Link 
-              href="/login-cliente"
-              className="bg-white text-[#D15556] px-8 py-3 rounded-lg hover:bg-[#EED7B6] transition-colors font-medium tracking-wide"
-            >
-              Agendar
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      {/* Spacer para compensar navbar fixa */}
-      <div className="h-20"></div>
-
+    <LayoutPublic>
       {/* Hero Section */}
-      <section id="hero" className={`py-32 relative transition-all duration-1000 ${
-        animatedSections.has('hero') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
+      <section className="pt-20 pb-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Foto e Info */}
             <div className="text-center lg:text-left">
-              <div className="w-64 h-64 mx-auto lg:mx-0 mb-8 rounded-full overflow-hidden bg-[#006D5B]">
+              <div className="w-56 h-56 md:w-64 md:h-64 mx-auto lg:mx-0 mb-8 rounded-full overflow-hidden bg-[#d34d4c]">
                 <div className="w-full h-full flex items-center justify-center">
                   <User className="w-32 h-32 text-white" />
                 </div>
               </div>
-              <h1 className="text-5xl font-light text-[#006D5B] mb-4">{ciceraInfo.name}</h1>
-              <p className="text-2xl text-[#D15556] font-medium mb-6">{ciceraInfo.title}</p>
+              <h1 className="text-3xl md:text-4xl lg:text-6xl font-bold mb-4 font-heading" style={{ color: '#f2dcbc' }}>{ciceraInfo.name}</h1>
+              <p className="text-lg md:text-xl lg:text-2xl text-[#d34d4c] font-medium mb-6 font-body">{ciceraInfo.title}</p>
               <Link 
                 href="/login-cliente"
-                className="bg-[#D15556] text-white px-8 py-3 rounded-lg hover:bg-[#c04546] transition-all duration-300 font-medium"
+                className="bg-[#d34d4c] text-white px-8 py-4 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium tracking-wide shadow-md hover:shadow-lg inline-block"
               >
-                Agendar com {ciceraInfo.name.split(' ')[0]}
+                Agendar com {ciceraInfo.name}
               </Link>
             </div>
             
             {/* Bio */}
-            <div>
-              <h2 className="text-3xl font-light text-[#006D5B] mb-6">Sobre Mim</h2>
-              <p className="text-lg text-gray-700 leading-relaxed mb-6">
+            <div className="text-center md:text-left">
+              <h2 className="text-3xl md:text-4xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Sobre Mim</h2>
+              <p className="text-lg md:text-xl font-body leading-relaxed mb-6" style={{ color: '#f2dcbc' }}>
                 {ciceraInfo.bio}
               </p>
-              <p className="text-gray-700 leading-relaxed">
-                Trabalho com técnicas 100% naturalistas, sem química, priorizando a saúde capilar. Utilizo produtos premium da KeuneHaircosmetics para garantir os melhores resultados em todos os tratamentos.
+              <p className="text-base md:text-lg font-body leading-relaxed" style={{ color: '#f2dcbc' }}>
+                Especializada em tratamentos naturais que fortalecem e revitalizam desde a raiz, sem abrir mão da saúde do seu cabelo. Trabalho com produtos da Keune Haircosmetics para garantir resultados excepcionais.
               </p>
             </div>
           </div>
@@ -165,34 +89,29 @@ export default function CiceraPage() {
       </section>
 
       {/* Serviços */}
-      <section id="servicos" className={`py-32 relative transition-all duration-1000 ${
-        animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
+      <section className="py-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl font-light text-[#006D5B] mb-6">Tratamentos Especializados</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Conheça os tratamentos oferecidos pela {ciceraInfo.name.split(' ')[0]}</p>
-            <div className="w-24 h-1 bg-[#006D5B] mx-auto mt-8"></div>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Tratamentos Especializados</h2>
+            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os tratamentos oferecidos pela {ciceraInfo.name}</p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {ciceraInfo.services.map((service, index) => (
-              <div key={service.name} className={`bg-white/90 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border-l-4 border-[#006D5B] ${
-                animatedSections.has('servicos') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-              }`} style={{ transitionDelay: `${index * 100}ms` }}>
+              <div key={service.name} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#006D5B] rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-[#d34d4c] rounded-full flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-xl font-light text-[#D15556]">R$ {service.price.toFixed(2)}</span>
+                  <span className="text-xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
                 </div>
-                <h3 className="text-xl font-light text-[#006D5B] mb-3">{service.name}</h3>
-                <p className="text-gray-600 text-sm leading-relaxed mb-4">
+                <h3 className="text-xl font-bold font-heading mb-3" style={{ color: '#f2dcbc' }}>{service.name}</h3>
+                <p className="text-base md:text-lg font-body leading-relaxed mb-4" style={{ color: '#f2dcbc' }}>
                   {service.description}
                 </p>
                 <Link 
                   href="/login-cliente"
-                  className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-all duration-300 text-sm font-medium"
+                  className="bg-[#d34d4c] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 text-sm font-medium inline-block w-full text-center"
                 >
                   Agendar
                 </Link>
@@ -203,20 +122,17 @@ export default function CiceraPage() {
       </section>
 
       {/* Galeria */}
-      <section id="galeria" className={`py-32 relative transition-all duration-1000 ${
-        animatedSections.has('galeria') ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}>
+      <section className="py-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20">
-            <h2 className="text-5xl font-light text-[#006D5B] mb-6">Galeria de Trabalhos</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">Confira alguns dos trabalhos realizados pela {ciceraInfo.name.split(' ')[0]}</p>
-            <div className="w-24 h-1 bg-[#006D5B] mx-auto mt-8"></div>
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Galeria de Trabalhos</h2>
+            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Confira alguns dos tratamentos realizados pela {ciceraInfo.name}</p>
           </div>
           
           <div className="relative max-w-4xl mx-auto">
             {/* Imagem Principal */}
             <div className="relative h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl">
-              <div className="w-full h-full bg-[#006D5B] flex items-center justify-center">
+              <div className="w-full h-full bg-[#d34d4c] flex items-center justify-center">
                 <span className="text-white text-lg">Imagem {currentImageIndex + 1} de {galleryImages.length}</span>
               </div>
             </div>
@@ -224,14 +140,14 @@ export default function CiceraPage() {
             {/* Controles */}
             <button 
               onClick={prevImage}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#006D5B] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#d34d4c] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
             >
               <ArrowLeft className="w-6 h-6" />
             </button>
             
             <button 
               onClick={nextImage}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#006D5B] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white text-[#d34d4c] w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110"
             >
               <ArrowRight className="w-6 h-6" />
             </button>
@@ -244,7 +160,7 @@ export default function CiceraPage() {
                   onClick={() => setCurrentImageIndex(index)}
                   className={`w-3 h-3 rounded-full transition-all duration-300 ${
                     currentImageIndex === index 
-                      ? 'bg-[#D15556] scale-125' 
+                      ? 'bg-[#d34d4c] scale-125' 
                       : 'bg-gray-300 hover:bg-gray-400'
                   }`}
                 />
@@ -254,43 +170,28 @@ export default function CiceraPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="text-gray-900 py-16 border-t border-[#D15556] relative" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-12">
-            <div>
-              <h3 className="text-2xl font-light text-gray-900 mb-6">Espaço Guapa</h3>
-              <p className="text-gray-600 leading-relaxed">
-                Transformando vidas através da beleza e autoestima.
-              </p>
-            </div>
-            <div>
-              <h4 className="text-lg font-medium mb-6">Links Rápidos</h4>
-              <ul className="space-y-3">
-                <li><Link href="/servicos" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Serviços</Link></li>
-                <li><Link href="/profissionais" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Profissionais</Link></li>
-                <li><Link href="/agendamento" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Agendamento</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-lg font-medium mb-6">Contato</h4>
-              <div className="space-y-3 text-gray-600">
-                <p>Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP</p>
-                <p>(11) 99999-9999</p>
-                <p>contato@espacoguapa.com</p>
-              </div>
-            </div>
-          </div>
-          <div className="border-t border-[#EED7B6] mt-12 pt-8 text-center text-gray-600">
-            <p>&copy; 2024 Espaço Guapa. Todos os direitos reservados.</p>
-          </div>
+      {/* CTA Section */}
+      <section className="py-12 md:py-24 relative">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>
+            Pronto para Agendar com {ciceraInfo.name}?
+          </h2>
+          <p className="text-lg md:text-xl leading-relaxed font-body mb-8" style={{ color: '#f2dcbc' }}>
+            Agende sua consulta e descubra como podemos cuidar dos seus fios com tratamentos naturais e eficazes.
+          </p>
+          <a 
+            href="/login-cliente"
+            className="bg-[#d34d4c] text-white px-8 py-4 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 transform hover:scale-105 font-medium tracking-wide shadow-md hover:shadow-lg inline-block"
+          >
+            Agendar Consulta
+          </a>
         </div>
-      </footer>
+      </section>
 
       {/* WhatsApp Fixo */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href="https://wa.me/5511999999999?text=Olá! Gostaria de agendar um horário com a Cicera no Espaço Guapa." 
+          href="https://wa.me/5519991531394?text=Olá! Gostaria de agendar um horário com a Cicera no Espaço Guapa." 
           target="_blank" 
           rel="noopener noreferrer"
           className="bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 cursor-pointer"
@@ -299,16 +200,6 @@ export default function CiceraPage() {
           <MessageCircle className="w-7 h-7" />
         </a>
       </div>
-
-      <style jsx global>{`
-        html {
-          scroll-behavior: smooth;
-        }
-
-        body {
-          overflow-x: hidden;
-        }
-      `}</style>
-    </div>
+    </LayoutPublic>
   )
 }

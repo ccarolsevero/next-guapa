@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { 
   LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, Settings, 
-  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User
+  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe
 } from 'lucide-react'
 
 export default function AdminLayout({
@@ -42,6 +42,7 @@ export default function AdminLayout({
     { name: 'Comandas', href: '/admin/comandas', icon: Package },
     { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
     { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
+    { name: 'Editar Site', href: '/admin/editar-site', icon: Globe },
     { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
   ]
 

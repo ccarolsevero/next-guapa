@@ -11,7 +11,7 @@
 2. **Acesse a URL:**
 
    ```
-   http://localhost:3001/admin
+   http://localhost:3000/admin
    ```
 
 3. **Faça login com as credenciais:**
@@ -73,6 +73,16 @@
 - Filtros por período
 - Exportação de dados
 
+### 🌐 Editar Site
+
+- **Galeria da Home:** Adicionar, editar e remover fotos do slide da página inicial
+- **Profissionais:** Gerenciar informações das cabeleireiras
+  - Nome, título e foto de perfil
+  - Descrição e serviços realizados
+  - Galeria de fotos de cada profissional
+  - Adicionar ou deletar profissionais
+- **Configurações Gerais:** Nome do site, endereço, WhatsApp, email
+
 ### ⚙️ Configurações
 
 - Configurações do sistema
@@ -92,22 +102,23 @@
 
 ## URLs diretas:
 
-- **Login:** `http://localhost:3001/admin/login`
-- **Dashboard:** `http://localhost:3001/admin/dashboard`
-- **Clientes:** `http://localhost:3001/admin/clientes`
-- **Agendamentos:** `http://localhost:3001/admin/agendamentos`
-- **Comandas:** `http://localhost:3001/admin/comandas`
-- **Serviços:** `http://localhost:3001/admin/servicos`
-- **Financeiro:** `http://localhost:3001/admin/financeiro`
-- **Relatórios:** `http://localhost:3001/admin/relatorios`
-- **Configurações:** `http://localhost:3001/admin/configuracoes`
-- **Produtos:** `http://localhost:3001/admin/produtos`
-- **Pedidos:** `http://localhost:3001/admin/pedidos`
+- **Login:** `http://localhost:3000/admin/login`
+- **Dashboard:** `http://localhost:3000/admin/dashboard`
+- **Clientes:** `http://localhost:3000/admin/clientes`
+- **Agendamentos:** `http://localhost:3000/admin/agendamentos`
+- **Comandas:** `http://localhost:3000/admin/comandas`
+- **Serviços:** `http://localhost:3000/admin/servicos`
+- **Financeiro:** `http://localhost:3000/admin/financeiro`
+- **Relatórios:** `http://localhost:3000/admin/relatorios`
+- **Editar Site:** `http://localhost:3000/admin/editar-site`
+- **Configurações:** `http://localhost:3000/admin/configuracoes`
+- **Produtos:** `http://localhost:3000/admin/produtos`
+- **Pedidos:** `http://localhost:3000/admin/pedidos`
 
 ## Páginas públicas:
 
-- **Home:** `http://localhost:3001/`
-- **Serviços:** `http://localhost:3001/servicos`
-- **Profissionais:** `http://localhost:3001/profissionais`
-- **Produtos:** `http://localhost:3001/produtos`
-- **Agendamento:** `http://localhost:3001/agendamento`
+- **Home:** `http://localhost:3000/`
+- **Serviços:** `http://localhost:3000/servicos`
+- **Profissionais:** `http://localhost:3000/profissionais`
+- **Produtos:** `http://localhost:3000/produtos`
+- **Agendamento:** `http://localhost:3000/agendamento`
