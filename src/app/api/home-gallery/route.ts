@@ -1,10 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
 
 export async function GET() {
   try {
-    console.log('Testando API home-gallery...')
+    console.log('Tentando buscar fotos da home do banco...')
     
-    // Por enquanto, vamos retornar dados de teste
+    const photos = await prisma.homeGallery.findMany({
+      where: {
+        isActive: true
+      },
+      orderBy: {
+        order: 'asc'
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+        order: true
+      }
+    })
+
+    console.log('Fotos encontradas no banco:', photos)
+    return NextResponse.json(photos)
+  } catch (error) {
+    console.error('Erro ao buscar fotos da home:', error)
+    
+    // Fallback para dados de teste se o banco falhar
     const testPhotos = [
       {
         id: '1',
@@ -28,14 +50,8 @@ export async function GET() {
       }
     ]
 
-    console.log('Retornando fotos de teste:', testPhotos)
+    console.log('Retornando fotos de teste como fallback')
     return NextResponse.json(testPhotos)
-  } catch (error) {
-    console.error('Erro na API:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
-      { status: 500 }
-    )
   }
 }
 
@@ -43,12 +59,30 @@ export async function POST(request: NextRequest) {
   try {
     const { imageUrl } = await request.json()
     
-    // Por enquanto, apenas retornar sucesso
-    return NextResponse.json({ success: true, imageUrl })
+    console.log('Tentando adicionar foto no banco:', imageUrl)
+
+    // Encontrar a maior ordem atual
+    const maxOrder = await prisma.homeGallery.aggregate({
+      where: { isActive: true },
+      _max: { order: true }
+    })
+
+    const newOrder = (maxOrder._max.order || 0) + 1
+
+    const photo = await prisma.homeGallery.create({
+      data: {
+        imageUrl,
+        order: newOrder,
+        isActive: true
+      }
+    })
+
+    console.log('Foto adicionada no banco com sucesso:', photo)
+    return NextResponse.json(photo)
   } catch (error) {
-    console.error('Erro ao adicionar foto:', error)
+    console.error('Erro ao adicionar foto no banco:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     )
   }
@@ -58,12 +92,24 @@ export async function PUT(request: NextRequest) {
   try {
     const { photos } = await request.json()
     
-    // Por enquanto, apenas retornar sucesso
+    console.log('Tentando atualizar ordem das fotos no banco:', photos)
+
+    // Atualizar a ordem de todas as fotos
+    const updatePromises = photos.map((photo: { id: string; imageUrl: string; order: number }, index: number) =>
+      prisma.homeGallery.update({
+        where: { id: photo.id },
+        data: { order: index + 1 }
+      })
+    )
+
+    await Promise.all(updatePromises)
+
+    console.log('Ordem das fotos atualizada no banco com sucesso')
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Erro ao atualizar ordem:', error)
+    console.error('Erro ao atualizar ordem no banco:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     )
   }

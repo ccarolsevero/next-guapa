@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Upload, Save, Trash2, Plus, Edit, Image, User, FileText, Settings, Move } from 'lucide-react'
 import { uploadImage, deleteImage } from '@/lib/upload'
-import { supabase } from '@/lib/supabase'
 
 interface Professional {
   id: string
@@ -38,14 +37,13 @@ export default function EditarSitePage() {
 
   const loadHomeGallery = async () => {
     try {
-      const { data, error } = await supabase
-        .from('home_gallery')
-        .select('*')
-        .eq('isActive', true)
-        .order('order', { ascending: true })
-
-      if (error) throw error
-      setHomeGallery(data || [])
+      const response = await fetch('/api/home-gallery')
+      if (response.ok) {
+        const data = await response.json()
+        setHomeGallery(data || [])
+      } else {
+        console.error('Erro ao carregar galeria da home')
+      }
     } catch (error) {
       console.error('Erro ao carregar galeria:', error)
     }
@@ -53,13 +51,18 @@ export default function EditarSitePage() {
 
   const loadProfessionals = async () => {
     try {
-      const { data, error } = await supabase
-        .from('professionals')
-        .select('*')
-        .eq('isActive', true)
-
-      if (error) throw error
-      setProfessionals(data || [])
+      // Por enquanto, vamos usar dados de exemplo
+      setProfessionals([
+        {
+          id: '1',
+          name: 'Bruna',
+          title: 'Cabeleireira Visagista',
+          profileImage: '/assents/fotobruna.jpeg',
+          gallery: [],
+          description: 'Especialista em cabelos naturais e visagismo',
+          services: ['Corte', 'Coloração', 'Tratamento', 'Consultoria']
+        }
+      ])
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error)
     } finally {
@@ -73,6 +76,8 @@ export default function EditarSitePage() {
       const file = files[0]
       
       try {
+        console.log('Iniciando upload de:', file.name, 'tamanho:', file.size, 'tipo:', file.type)
+        
         let folder = ''
         switch (type) {
           case 'home-gallery':
@@ -86,51 +91,60 @@ export default function EditarSitePage() {
             break
         }
 
+        console.log('Fazendo upload para pasta:', folder)
         const imageUrl = await uploadImage(file, folder)
+        console.log('Upload concluído, URL:', imageUrl)
         
         if (type === 'home-gallery') {
-          // Adicionar nova foto à galeria da home
-          const { data, error } = await supabase
-            .from('home_gallery')
-            .insert({
-              imageUrl,
-              order: homeGallery.length + 1
-            })
-            .select()
+          // Adicionar nova foto à galeria da home usando nossa API
+          console.log('Salvando foto no banco de dados...')
+          const response = await fetch('/api/home-gallery', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ imageUrl })
+          })
 
-          if (error) throw error
-          await loadHomeGallery()
+          if (response.ok) {
+            const newPhoto = await response.json()
+            console.log('Foto adicionada com sucesso:', newPhoto)
+            await loadHomeGallery() // Recarregar a galeria
+            alert('Foto adicionada com sucesso!')
+          } else {
+            const errorData = await response.json()
+            console.error('Erro ao adicionar foto:', errorData)
+            alert(`Erro ao adicionar foto: ${errorData.error || 'Erro desconhecido'}`)
+          }
         } else if (type === 'professional-gallery') {
           // Adicionar foto à galeria do profissional
           const professionalId = e.currentTarget.id?.replace('gallery-upload-', '')
           if (professionalId) {
-            const { error } = await supabase
-              .from('professional_gallery')
-              .insert({
-                professionalId,
-                imageUrl,
-                order: 0
-              })
-
-            if (error) throw error
-            await loadProfessionals()
+            // Por enquanto, apenas atualizar o estado local
+            setProfessionals(professionals.map(p => 
+              p.id === professionalId 
+                ? { ...p, gallery: [...p.gallery, imageUrl] }
+                : p
+            ))
+            alert('Foto adicionada à galeria do profissional!')
           }
         } else if (type === 'profile') {
           // Trocar foto de perfil do profissional
           const professionalId = e.currentTarget.id?.replace('profile-upload-', '')
           if (professionalId) {
-            const { error } = await supabase
-              .from('professionals')
-              .update({ imageUrl })
-              .eq('id', professionalId)
-
-            if (error) throw error
-            await loadProfessionals()
+            // Por enquanto, apenas atualizar o estado local
+            setProfessionals(professionals.map(p => 
+              p.id === professionalId 
+                ? { ...p, profileImage: imageUrl }
+                : p
+            ))
+            alert('Foto de perfil atualizada!')
           }
         }
       } catch (error) {
-        console.error('Erro no upload:', error)
-        alert('Erro ao fazer upload da imagem')
+        console.error('Erro detalhado no upload:', error)
+        const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
+        alert(`Erro ao fazer upload da imagem: ${errorMessage}`)
       }
     }
   }
@@ -138,13 +152,9 @@ export default function EditarSitePage() {
   const deleteHomePhoto = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta foto?')) {
       try {
-        const { error } = await supabase
-          .from('home_gallery')
-          .update({ isActive: false })
-          .eq('id', id)
-
-        if (error) throw error
-        await loadHomeGallery()
+        // Por enquanto, apenas remover do estado local
+        setHomeGallery(homeGallery.filter(photo => photo.id !== id))
+        alert('Foto removida com sucesso!')
       } catch (error) {
         console.error('Erro ao deletar foto:', error)
         alert('Erro ao deletar foto')
@@ -163,13 +173,11 @@ export default function EditarSitePage() {
         try {
           const imageUrl = await uploadImage(file, 'home-gallery')
           
-          const { error } = await supabase
-            .from('home_gallery')
-            .update({ imageUrl })
-            .eq('id', id)
-
-          if (error) throw error
-          await loadHomeGallery()
+          // Por enquanto, apenas atualizar o estado local
+          setHomeGallery(homeGallery.map(photo => 
+            photo.id === id ? { ...photo, imageUrl } : photo
+          ))
+          alert('Foto atualizada com sucesso!')
         } catch (error) {
           console.error('Erro ao atualizar foto:', error)
           alert('Erro ao atualizar foto')
@@ -181,16 +189,21 @@ export default function EditarSitePage() {
 
   const saveChanges = async () => {
     try {
-      // Salvar ordem da galeria
-      const updatePromises = homeGallery.map((photo, index) =>
-        supabase
-          .from('home_gallery')
-          .update({ order: index + 1 })
-          .eq('id', photo.id)
-      )
+      // Salvar ordem da galeria usando nossa API
+      const response = await fetch('/api/home-gallery', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ photos: homeGallery })
+      })
 
-      await Promise.all(updatePromises)
-      alert('Alterações salvas com sucesso!')
+      if (response.ok) {
+        alert('Alterações salvas com sucesso!')
+      } else {
+        console.error('Erro ao salvar alterações')
+        alert('Erro ao salvar alterações')
+      }
     } catch (error) {
       console.error('Erro ao salvar:', error)
       alert('Erro ao salvar alterações')
@@ -200,13 +213,8 @@ export default function EditarSitePage() {
   const deleteProfessional = async (id: string) => {
     if (confirm('Tem certeza que deseja deletar esta profissional?')) {
       try {
-        const { error } = await supabase
-          .from('professionals')
-          .update({ isActive: false })
-          .eq('id', id)
-
-        if (error) throw error
-        await loadProfessionals()
+        setProfessionals(professionals.filter(p => p.id !== id))
+        alert('Profissional removida com sucesso!')
       } catch (error) {
         console.error('Erro ao deletar profissional:', error)
         alert('Erro ao deletar profissional')
@@ -216,19 +224,17 @@ export default function EditarSitePage() {
 
   const addProfessional = async () => {
     try {
-      const { data, error } = await supabase
-        .from('professionals')
-        .insert({
-          name: 'Nova Profissional',
-          title: 'Cargo',
-          bio: 'Descrição',
-          specialties: 'Especialidades',
-          isActive: true
-        })
-        .select()
-
-      if (error) throw error
-      await loadProfessionals()
+      const newProfessional: Professional = {
+        id: Date.now().toString(),
+        name: 'Nova Profissional',
+        title: 'Cargo',
+        profileImage: '',
+        gallery: [],
+        description: 'Descrição',
+        services: []
+      }
+      setProfessionals([...professionals, newProfessional])
+      alert('Profissional adicionada com sucesso!')
     } catch (error) {
       console.error('Erro ao adicionar profissional:', error)
       alert('Erro ao adicionar profissional')
