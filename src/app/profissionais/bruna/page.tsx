@@ -86,7 +86,7 @@ export default function BrunaPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#F5F0E8' }}>
+    <div className="min-h-screen" style={{ backgroundColor: '#022b28' }}>
       {/* Header */}
       <header className="bg-[#D15556] border-b border-[#c04546] fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

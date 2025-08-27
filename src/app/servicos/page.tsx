@@ -82,40 +82,41 @@ export default function ServicosPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen" style={{ backgroundColor: '#022b28' }}>
       {/* Header */}
-      <header className="bg-[#D15556] border-b border-[#c04546] fixed top-0 left-0 right-0 z-50">
+      <header className="bg-[#f2dcbc] border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-2">
+          <div className="flex justify-between items-center py-0">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <img 
-                  src="/assents/logonavbar.svg" 
+                  src="/assents/logonavbarg.svg" 
                   alt="Espaço Guapa" 
                   style={{ 
-                    height: '60px', 
-                    width: 'auto'
+                    height: '120px', 
+                    width: 'auto',
+                    filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
                   }}
                 />
               </Link>
             </div>
             <nav className="hidden md:flex space-x-12">
-              <Link href="/" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+              <Link href="/" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
                 Início
               </Link>
-              <Link href="/servicos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+              <Link href="/servicos" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
                 Serviços
               </Link>
-              <Link href="/profissionais" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+              <Link href="/profissionais" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
                 Nosso Time
               </Link>
-              <Link href="/produtos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+              <Link href="/produtos" className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium">
                 Produtos
               </Link>
             </nav>
             <Link 
               href="/login-cliente"
-              className="bg-white text-[#D15556] px-8 py-3 rounded-lg hover:bg-[#EED7B6] transition-colors font-medium tracking-wide"
+              className="bg-[#d34d4c] text-white px-8 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide"
             >
               Agendar
             </Link>
@@ -129,15 +130,48 @@ export default function ServicosPage() {
       {/* Hero Section */}
       <section className="py-32 px-4 sm:px-6 lg:px-8 animate-on-scroll">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-6xl font-light text-gray-900 mb-8 leading-tight animate-on-scroll">
+          <h1 className="text-6xl font-light font-heading mb-8 leading-tight animate-on-scroll" style={{ color: '#f2dcbc' }}>
             Nossos
             <br />
-            <span className="font-light">Serviços</span>
+            <span className="font-light font-heading">Serviços</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed animate-on-scroll">
-            Oferecemos uma ampla variedade de serviços para cuidar da sua beleza. 
-            Cada serviço é realizado com produtos de qualidade e técnicas modernas.
-          </p>
+        </div>
+      </section>
+
+      {/* Descrições dos Serviços */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-12 mb-20">
+            {/* Cortes */}
+            <div className="text-center animate-on-scroll">
+              <h3 className="text-3xl font-bold font-heading mb-6" style={{ color: '#f2dcbc' }}>
+                Cortes que Celebram a Natureza do Cabelo
+              </h3>
+              <p className="text-lg font-body leading-relaxed" style={{ color: '#f2dcbc' }}>
+                Cada corte é pensado para valorizar o movimento, a textura e a forma única dos seus fios sem desrespeitar sua essência. Sempre buscando alinhar a praticidade do dia a dia com a potência dos cabelos naturais.
+              </p>
+            </div>
+
+            {/* Coloração */}
+            <div className="text-center animate-on-scroll">
+              <h3 className="text-3xl font-bold font-heading mb-6" style={{ color: '#f2dcbc' }}>
+                Colorimetria Criativa
+              </h3>
+              <p className="text-lg font-body leading-relaxed" style={{ color: '#f2dcbc' }}>
+                Trabalhamos com colorações, loiros, iluminados e cores fantasia com cuidado máximo, evitando processos que comprometam a saúde capilar. Sempre buscando a melhor manutenção para a sua rotina, alinhada com as cores que representam sua personalidade.
+              </p>
+            </div>
+
+            {/* Tratamentos */}
+            <div className="text-center animate-on-scroll">
+              <h3 className="text-3xl font-bold font-heading mb-6" style={{ color: '#f2dcbc' }}>
+                Tratamentos Naturais Tricoterapêuticos
+              </h3>
+              <p className="text-lg font-body leading-relaxed" style={{ color: '#f2dcbc' }}>
+                Técnicas especiais que cuidam especialmente do couro cabeludo, mas também do comprimento, com fórmulas naturais e sem uso de química. Realizados com a linha Keune So Pure, o resultado: cabelo mais forte, saudável e com brilho natural.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -150,8 +184,8 @@ export default function ServicosPage() {
                 <div className="w-24 h-24 bg-gray-50 border border-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 transition-all duration-500 transform hover:scale-110">
                   <category.icon className="w-12 h-12 text-gray-600 transition-all duration-500" />
                 </div>
-                <h2 className="text-4xl font-light text-gray-900 mb-4 animate-on-scroll">{category.category}</h2>
-                <p className="text-gray-600 text-lg animate-on-scroll">Serviços especializados em {category.category.toLowerCase()}</p>
+                <h2 className="text-4xl font-light font-heading mb-4 animate-on-scroll" style={{ color: '#f2dcbc' }}>{category.category}</h2>
+                <p className="text-gray-600 text-lg animate-on-scroll font-body">Serviços especializados em {category.category.toLowerCase()}</p>
               </div>
               
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
