@@ -463,7 +463,7 @@ export default function HomePage() {
                 <p className="text-base md:text-lg mb-6 md:mb-12 leading-relaxed font-medium text-center md:text-left" style={{ color: '#f2dcbc' }}>
                   Bem-vinda ao Espaço Guapa – onde a beleza natural dos seus cabelos é respeitada e valorizada. Aqui, você encontra um refúgio de cuidado, com tratamentos sem química que respeitam cada fio e preservam a saúde do couro cabeludo.
                 </p>
-                <div className="text-center md:text-left">
+                <div className="text-center md:text-left mb-8 md:mb-0">
                   <Link 
                     href="/login-cliente"
                     className="bg-[#D15556] text-white px-6 md:px-8 py-3 md:py-4 rounded-lg hover:bg-[#c04546] transition-all duration-300 transform hover:scale-105 font-medium tracking-wide shadow-md hover:shadow-lg inline-block"
