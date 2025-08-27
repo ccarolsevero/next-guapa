@@ -114,3 +114,33 @@ export async function PUT(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+    
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID da foto é obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    console.log('Tentando deletar foto do banco:', id)
+
+    // Deletar a foto do banco
+    await prisma.homeGallery.delete({
+      where: { id }
+    })
+
+    console.log('Foto deletada do banco com sucesso')
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Erro ao deletar foto do banco:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
+      { status: 500 }
+    )
+  }
+}

@@ -152,9 +152,24 @@ export default function EditarSitePage() {
   const deleteHomePhoto = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta foto?')) {
       try {
-        // Por enquanto, apenas remover do estado local
-        setHomeGallery(homeGallery.filter(photo => photo.id !== id))
-        alert('Foto removida com sucesso!')
+        console.log('Tentando deletar foto:', id)
+        
+        const response = await fetch(`/api/home-gallery?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+
+        if (response.ok) {
+          // Remover do estado local após sucesso no banco
+          setHomeGallery(homeGallery.filter(photo => photo.id !== id))
+          alert('Foto removida com sucesso!')
+        } else {
+          const errorData = await response.json()
+          console.error('Erro ao deletar foto:', errorData)
+          alert(`Erro ao deletar foto: ${errorData.error || 'Erro desconhecido'}`)
+        }
       } catch (error) {
         console.error('Erro ao deletar foto:', error)
         alert('Erro ao deletar foto')
