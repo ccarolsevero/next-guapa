@@ -61,10 +61,15 @@ export default function CadastroPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('Iniciando cadastro...')
+    console.log('Dados do formulário:', formData)
+    
     if (!validateForm()) {
+      console.log('Validação falhou')
       return
     }
 
+    console.log('Validação passou, iniciando submissão...')
     setIsSubmitting(true)
 
     try {
@@ -104,8 +109,15 @@ export default function CadastroPage() {
       // Redirecionar para o painel do cliente
       window.location.href = '/painel-cliente'
     } catch (error) {
-      console.error('Erro no cadastro:', error)
-      setErrors({ submit: error instanceof Error ? error.message : 'Erro ao realizar cadastro. Tente novamente.' })
+      console.error('=== ERRO NO CADASTRO ===')
+      console.error('Erro detalhado:', error)
+      console.error('Tipo do erro:', typeof error)
+      console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
+      
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao realizar cadastro. Tente novamente.'
+      console.error('Mensagem de erro:', errorMessage)
+      
+      setErrors({ submit: errorMessage })
     } finally {
       setIsSubmitting(false)
     }
