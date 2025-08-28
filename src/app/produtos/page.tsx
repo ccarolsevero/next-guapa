@@ -127,15 +127,37 @@ export default function ProdutosPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {filteredProducts.map((product) => (
-                <div key={product.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
+                <div key={product._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                    </div>
+                    {product.imageUrl ? (
+                      <div className="w-32 h-32 mx-auto mb-4 rounded-lg overflow-hidden bg-white/20">
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback para ícone se a imagem falhar
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                        <div className="w-full h-full bg-[#d34d4c] rounded-lg flex items-center justify-center hidden">
+                          <Package className="w-8 h-8 text-white" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-32 h-32 bg-[#d34d4c] rounded-lg mx-auto mb-4 flex items-center justify-center">
+                        <Package className="w-8 h-8 text-white" />
+                      </div>
+                    )}
                     <h3 className="text-xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>
                       {product.name}
+                      {product.isFeatured && (
+                        <span className="inline-flex items-center ml-2 px-2 py-1 rounded-full text-xs font-medium bg-yellow-400 text-yellow-900">
+                          <Star className="w-3 h-3 mr-1" />
+                          Destaque
+                        </span>
+                      )}
                     </h3>
                     <p className="text-sm font-medium text-[#d34d4c] mb-2">
                       {product.category}
@@ -146,9 +168,29 @@ export default function ProdutosPage() {
                   </div>
                   
                   <div className="text-center">
-                    <p className="text-2xl font-light text-[#d34d4c] mb-4">
-                      R$ {product.price.toFixed(2).replace('.', ',')}
-                    </p>
+                    <div className="mb-4">
+                      {product.discount > 0 ? (
+                        <div className="space-y-1">
+                          {/* Preço original riscado */}
+                          <div className="text-lg text-gray-400 line-through">
+                            R$ {product.price.toFixed(2).replace('.', ',')}
+                          </div>
+                          {/* Preço com desconto */}
+                          <div className="text-2xl font-bold text-[#d34d4c]">
+                            R$ {product.finalPrice.toFixed(2).replace('.', ',')}
+                          </div>
+                          {/* Badge de desconto */}
+                          <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-500 text-white">
+                            <span className="mr-1">-{product.discount}%</span>
+                            <span>OFF</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-2xl font-bold text-[#d34d4c]">
+                          R$ {product.price.toFixed(2).replace('.', ',')}
+                        </div>
+                      )}
+                    </div>
                     <a 
                       href="/login-cliente"
                       className="w-full bg-[#d34d4c] text-white py-2 px-4 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium text-center block"
