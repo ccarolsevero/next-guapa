@@ -6,17 +6,29 @@ const prisma = new PrismaClient()
 
 export async function GET() {
   try {
+    console.log('=== INÍCIO GET /api/clients ===')
+    console.log('Tentando conectar ao banco de dados...')
+    
     const clients = await prisma.client.findMany({
       orderBy: {
         createdAt: 'desc'
       }
     })
 
+    console.log('Clientes encontrados:', clients.length)
     return NextResponse.json(clients)
   } catch (error) {
-    console.error('Erro ao buscar clientes:', error)
+    console.error('=== ERRO GET /api/clients ===')
+    console.error('Erro detalhado:', error)
+    console.error('Tipo do erro:', typeof error)
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
+    
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor', 
+        details: error instanceof Error ? error.message : 'Erro desconhecido',
+        type: typeof error
+      },
       { status: 500 }
     )
   }
