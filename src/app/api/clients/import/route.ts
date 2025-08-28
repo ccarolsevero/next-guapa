@@ -85,15 +85,21 @@ export async function POST(request: NextRequest) {
       const rowNumber = i + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
 
       try {
-        // Mapear colunas específicas do arquivo
-        const nome = row.nome || row['1'] || row['A'] || row['Cliente'] || row['Nome']
-        const email = row.email || row['F'] || row['Email'] || row['E-mail']
-        const telefone = row.telefone || row['E'] || row['Celular'] || row['Telefone'] || row['Phone']
-        const dataCadastro = row.dataCadastro || row['R'] || row['Data de cadastro'] || row['Cadastrado']
+        // Debug: mostrar todas as colunas disponíveis
+        console.log(`Linha ${rowNumber} - Colunas disponíveis:`, Object.keys(row))
+        
+        // Mapear colunas específicas do arquivo - tentar múltiplas opções
+        const nome = row.nome || row['1'] || row['A'] || row['Cliente'] || row['Nome'] || row['NOME'] || row['Name'] || row['name']
+        const email = row.email || row['F'] || row['Email'] || row['E-mail'] || row['EMAIL'] || row['email']
+        const telefone = row.telefone || row['E'] || row['Celular'] || row['Telefone'] || row['Phone'] || row['TELEFONE'] || row['telefone'] || row['Phone']
+        const dataCadastro = row.dataCadastro || row['R'] || row['Data de cadastro'] || row['Cadastrado'] || row['DATA'] || row['data']
+        
+        // Debug: mostrar valores encontrados
+        console.log(`Linha ${rowNumber} - Valores encontrados:`, { nome, email, telefone, dataCadastro })
         
         // Validar campos obrigatórios
         if (!nome || !email || !telefone) {
-          results.errors.push(`Linha ${rowNumber}: Nome, email e telefone são obrigatórios. Encontrado: nome="${nome}", email="${email}", telefone="${telefone}"`)
+          results.errors.push(`Linha ${rowNumber}: Nome, email e telefone são obrigatórios. Encontrado: nome="${nome}", email="${email}", telefone="${telefone}". Colunas disponíveis: ${Object.keys(row).join(', ')}`)
           continue
         }
 
