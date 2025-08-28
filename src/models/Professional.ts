@@ -8,11 +8,11 @@ const professionalSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    trim: true
+    trim: true,
+    default: 'Cabeleireira'
   },
   email: {
     type: String,
-    unique: true,
     trim: true,
     lowercase: true
   },
@@ -20,20 +20,34 @@ const professionalSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
-  bio: {
+  shortDescription: {
+    type: String,
+    trim: true,
+    default: 'Especialista em tratamentos capilares'
+  },
+  fullDescription: {
+    type: String,
+    trim: true,
+    default: 'Profissional experiente e dedicada aos cuidados capilares'
+  },
+  services: [{
     type: String,
     trim: true
-  },
-  specialties: {
+  }],
+  profileImage: {
     type: String,
-    trim: true
+    default: '/assents/fotobruna.jpeg'
   },
-  imageUrl: {
+  gallery: [{
     type: String
-  },
+  }],
   isActive: {
     type: Boolean,
     default: true
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

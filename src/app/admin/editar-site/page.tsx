@@ -1,7 +1,56 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { localDB, HomePhoto, Professional, SiteSettings } from '@/lib/localStorage'
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  User, 
+  Search, 
+  Eye, 
+  EyeOff, 
+  Star, 
+  StarOff,
+  Image,
+  Phone,
+  Mail,
+  X
+} from 'lucide-react'
+
+interface HomePhoto {
+  _id: string
+  imageUrl: string
+  order: number
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface Professional {
+  _id: string
+  name: string
+  title: string
+  email: string
+  phone: string
+  shortDescription: string
+  fullDescription: string
+  services: string[]
+  profileImage: string
+  gallery: string[]
+  isActive: boolean
+  isFeatured: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+interface SiteSettings {
+  siteName: string
+  description: string
+  address: string
+  whatsapp: string
+  email: string
+  updatedAt: string
+}
 
 export default function EditarSite() {
   const [homeGallery, setHomeGallery] = useState<HomePhoto[]>([])
@@ -15,6 +64,22 @@ export default function EditarSite() {
     updatedAt: new Date().toISOString()
   })
   const [loading, setLoading] = useState(true)
+  const [showAddProfessionalModal, setShowAddProfessionalModal] = useState(false)
+  const [showEditProfessionalModal, setShowEditProfessionalModal] = useState(false)
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+  const [newProfessional, setNewProfessional] = useState({
+    name: '',
+    title: 'Cabeleireira',
+    email: '',
+    phone: '',
+    shortDescription: '',
+    fullDescription: '',
+    services: [] as string[],
+    profileImage: '/assents/fotobruna.jpeg',
+    gallery: [] as string[],
+    newService: '',
+    newGalleryImage: ''
+  })
 
   useEffect(() => {
     loadData()
@@ -56,33 +121,40 @@ export default function EditarSite() {
       if (!response.ok) {
         throw new Error('Erro ao carregar fotos')
       }
-      const photos = await response.json()
+      const photos: HomePhoto[] = await response.json()
       console.log('Fotos carregadas:', photos.length)
-      setHomeGallery(photos.filter(photo => photo.isActive).sort((a, b) => a.order - b.order))
+      setHomeGallery(photos.filter((photo: HomePhoto) => photo.isActive).sort((a: HomePhoto, b: HomePhoto) => a.order - b.order))
     } catch (error) {
       console.error('Erro ao carregar galeria da home:', error)
-      // Fallback para localStorage se a API falhar
-      try {
-        const photos = await localDB.getHomePhotos()
-        setHomeGallery(photos.filter(photo => photo.isActive).sort((a, b) => a.order - b.order))
-      } catch (localError) {
-        console.error('Erro no fallback localStorage:', localError)
-      }
+      setHomeGallery([])
     }
   }
 
   const loadProfessionals = async () => {
     try {
-      const profs = await localDB.getProfessionals()
-      setProfessionals(profs.filter(p => p.isActive))
+      console.log('Carregando profissionais do banco de dados...')
+      const response = await fetch('/api/professionals')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar profissionais')
+      }
+      const profs: Professional[] = await response.json()
+      console.log('Profissionais carregados:', profs.length)
+      setProfessionals(profs.filter((p: Professional) => p.isActive))
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error)
+      setProfessionals([])
     }
   }
 
   const loadSiteSettings = async () => {
     try {
-      const settings = await localDB.getSiteSettings()
+      console.log('Carregando configurações do site...')
+      const response = await fetch('/api/site-settings')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar configurações')
+      }
+      const settings: SiteSettings = await response.json()
+      console.log('Configurações carregadas')
       setSiteSettings(settings)
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
@@ -217,7 +289,7 @@ export default function EditarSite() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(items.map((item, index) => ({
-          id: item.id,
+          id: item._id,
           order: index + 1
         })))
       })
@@ -233,9 +305,143 @@ export default function EditarSite() {
     }
   }
 
+  // Funções para gerenciar profissionais
+  const handleToggleProfessionalActive = async (professional: Professional) => {
+    try {
+      const response = await fetch(`/api/professionals/${professional._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...professional,
+          isActive: !professional.isActive
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar profissional')
+      }
+
+      await loadProfessionals()
+      alert(`Profissional ${professional.isActive ? 'desativado' : 'ativado'} com sucesso!`)
+    } catch (error) {
+      console.error('Erro ao atualizar profissional:', error)
+      alert('Erro ao atualizar profissional')
+    }
+  }
+
+  const handleToggleProfessionalFeatured = async (professional: Professional) => {
+    try {
+      const response = await fetch(`/api/professionals/${professional._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...professional,
+          isFeatured: !professional.isFeatured
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar profissional')
+      }
+
+      await loadProfessionals()
+      alert(`Profissional ${professional.isFeatured ? 'removido dos' : 'adicionado aos'} destaques!`)
+    } catch (error) {
+      console.error('Erro ao atualizar profissional:', error)
+      alert('Erro ao atualizar profissional')
+    }
+  }
+
+  const handleEditProfessional = (professional: Professional) => {
+    setSelectedProfessional(professional)
+    setShowEditProfessionalModal(true)
+  }
+
+  const handleDeleteProfessional = async (professional: Professional) => {
+    if (confirm(`Tem certeza que deseja excluir a profissional ${professional.name}?`)) {
+      try {
+        const response = await fetch(`/api/professionals/${professional._id}`, {
+          method: 'DELETE'
+        })
+
+        if (!response.ok) {
+          throw new Error('Erro ao deletar profissional')
+        }
+
+        await loadProfessionals()
+        alert('Profissional deletado com sucesso!')
+      } catch (error) {
+        console.error('Erro ao deletar profissional:', error)
+        alert('Erro ao deletar profissional')
+      }
+    }
+  }
+
+  const handleAddProfessional = async () => {
+    try {
+      const response = await fetch('/api/professionals', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newProfessional.name,
+          title: newProfessional.title,
+          email: newProfessional.email,
+          phone: newProfessional.phone,
+          shortDescription: newProfessional.shortDescription,
+          fullDescription: newProfessional.fullDescription,
+          services: newProfessional.services,
+          profileImage: newProfessional.profileImage,
+          gallery: newProfessional.gallery
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao adicionar profissional')
+      }
+
+      await loadProfessionals()
+      setShowAddProfessionalModal(false)
+      setNewProfessional({
+        name: '',
+        title: 'Cabeleireira',
+        email: '',
+        phone: '',
+        shortDescription: '',
+        fullDescription: '',
+        services: [],
+        profileImage: '/assents/fotobruna.jpeg',
+        gallery: [],
+        newService: '',
+        newGalleryImage: ''
+      })
+      alert('Profissional adicionado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao adicionar profissional:', error)
+      alert('Erro ao adicionar profissional')
+    }
+  }
+
   const saveSiteSettings = async () => {
     try {
-      await localDB.updateSiteSettings(siteSettings)
+      console.log('Salvando configurações do site...')
+      const response = await fetch('/api/site-settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(siteSettings)
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao salvar configurações')
+      }
+      
       alert('Configurações salvas com sucesso!')
     } catch (error) {
       console.error('Erro ao salvar configurações:', error)
@@ -245,15 +451,8 @@ export default function EditarSite() {
 
   const exportData = async () => {
     try {
-      const data = await localDB.exportData()
-      const blob = new Blob([data], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `guapa-backup-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      alert('Dados exportados com sucesso!')
+      // Por enquanto, vamos apenas mostrar uma mensagem
+      alert('Funcionalidade de exportação em desenvolvimento')
     } catch (error) {
       console.error('Erro ao exportar dados:', error)
       alert('Erro ao exportar dados')
@@ -265,10 +464,8 @@ export default function EditarSite() {
     if (!file) return
 
     try {
-      const text = await file.text()
-      await localDB.importData(text)
-      await loadData()
-      alert('Dados importados com sucesso!')
+      // Por enquanto, vamos apenas mostrar uma mensagem
+      alert('Funcionalidade de importação em desenvolvimento')
     } catch (error) {
       console.error('Erro ao importar dados:', error)
       alert('Erro ao importar dados')
@@ -482,9 +679,138 @@ export default function EditarSite() {
         </div>
 
         {/* Profissionais */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4">Profissionais</h2>
-          <p className="text-gray-600 mb-4">Funcionalidade em desenvolvimento...</p>
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Profissionais</h2>
+            <button
+              onClick={() => setShowAddProfessionalModal(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Profissional
+            </button>
+          </div>
+
+          {/* Lista de Profissionais */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {professionals.map((professional) => (
+              <div key={professional._id} className="border rounded-lg overflow-hidden">
+                {/* Imagem de Perfil */}
+                <div className="relative h-48 bg-gray-200">
+                  <img
+                    src={professional.profileImage}
+                    alt={professional.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = '/assents/fotobruna.jpeg'
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => handleToggleProfessionalFeatured(professional)}
+                      className={`p-2 rounded-full ${
+                        professional.isFeatured 
+                          ? 'bg-yellow-500 text-white' 
+                          : 'bg-white text-gray-600'
+                      } hover:bg-yellow-500 hover:text-white transition-colors`}
+                      title={professional.isFeatured ? 'Remover dos destaques' : 'Adicionar aos destaques'}
+                    >
+                      {professional.isFeatured ? <Star className="w-4 h-4" /> : <StarOff className="w-4 h-4" />}
+                    </button>
+                    <button
+                      onClick={() => handleToggleProfessionalActive(professional)}
+                      className={`p-2 rounded-full ${
+                        professional.isActive 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-red-500 text-white'
+                      } hover:opacity-80 transition-colors`}
+                      title={professional.isActive ? 'Desativar' : 'Ativar'}
+                    >
+                      {professional.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Informações */}
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{professional.name}</h3>
+                      <p className="text-gray-600 text-sm">{professional.title}</p>
+                    </div>
+                    {professional.isFeatured && (
+                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                        Destaque
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-gray-700 text-sm mb-3 line-clamp-2">
+                    {professional.shortDescription}
+                  </p>
+
+                  {/* Serviços */}
+                  <div className="mb-3">
+                    <h4 className="text-xs font-medium text-gray-800 mb-1">Serviços:</h4>
+                    <div className="flex flex-wrap gap-1">
+                      {professional.services.slice(0, 3).map((service, index) => (
+                        <span
+                          key={index}
+                          className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
+                        >
+                          {service}
+                        </span>
+                      ))}
+                      {professional.services.length > 3 && (
+                        <span className="text-gray-500 text-xs">
+                          +{professional.services.length - 3} mais
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Galeria */}
+                  <div className="mb-3">
+                    <div className="flex items-center text-xs text-gray-600">
+                      <Image className="w-3 h-3 mr-1" />
+                      {professional.gallery.length} fotos na galeria
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditProfessional(professional)}
+                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      <Edit className="w-3 h-3 inline mr-1" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProfessional(professional)}
+                      className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                      <Trash2 className="w-3 h-3 inline mr-1" />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {professionals.length === 0 && (
+            <div className="text-center py-8">
+              <User className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600 mb-2">
+                Nenhum profissional cadastrado
+              </h3>
+              <p className="text-gray-500">
+                Comece adicionando o primeiro profissional
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
