@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { DatabaseService } from '@/lib/database'
+import connectDB from '@/lib/mongodb'
+import HomeGallery from '@/models/HomeGallery'
 
 export async function GET() {
   try {
-    console.log('Buscando fotos da home do banco de dados...')
+    console.log('Buscando fotos da home do MongoDB...')
     
-    const photos = await DatabaseService.getHomePhotos()
-    console.log('Fotos encontradas no banco:', photos.length)
+    await connectDB()
+    const photos = await HomeGallery.find({ isActive: true }).sort({ order: 1 })
+    console.log('Fotos encontradas no MongoDB:', photos.length)
     
     return NextResponse.json(photos)
   } catch (error) {
@@ -15,7 +17,7 @@ export async function GET() {
     // Fallback para dados de teste se o banco falhar
     const testPhotos = [
       {
-        id: '1',
+        _id: '1',
         imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg',
         order: 1,
         isActive: true,
@@ -23,7 +25,7 @@ export async function GET() {
         updatedAt: new Date().toISOString()
       },
       {
-        id: '2',
+        _id: '2',
         imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg',
         order: 2,
         isActive: true,
@@ -31,7 +33,7 @@ export async function GET() {
         updatedAt: new Date().toISOString()
       },
       {
-        id: '3',
+        _id: '3',
         imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg',
         order: 3,
         isActive: true,
@@ -48,10 +50,21 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const { imageUrl } = await request.json()
-    console.log('Adicionando nova foto no banco de dados...')
+    console.log('Adicionando nova foto no MongoDB...')
     
-    const newPhoto = await DatabaseService.addHomePhoto(imageUrl)
-    console.log('Foto adicionada com sucesso:', newPhoto.id)
+    await connectDB()
+    
+    // Pegar a maior ordem atual
+    const maxOrderPhoto = await HomeGallery.findOne().sort({ order: -1 })
+    const newOrder = (maxOrderPhoto?.order || 0) + 1
+    
+    const newPhoto = await HomeGallery.create({
+      imageUrl,
+      order: newOrder,
+      isActive: true
+    })
+    
+    console.log('Foto adicionada com sucesso:', newPhoto._id)
     
     return NextResponse.json(newPhoto)
   } catch (error) {
@@ -66,9 +79,14 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const photos = await request.json()
-    console.log('Atualizando ordem das fotos no banco de dados...')
+    console.log('Atualizando ordem das fotos no MongoDB...')
     
-    await DatabaseService.updateHomePhotoOrder(photos)
+    await connectDB()
+    
+    for (const photo of photos) {
+      await HomeGallery.findByIdAndUpdate(photo.id, { order: photo.order })
+    }
+    
     console.log('Ordem das fotos atualizada com sucesso')
     
     return NextResponse.json({ success: true })
@@ -90,9 +108,10 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID não fornecido' }, { status: 400 })
     }
     
-    console.log('Deletando foto do banco de dados:', id)
+    console.log('Deletando foto do MongoDB:', id)
     
-    await DatabaseService.deleteHomePhoto(id)
+    await connectDB()
+    await HomeGallery.findByIdAndDelete(id)
     console.log('Foto deletada com sucesso')
     
     return NextResponse.json({ success: true })
