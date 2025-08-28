@@ -230,7 +230,7 @@ export default function ImportarClientesPage() {
       {!file && (
         <div className="mb-8">
           <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors cursor-pointer ${
               dragActive 
                 ? 'border-blue-400 bg-blue-50' 
                 : 'border-gray-300 hover:border-blue-400'
@@ -239,6 +239,7 @@ export default function ImportarClientesPage() {
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
           >
             <Upload className={`w-12 h-12 mx-auto mb-4 ${dragActive ? 'text-blue-400' : 'text-gray-400'}`} />
             <p className="text-lg font-medium text-gray-900 mb-2">
@@ -247,30 +248,57 @@ export default function ImportarClientesPage() {
             <p className="text-sm text-gray-600 mb-4">
               Formatos aceitos: .xlsx, .xls (máximo 10MB)
             </p>
-            <div className="space-y-2">
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Selecionar Arquivo
-              </button>
-              <button
-                onClick={() => {
-                  const input = document.createElement('input')
-                  input.type = 'file'
-                  input.onchange = (e) => {
-                    const target = e.target as HTMLInputElement
-                    if (target.files && target.files[0]) {
-                      handleFile(target.files[0])
+                          <div className="space-y-2">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Selecionar Arquivo
+                </button>
+                <button
+                  onClick={() => {
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.onchange = (e) => {
+                      const target = e.target as HTMLInputElement
+                      if (target.files && target.files[0]) {
+                        handleFile(target.files[0])
+                      }
                     }
-                  }
-                  input.click()
-                }}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors block w-full"
-              >
-                Selecionar Arquivo (Alternativo)
-              </button>
-            </div>
+                    input.click()
+                  }}
+                  className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors block w-full"
+                >
+                  Selecionar Arquivo (Alternativo)
+                </button>
+                <button
+                  onClick={() => {
+                    // Solução mais agressiva - forçar seleção de qualquer arquivo
+                    const input = document.createElement('input')
+                    input.type = 'file'
+                    input.multiple = false
+                    input.style.display = 'none'
+                    document.body.appendChild(input)
+                    
+                    input.onchange = (e) => {
+                      const target = e.target as HTMLInputElement
+                      if (target.files && target.files[0]) {
+                        console.log('Arquivo selecionado via método 3:', target.files[0])
+                        handleFile(target.files[0])
+                      }
+                      document.body.removeChild(input)
+                    }
+                    
+                    // Forçar clique
+                    setTimeout(() => {
+                      input.click()
+                    }, 100)
+                  }}
+                  className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors block w-full"
+                >
+                  Forçar Seleção de Arquivo
+                </button>
+              </div>
             <input
               ref={fileInputRef}
               type="file"
