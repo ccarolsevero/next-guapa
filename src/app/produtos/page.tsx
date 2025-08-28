@@ -1,69 +1,65 @@
 'use client'
 
 import LayoutPublic from '../layout-public'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { Package, Star, ShoppingCart } from 'lucide-react'
 
-const products = [
-  {
-    id: 1,
-    name: "Shampoo Keune Care",
-    category: "Limpeza",
-    price: 45.00,
-    description: "Shampoo profissional para todos os tipos de cabelo, com fórmula suave e hidratante.",
-    image: "/product1.jpg"
-  },
-  {
-    id: 2,
-    name: "Condicionador Keune Care",
-    category: "Tratamento",
-    price: 42.00,
-    description: "Condicionador hidratante que nutre e desembaraça os fios, deixando-os macios e brilhantes.",
-    image: "/product2.jpg"
-  },
-  {
-    id: 3,
-    name: "Máscara Keune So Pure",
-    category: "Tratamento",
-    price: 65.00,
-    description: "Máscara de reparação profunda que fortalece e regenera cabelos danificados.",
-    image: "/product3.jpg"
-  },
-  {
-    id: 4,
-    name: "Óleo Keune Care",
-    category: "Finalização",
-    price: 38.00,
-    description: "Óleo de argan puro que protege, hidrata e adiciona brilho aos cabelos.",
-    image: "/product4.jpg"
-  },
-  {
-    id: 5,
-    name: "Protetor Térmico Keune",
-    category: "Proteção",
-    price: 52.00,
-    description: "Protetor térmico que protege os fios do calor de secadores e chapinhas.",
-    image: "/product5.jpg"
-  },
-  {
-    id: 6,
-    name: "Spray Keune So Pure",
-    category: "Finalização",
-    price: 35.00,
-    description: "Spray de finalização que fixa o penteado e mantém os fios saudáveis.",
-    image: "/product6.jpg"
-  }
-]
-
-const categories = ["Todos", "Limpeza", "Tratamento", "Finalização", "Proteção"]
+interface Product {
+  _id: string
+  name: string
+  description?: string
+  price: number
+  originalPrice?: number
+  discount: number
+  finalPrice: number
+  category: string
+  imageUrl?: string
+  stock: number
+  isActive: boolean
+  isFeatured: boolean
+  tags: string[]
+  brand?: string
+  sku?: string
+  createdAt: string
+  updatedAt: string
+}
 
 export default function ProdutosPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState("Todos")
   const [searchTerm, setSearchTerm] = useState("")
+
+  // Carregar produtos ativos
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch('/api/products?isActive=true&limit=100')
+        const data = await response.json()
+        
+        if (response.ok) {
+          setProducts(data.products)
+        } else {
+          console.error('Erro ao carregar produtos:', data.error)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar produtos:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadProducts()
+  }, [])
+
+  // Obter categorias únicas dos produtos
+  const categories = ["Todos", ...Array.from(new Set(products.map(p => p.category)))]
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === "Todos" || product.category === selectedCategory
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase())
+                         (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesCategory && matchesSearch
   })
 

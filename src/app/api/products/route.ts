@@ -1,0 +1,239 @@
+import { NextRequest, NextResponse } from 'next/server'
+import connectDB from '@/lib/mongodb'
+import Product from '@/models/Product'
+
+// GET - Listar produtos (com filtros)
+export async function GET(request: NextRequest) {
+  try {
+    await connectDB()
+    
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get('category')
+    const isActive = searchParams.get('isActive')
+    const isFeatured = searchParams.get('isFeatured')
+    const search = searchParams.get('search')
+    const limit = parseInt(searchParams.get('limit') || '50')
+    const page = parseInt(searchParams.get('page') || '1')
+    
+    // Construir filtros
+    const filters: any = {}
+    
+    if (category && category !== 'all') {
+      filters.category = category
+    }
+    
+    if (isActive !== null) {
+      filters.isActive = isActive === 'true'
+    }
+    
+    if (isFeatured !== null) {
+      filters.isFeatured = isFeatured === 'true'
+    }
+    
+    if (search) {
+      filters.$text = { $search: search }
+    }
+    
+    // Calcular skip para paginação
+    const skip = (page - 1) * limit
+    
+    // Buscar produtos
+    const products = await Product.find(filters)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean()
+    
+    // Contar total para paginação
+    const total = await Product.countDocuments(filters)
+    
+    // Calcular preços finais com desconto
+    const productsWithFinalPrice = products.map(product => ({
+      ...product,
+      finalPrice: product.discount > 0 
+        ? product.price * (1 - product.discount / 100) 
+        : product.price
+    }))
+    
+    return NextResponse.json({
+      products: productsWithFinalPrice,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    })
+    
+  } catch (error) {
+    console.error('Erro ao buscar produtos:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
+
+// POST - Criar novo produto
+export async function POST(request: NextRequest) {
+  try {
+    await connectDB()
+    
+    const body = await request.json()
+    const {
+      name,
+      description,
+      price,
+      originalPrice,
+      discount,
+      category,
+      imageUrl,
+      stock,
+      isActive,
+      isFeatured,
+      tags,
+      specifications,
+      weight,
+      dimensions,
+      brand,
+      sku
+    } = body
+    
+    // Validações
+    if (!name || !price) {
+      return NextResponse.json(
+        { error: 'Nome e preço são obrigatórios' },
+        { status: 400 }
+      )
+    }
+    
+    if (price < 0) {
+      return NextResponse.json(
+        { error: 'Preço não pode ser negativo' },
+        { status: 400 }
+      )
+    }
+    
+    if (discount && (discount < 0 || discount > 100)) {
+      return NextResponse.json(
+        { error: 'Desconto deve estar entre 0 e 100%' },
+        { status: 400 }
+      )
+    }
+    
+    // Verificar se SKU já existe
+    if (sku) {
+      const existingProduct = await Product.findOne({ sku })
+      if (existingProduct) {
+        return NextResponse.json(
+          { error: 'SKU já existe' },
+          { status: 409 }
+        )
+      }
+    }
+    
+    // Criar produto
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      originalPrice: originalPrice || price,
+      discount: discount || 0,
+      category: category || 'Geral',
+      imageUrl,
+      stock: stock || 0,
+      isActive: isActive !== undefined ? isActive : true,
+      isFeatured: isFeatured || false,
+      tags: tags || [],
+      specifications: specifications || {},
+      weight,
+      dimensions,
+      brand,
+      sku
+    })
+    
+    return NextResponse.json(product, { status: 201 })
+    
+  } catch (error) {
+    console.error('Erro ao criar produto:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - Atualizar múltiplos produtos (para ações em lote)
+export async function PUT(request: NextRequest) {
+  try {
+    await connectDB()
+    
+    const body = await request.json()
+    const { action, productIds, data } = body
+    
+    if (!action || !productIds || !Array.isArray(productIds)) {
+      return NextResponse.json(
+        { error: 'Ação e IDs dos produtos são obrigatórios' },
+        { status: 400 }
+      )
+    }
+    
+    let updateData: any = {}
+    
+    switch (action) {
+      case 'activate':
+        updateData = { isActive: true }
+        break
+      case 'deactivate':
+        updateData = { isActive: false }
+        break
+      case 'feature':
+        updateData = { isFeatured: true }
+        break
+      case 'unfeature':
+        updateData = { isFeatured: false }
+        break
+      case 'applyDiscount':
+        if (!data || !data.discount) {
+          return NextResponse.json(
+            { error: 'Desconto é obrigatório' },
+            { status: 400 }
+          )
+        }
+        updateData = { discount: data.discount }
+        break
+      case 'updatePrice':
+        if (!data || !data.price) {
+          return NextResponse.json(
+            { error: 'Preço é obrigatório' },
+            { status: 400 }
+          )
+        }
+        updateData = { price: data.price }
+        break
+      default:
+        return NextResponse.json(
+          { error: 'Ação inválida' },
+          { status: 400 }
+        )
+    }
+    
+    // Atualizar produtos
+    const result = await Product.updateMany(
+      { _id: { $in: productIds } },
+      updateData
+    )
+    
+    return NextResponse.json({
+      message: `${result.modifiedCount} produtos atualizados`,
+      modifiedCount: result.modifiedCount
+    })
+    
+  } catch (error) {
+    console.error('Erro ao atualizar produtos:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}

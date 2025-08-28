@@ -1,137 +1,200 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash2, ShoppingBag, Package, Search, Filter } from 'lucide-react'
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  ShoppingBag, 
+  Package, 
+  Search, 
+  Filter,
+  Eye,
+  EyeOff,
+  Star,
+  Tag,
+  TrendingUp,
+  MoreHorizontal,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  DollarSign,
+  Percent,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react'
 
-// Mock data para categorias
-const categories = [
-  { id: '1', name: 'Shampoos', description: 'Produtos para limpeza capilar', isActive: true },
-  { id: '2', name: 'Condicionadores', description: 'Produtos para finalização', isActive: true },
-  { id: '3', name: 'Máscaras', description: 'Tratamentos profundos', isActive: true },
-  { id: '4', name: 'Cremes de Tratamento', description: 'Produtos para manutenção', isActive: true },
-  { id: '5', name: 'Maquiagem', description: 'Produtos de beleza', isActive: true },
-  { id: '6', name: 'Acessórios', description: 'Ferramentas e acessórios', isActive: true },
-]
+interface Product {
+  _id: string
+  name: string
+  description?: string
+  price: number
+  originalPrice?: number
+  discount: number
+  finalPrice: number
+  category: string
+  imageUrl?: string
+  stock: number
+  isActive: boolean
+  isFeatured: boolean
+  tags: string[]
+  brand?: string
+  sku?: string
+  createdAt: string
+  updatedAt: string
+}
 
-// Mock data para produtos
-const products = [
-  {
-    id: '1',
-    name: 'Shampoo Profissional Hidratação',
-    description: 'Shampoo específico para cabelos secos e danificados. Proporciona hidratação profunda e maciez duradoura.',
-    price: 45.00,
-    salePrice: 38.00,
-    categoryId: '1',
-    category: 'Shampoos',
-    imageUrl: null,
-    stock: 15,
-    isActive: true,
-    rating: 4.8,
-    reviews: 24,
-    sales: 45
-  },
-  {
-    id: '2',
-    name: 'Condicionador Nutrição Intensa',
-    description: 'Condicionador com proteínas e vitaminas para cabelos quebradiços. Restaura a fibra capilar.',
-    price: 50.00,
-    salePrice: null,
-    categoryId: '2',
-    category: 'Condicionadores',
-    imageUrl: null,
-    stock: 12,
-    isActive: true,
-    rating: 4.6,
-    reviews: 18,
-    sales: 32
-  },
-  {
-    id: '3',
-    name: 'Máscara Capilar Reconstrução',
-    description: 'Tratamento profundo para cabelos finos e quebradiços. Repara danos e fortalece a fibra capilar.',
-    price: 55.00,
-    salePrice: 49.00,
-    categoryId: '3',
-    category: 'Máscaras',
-    imageUrl: null,
-    stock: 8,
-    isActive: true,
-    rating: 4.9,
-    reviews: 31,
-    sales: 28
-  },
-  {
-    id: '4',
-    name: 'Creme de Tratamento Sem Enxágue',
-    description: 'Creme para uso diário que protege o cabelo de danos externos e mantém a hidratação.',
-    price: 65.00,
-    salePrice: null,
-    categoryId: '4',
-    category: 'Cremes de Tratamento',
-    imageUrl: null,
-    stock: 20,
-    isActive: true,
-    rating: 4.7,
-    reviews: 42,
-    sales: 38
-  },
-  {
-    id: '5',
-    name: 'Kit Maquiagem Completo',
-    description: 'Kit com base, pó, blush, sombra e batom. Ideal para maquiagens profissionais.',
-    price: 120.00,
-    salePrice: 99.00,
-    categoryId: '5',
-    category: 'Maquiagem',
-    imageUrl: null,
-    stock: 5,
-    isActive: true,
-    rating: 4.5,
-    reviews: 15,
-    sales: 12
-  },
-  {
-    id: '6',
-    name: 'Escova Profissional Térmica',
-    description: 'Escova com tecnologia de íons para cabelos mais lisos e brilhantes.',
-    price: 85.00,
-    salePrice: null,
-    categoryId: '6',
-    category: 'Acessórios',
-    imageUrl: null,
-    stock: 10,
-    isActive: true,
-    rating: 4.8,
-    reviews: 28,
-    sales: 22
-  }
-]
+interface Pagination {
+  page: number
+  limit: number
+  total: number
+  pages: number
+}
 
-export default function ProdutosAdminPage() {
+export default function ProdutosPage() {
+  const [products, setProducts] = useState<Product[]>([])
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    pages: 0
+  })
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [stockFilter, setStockFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([])
+  const [showBulkActions, setShowBulkActions] = useState(false)
+  const [bulkDiscount, setBulkDiscount] = useState('')
+  const [bulkPrice, setBulkPrice] = useState('')
 
-  // Filtrar produtos
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'all' || product.categoryId === selectedCategory
-    const matchesStock = stockFilter === 'all' || 
-                        (stockFilter === 'in-stock' && product.stock > 0) ||
-                        (stockFilter === 'out-of-stock' && product.stock === 0) ||
-                        (stockFilter === 'low-stock' && product.stock <= 5 && product.stock > 0)
-    
-    return matchesSearch && matchesCategory && matchesStock
-  })
+  // Carregar produtos
+  const loadProducts = async () => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        page: pagination.page.toString(),
+        limit: pagination.limit.toString()
+      })
+
+      if (searchTerm) params.append('search', searchTerm)
+      if (selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (statusFilter !== 'all') params.append('isActive', statusFilter === 'active' ? 'true' : 'false')
+
+      const response = await fetch(`/api/products?${params}`)
+      const data = await response.json()
+
+      if (response.ok) {
+        setProducts(data.products)
+        setPagination(data.pagination)
+      } else {
+        console.error('Erro ao carregar produtos:', data.error)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar produtos:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Carregar produtos na montagem do componente
+  useEffect(() => {
+    loadProducts()
+  }, [pagination.page, searchTerm, selectedCategory, statusFilter])
+
+  // Ações em lote
+  const handleBulkAction = async (action: string) => {
+    if (selectedProducts.length === 0) return
+
+    try {
+      const body: {
+        action: string
+        productIds: string[]
+        data?: { discount?: number; price?: number }
+      } = {
+        action,
+        productIds: selectedProducts
+      }
+
+      if (action === 'applyDiscount' && bulkDiscount) {
+        body.data = { discount: parseFloat(bulkDiscount) }
+      } else if (action === 'updatePrice' && bulkPrice) {
+        body.data = { price: parseFloat(bulkPrice) }
+      }
+
+      const response = await fetch('/api/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert(data.message)
+        setSelectedProducts([])
+        setShowBulkActions(false)
+        loadProducts() // Recarregar produtos
+      } else {
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro na ação em lote:', error)
+      alert('Erro ao executar ação em lote')
+    }
+  }
+
+  // Excluir produto
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Tem certeza que deseja excluir este produto?')) return
+
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'DELETE'
+      })
+
+      if (response.ok) {
+        alert('Produto excluído com sucesso!')
+        loadProducts() // Recarregar produtos
+      } else {
+        const data = await response.json()
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao excluir produto:', error)
+      alert('Erro ao excluir produto')
+    }
+  }
+
+  // Alternar seleção de produto
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    )
+  }
+
+  // Selecionar todos
+  const selectAll = () => {
+    setSelectedProducts(products.map(p => p._id))
+  }
+
+  // Desmarcar todos
+  const deselectAll = () => {
+    setSelectedProducts([])
+  }
 
   // Estatísticas
-  const totalProducts = products.length
+  const totalProducts = pagination.total
   const activeProducts = products.filter(p => p.isActive).length
   const lowStockProducts = products.filter(p => p.stock <= 5 && p.stock > 0).length
   const outOfStockProducts = products.filter(p => p.stock === 0).length
-  const totalSales = products.reduce((sum, p) => sum + p.sales, 0)
+  const featuredProducts = products.filter(p => p.isFeatured).length
+
+  // Categorias únicas
+  const categories = Array.from(new Set(products.map(p => p.category)))
 
   return (
     <div className="p-6">
@@ -164,7 +227,7 @@ export default function ProdutosAdminPage() {
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
-                <ShoppingBag className="w-6 h-6 text-green-600" />
+                <CheckCircle className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Produtos Ativos</p>
@@ -176,7 +239,7 @@ export default function ProdutosAdminPage() {
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center">
               <div className="p-2 bg-yellow-100 rounded-lg">
-                <Package className="w-6 h-6 text-yellow-600" />
+                <AlertCircle className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Estoque Baixo</p>
@@ -188,7 +251,7 @@ export default function ProdutosAdminPage() {
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center">
               <div className="p-2 bg-red-100 rounded-lg">
-                <Package className="w-6 h-6 text-red-600" />
+                <XCircle className="w-6 h-6 text-red-600" />
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Sem Estoque</p>
@@ -200,11 +263,11 @@ export default function ProdutosAdminPage() {
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="flex items-center">
               <div className="p-2 bg-purple-100 rounded-lg">
-                <ShoppingBag className="w-6 h-6 text-purple-600" />
+                <Star className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Vendas Totais</p>
-                <p className="text-2xl font-bold text-gray-900">{totalSales}</p>
+                <p className="text-sm font-medium text-gray-600">Destaques</p>
+                <p className="text-2xl font-bold text-gray-900">{featuredProducts}</p>
               </div>
             </div>
           </div>
@@ -238,162 +301,317 @@ export default function ProdutosAdminPage() {
               >
                 <option value="all">Todas as categorias</option>
                 {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
+                  <option key={category} value={category}>
+                    {category}
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estoque</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select
-                value={stockFilter}
-                onChange={(e) => setStockFilter(e.target.value)}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                 style={{ color: '#000000' }}
               >
                 <option value="all">Todos</option>
-                <option value="in-stock">Em estoque</option>
-                <option value="low-stock">Estoque baixo</option>
-                <option value="out-of-stock">Sem estoque</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
               </select>
             </div>
 
             <div className="flex items-end">
-              <Link
-                href="/admin/produtos/categorias"
-                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-center"
+              <button
+                onClick={() => setShowBulkActions(!showBulkActions)}
+                className="w-full bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
               >
-                Gerenciar Categorias
-              </Link>
+                Ações em Lote
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Tabela de Produtos */}
-        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Produto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoria
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Preço
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estoque
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vendas
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {filteredProducts.map((product) => (
-                  <tr key={product.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-5 h-5 text-pink-600" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {product.salePrice ? (
-                          <div>
-                            <span className="text-pink-600 font-bold">R$ {product.salePrice.toFixed(2)}</span>
-                            <span className="text-gray-500 line-through ml-2">R$ {product.price.toFixed(2)}</span>
-                          </div>
-                        ) : (
-                          <span>R$ {product.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <span className={`text-sm font-medium ${
-                          product.stock === 0 ? 'text-red-600' :
-                          product.stock <= 5 ? 'text-yellow-600' : 'text-green-600'
-                        }`}>
-                          {product.stock}
-                        </span>
-                        {product.stock <= 5 && product.stock > 0 && (
-                          <span className="ml-2 text-xs text-yellow-600">Baixo</span>
-                        )}
-                        {product.stock === 0 && (
-                          <span className="ml-2 text-xs text-red-600">Esgotado</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.sales}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.isActive ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Link
-                          href={`/admin/produtos/${product.id}/editar`}
-                          className="text-pink-600 hover:text-pink-900"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <button
-                          onClick={() => {
-                            if (confirm('Tem certeza que deseja excluir este produto?')) {
-                              // Implementar exclusão
-                              console.log('Excluir produto:', product.id)
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        {/* Ações em Lote */}
+        {showBulkActions && (
+          <div className="bg-white p-4 rounded-lg shadow-sm mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Ações em Lote</h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={selectAll}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Selecionar Todos
+                </button>
+                <button
+                  onClick={deselectAll}
+                  className="text-sm text-gray-600 hover:text-gray-800"
+                >
+                  Desmarcar Todos
+                </button>
+              </div>
+            </div>
 
-        {filteredProducts.length === 0 && (
-          <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Nenhum produto encontrado</p>
-            <p className="text-gray-400">Tente ajustar os filtros de busca</p>
+            {selectedProducts.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <button
+                  onClick={() => handleBulkAction('activate')}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  Ativar ({selectedProducts.length})
+                </button>
+                <button
+                  onClick={() => handleBulkAction('deactivate')}
+                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Desativar ({selectedProducts.length})
+                </button>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Desconto %"
+                    value={bulkDiscount}
+                    onChange={(e) => setBulkDiscount(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleBulkAction('applyDiscount')}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Aplicar
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Novo preço"
+                    value={bulkPrice}
+                    onChange={(e) => setBulkPrice(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <button
+                    onClick={() => handleBulkAction('updatePrice')}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Atualizar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+        {/* Tabela de Produtos */}
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600 mx-auto"></div>
+              <p className="mt-2 text-gray-600">Carregando produtos...</p>
+            </div>
+          ) : (
+            <>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.length === products.length && products.length > 0}
+                          onChange={selectedProducts.length === products.length ? deselectAll : selectAll}
+                          className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                        />
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Produto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoria
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Preço
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estoque
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {products.map((product) => (
+                      <tr key={product._id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedProducts.includes(product._id)}
+                            onChange={() => toggleProductSelection(product._id)}
+                            className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
+                              {product.imageUrl ? (
+                                <img src={product.imageUrl} alt={product.name} className="h-8 w-8 rounded object-cover" />
+                              ) : (
+                                <Package className="w-5 h-5 text-pink-600" />
+                              )}
+                            </div>
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
+                              {product.isFeatured && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  Destaque
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {product.discount > 0 ? (
+                              <div>
+                                <span className="line-through text-gray-500">R$ {product.price.toFixed(2)}</span>
+                                <br />
+                                <span className="text-green-600 font-medium">R$ {product.finalPrice.toFixed(2)}</span>
+                                <span className="text-red-600 text-xs ml-1">-{product.discount}%</span>
+                              </div>
+                            ) : (
+                              <span>R$ {product.price.toFixed(2)}</span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">
+                            {product.stock > 0 ? (
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                product.stock <= 5 
+                                  ? 'bg-yellow-100 text-yellow-800' 
+                                  : 'bg-green-100 text-green-800'
+                              }`}>
+                                {product.stock} unidades
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Sem estoque
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.isActive 
+                              ? 'bg-green-100 text-green-800' 
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.isActive ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex space-x-2">
+                            <Link
+                              href={`/admin/produtos/editar/${product._id}`}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteProduct(product._id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Paginação */}
+              {pagination.pages > 1 && (
+                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                      disabled={pagination.page === 1}
+                      className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Anterior
+                    </button>
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                      disabled={pagination.page === pagination.pages}
+                      className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Mostrando <span className="font-medium">{((pagination.page - 1) * pagination.limit) + 1}</span> a{' '}
+                        <span className="font-medium">
+                          {Math.min(pagination.page * pagination.limit, pagination.total)}
+                        </span> de{' '}
+                        <span className="font-medium">{pagination.total}</span> resultados
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        <button
+                          onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                          disabled={pagination.page === 1}
+                          className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                          const page = i + 1
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setPagination(prev => ({ ...prev, page }))}
+                              className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                page === pagination.page
+                                  ? 'z-10 bg-pink-50 border-pink-500 text-pink-600'
+                                  : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          )
+                        })}
+                        <button
+                          onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                          disabled={pagination.page === pagination.pages}
+                          className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
     </div>
   )
