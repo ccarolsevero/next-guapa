@@ -69,11 +69,23 @@ export default function ImportarClientesPage() {
 
   const handleFile = (selectedFile: File) => {
     // Validar tipo de arquivo
-    if (!selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
+    const validExtensions = ['.xlsx', '.xls']
+    const validMimeTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel'
+    ]
+    
+    const hasValidExtension = validExtensions.some(ext => 
+      selectedFile.name.toLowerCase().endsWith(ext)
+    )
+    const hasValidMimeType = validMimeTypes.includes(selectedFile.type)
+    
+    if (!hasValidExtension && !hasValidMimeType) {
       alert('Formato de arquivo inválido. Use .xlsx ou .xls')
       return
     }
 
+    console.log('Arquivo selecionado:', selectedFile.name, selectedFile.type, selectedFile.size)
     setFile(selectedFile)
     generatePreview(selectedFile)
   }
@@ -250,7 +262,7 @@ export default function ImportarClientesPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls"
+              accept="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,.xlsx,.xls"
               onChange={handleFileSelect}
               className="hidden"
             />
