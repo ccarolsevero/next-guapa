@@ -428,6 +428,51 @@ export default function EditarSite() {
     }
   }
 
+  // Funções para adicionar serviços e fotos
+  const handleAddService = () => {
+    console.log('Tentando adicionar serviço:', newProfessional.newService)
+    if (newProfessional.newService.trim()) {
+      const newService = newProfessional.newService.trim()
+      console.log('Adicionando serviço:', newService)
+      setNewProfessional({
+        ...newProfessional,
+        services: [...newProfessional.services, newService],
+        newService: ''
+      })
+      console.log('Serviços após adicionar:', [...newProfessional.services, newService])
+    }
+  }
+
+  const handleAddGalleryImage = () => {
+    console.log('Tentando adicionar foto:', newProfessional.newGalleryImage)
+    if (newProfessional.newGalleryImage.trim()) {
+      const newImage = newProfessional.newGalleryImage.trim()
+      console.log('Adicionando foto:', newImage)
+      setNewProfessional({
+        ...newProfessional,
+        gallery: [...newProfessional.gallery, newImage],
+        newGalleryImage: ''
+      })
+      console.log('Galeria após adicionar:', [...newProfessional.gallery, newImage])
+    }
+  }
+
+  const handleRemoveService = (index: number) => {
+    console.log('Removendo serviço no índice:', index)
+    setNewProfessional({
+      ...newProfessional,
+      services: newProfessional.services.filter((_, i) => i !== index)
+    })
+  }
+
+  const handleRemoveGalleryImage = (index: number) => {
+    console.log('Removendo foto no índice:', index)
+    setNewProfessional({
+      ...newProfessional,
+      gallery: newProfessional.gallery.filter((_, i) => i !== index)
+    })
+  }
+
   const saveSiteSettings = async () => {
     try {
       console.log('Salvando configurações do site...')
@@ -940,24 +985,12 @@ export default function EditarSite() {
                     placeholder="Adicionar serviço"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && newProfessional.newService.trim()) {
-                        setNewProfessional({
-                          ...newProfessional,
-                          services: [...newProfessional.services, newProfessional.newService.trim()],
-                          newService: ''
-                        })
+                        handleAddService()
                       }
                     }}
                   />
                   <button
-                    onClick={() => {
-                      if (newProfessional.newService.trim()) {
-                        setNewProfessional({
-                          ...newProfessional,
-                          services: [...newProfessional.services, newProfessional.newService.trim()],
-                          newService: ''
-                        })
-                      }
-                    }}
+                    onClick={handleAddService}
                     className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     +
@@ -971,12 +1004,7 @@ export default function EditarSite() {
                     >
                       {service}
                       <button
-                        onClick={() => {
-                          setNewProfessional({
-                            ...newProfessional,
-                            services: newProfessional.services.filter((_, i) => i !== index)
-                          })
-                        }}
+                        onClick={() => handleRemoveService(index)}
                         className="text-blue-600 hover:text-blue-800"
                       >
                         ×
@@ -1000,24 +1028,12 @@ export default function EditarSite() {
                     placeholder="https://exemplo.com/foto.jpg"
                     onKeyPress={(e) => {
                       if (e.key === 'Enter' && newProfessional.newGalleryImage.trim()) {
-                        setNewProfessional({
-                          ...newProfessional,
-                          gallery: [...newProfessional.gallery, newProfessional.newGalleryImage.trim()],
-                          newGalleryImage: ''
-                        })
+                        handleAddGalleryImage()
                       }
                     }}
                   />
                   <button
-                    onClick={() => {
-                      if (newProfessional.newGalleryImage.trim()) {
-                        setNewProfessional({
-                          ...newProfessional,
-                          gallery: [...newProfessional.gallery, newProfessional.newGalleryImage.trim()],
-                          newGalleryImage: ''
-                        })
-                      }
-                    }}
+                    onClick={handleAddGalleryImage}
                     className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
                   >
                     +
@@ -1036,12 +1052,7 @@ export default function EditarSite() {
                         }}
                       />
                       <button
-                        onClick={() => {
-                          setNewProfessional({
-                            ...newProfessional,
-                            gallery: newProfessional.gallery.filter((_, i) => i !== index)
-                          })
-                        }}
+                        onClick={() => handleRemoveGalleryImage(index)}
                         className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm hover:bg-red-700"
                       >
                         ×

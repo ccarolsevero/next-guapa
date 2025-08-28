@@ -2,27 +2,73 @@
 
 import LayoutPublic from '../layout-public'
 import Link from 'next/link'
+import { useState, useEffect } from 'react'
 
-const professionals = [
-  {
-    id: 'bruna',
-    name: 'Bruna',
-    title: 'Cabeleireira Visagista',
-    description: 'Especialista em consultoria de visagismo, cortes e colorações dos mais variados tipos. Trabalha com técnicas modernas mantendo sempre a saúde dos fios.',
-    image: '/assents/fotobruna.jpeg',
-    specialties: ['Consultoria de Visagismo', 'Cortes Personalizados', 'Colorações']
-  },
-  {
-    id: 'cicera',
-    name: 'Cicera Canovas',
-    title: 'Tricoterapeuta',
-    description: 'Especialista em tratamentos naturais do couro cabeludo e fios. Utiliza técnicas 100% naturalistas, sem química, priorizando a saúde capilar.',
-    image: null, // Placeholder icon
-    specialties: ['Tratamentos Naturais', 'Saúde do Couro Cabeludo', 'Tricoterapia']
-  }
-]
+interface Professional {
+  _id: string
+  name: string
+  title: string
+  shortDescription: string
+  fullDescription: string
+  services: string[]
+  profileImage: string
+  gallery: string[]
+  isActive: boolean
+  isFeatured: boolean
+}
 
 export default function ProfissionaisPage() {
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadProfessionals()
+  }, [])
+
+  const loadProfessionals = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/professionals')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar profissionais')
+      }
+      const data = await response.json()
+      // Filtrar apenas profissionais ativos
+      const activeProfessionals = data.filter((prof: Professional) => prof.isActive)
+      setProfessionals(activeProfessionals)
+    } catch (error) {
+      console.error('Erro ao carregar profissionais:', error)
+      // Fallback para dados estáticos
+      setProfessionals([
+        {
+          _id: 'bruna',
+          name: 'Bruna',
+          title: 'Cabeleireira Visagista',
+          shortDescription: 'Especialista em consultoria de visagismo, cortes e colorações dos mais variados tipos.',
+          fullDescription: 'Especialista em consultoria de visagismo, cortes e colorações dos mais variados tipos. Trabalha com técnicas modernas mantendo sempre a saúde dos fios.',
+          services: ['Consultoria de Visagismo', 'Cortes Personalizados', 'Colorações'],
+          profileImage: '/assents/fotobruna.jpeg',
+          gallery: [],
+          isActive: true,
+          isFeatured: true
+        },
+        {
+          _id: 'cicera',
+          name: 'Cicera Canovas',
+          title: 'Tricoterapeuta',
+          shortDescription: 'Especialista em tratamentos naturais do couro cabeludo e fios.',
+          fullDescription: 'Especialista em tratamentos naturais do couro cabeludo e fios. Utiliza técnicas 100% naturalistas, sem química, priorizando a saúde capilar.',
+          services: ['Tratamentos Naturais', 'Saúde do Couro Cabeludo', 'Tricoterapia'],
+          profileImage: '/assents/fotobruna.jpeg',
+          gallery: [],
+          isActive: true,
+          isFeatured: false
+        }
+      ])
+    } finally {
+      setLoading(false)
+    }
+  }
   return (
     <LayoutPublic>
       {/* Hero Section */}
@@ -42,62 +88,78 @@ export default function ProfissionaisPage() {
       {/* Profissionais */}
       <section className="-py-4 md:py-0 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {professionals.map((professional) => (
-              <div key={professional.id} className="bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
-                <div className="text-center mb-8">
-                  <div className="w-32 h-32 rounded-full mx-auto mb-6 overflow-hidden">
-                    {professional.image ? (
-                      <img 
-                        src={professional.image} 
-                        alt={`${professional.name} - ${professional.title}`} 
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-[#d34d4c] flex items-center justify-center">
-                        <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                      </div>
-                    )}
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#d34d4c] mx-auto mb-4"></div>
+              <p className="text-[#f2dcbc]">Carregando profissionais...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              {professionals.map((professional) => (
+                <div key={professional._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
+                  <div className="text-center mb-8">
+                    <div className="w-32 h-32 rounded-full mx-auto mb-6 overflow-hidden">
+                      {professional.profileImage ? (
+                        <img 
+                          src={professional.profileImage} 
+                          alt={`${professional.name} - ${professional.title}`} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.src = '/assents/fotobruna.jpeg'
+                          }}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-[#d34d4c] flex items-center justify-center">
+                          <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                    <h3 className="text-3xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>{professional.name}</h3>
+                    <p className="text-[#d34d4c] font-medium font-body mb-4">{professional.title}</p>
                   </div>
-                  <h3 className="text-3xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>{professional.name}</h3>
-                  <p className="text-[#d34d4c] font-medium font-body mb-4">{professional.title}</p>
-                </div>
-                
-                <div className="mb-6">
-                  <p className="text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
-                    {professional.description}
-                  </p>
-                </div>
-                
-                <div className="mb-6">
-                  <h4 className="text-xl font-bold font-heading mb-4 text-center" style={{ color: '#f2dcbc' }}>
-                    Especialidades
-                  </h4>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {professional.specialties.map((specialty, index) => (
-                      <span 
-                        key={index}
-                        className="bg-[#d34d4c] text-white px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        {specialty}
-                      </span>
-                    ))}
+                  
+                  <div className="mb-6">
+                    <p className="text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
+                      {professional.shortDescription}
+                    </p>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <h4 className="text-xl font-bold font-heading mb-4 text-center" style={{ color: '#f2dcbc' }}>
+                      Especialidades
+                    </h4>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {professional.services.slice(0, 3).map((service: string, index: number) => (
+                        <span 
+                          key={index}
+                          className="bg-[#d34d4c] text-white px-3 py-1 rounded-full text-sm font-medium"
+                        >
+                          {service}
+                        </span>
+                      ))}
+                      {professional.services.length > 3 && (
+                        <span className="text-[#f2dcbc] text-sm">
+                          +{professional.services.length - 3} mais
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="text-center">
+                    <Link 
+                      href={`/profissionais/${professional._id}`}
+                      className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium inline-block"
+                    >
+                      Ver Perfil Completo
+                    </Link>
                   </div>
                 </div>
-                
-                <div className="text-center">
-                  <Link 
-                    href={`/profissionais/${professional.id}`}
-                    className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium inline-block"
-                  >
-                    Ver Perfil Completo
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
