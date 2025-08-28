@@ -139,7 +139,8 @@ export default function EditarSite() {
       }
       const profs: Professional[] = await response.json()
       console.log('Profissionais carregados:', profs.length)
-      setProfessionals(profs.filter((p: Professional) => p.isActive))
+      console.log('Dados dos profissionais:', profs)
+      setProfessionals(profs) // Removendo o filtro para mostrar todos
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error)
       setProfessionals([])
@@ -813,6 +814,263 @@ export default function EditarSite() {
           )}
         </div>
       </div>
+
+      {/* Modal de Adicionar Profissional */}
+      {showAddProfessionalModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-light text-[#D15556]">Adicionar Profissional</h3>
+              <button 
+                onClick={() => setShowAddProfessionalModal(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProfessional.name}
+                    onChange={(e) => setNewProfessional({...newProfessional, name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Nome da profissional"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Função
+                  </label>
+                  <input
+                    type="text"
+                    value={newProfessional.title}
+                    onChange={(e) => setNewProfessional({...newProfessional, title: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Ex: Cabeleireira"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={newProfessional.email}
+                    onChange={(e) => setNewProfessional({...newProfessional, email: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Telefone
+                  </label>
+                  <input
+                    type="tel"
+                    value={newProfessional.phone}
+                    onChange={(e) => setNewProfessional({...newProfessional, phone: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="(19) 99999-9999"
+                  />
+                </div>
+              </div>
+
+              {/* Descrições */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição Curta (para Home) *
+                </label>
+                <input
+                  type="text"
+                  value={newProfessional.shortDescription}
+                  onChange={(e) => setNewProfessional({...newProfessional, shortDescription: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Breve descrição que aparece na home"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição Completa (para página da profissional) *
+                </label>
+                <textarea
+                  value={newProfessional.fullDescription}
+                  onChange={(e) => setNewProfessional({...newProfessional, fullDescription: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  rows={4}
+                  placeholder="Descrição detalhada sobre a profissional"
+                />
+              </div>
+
+              {/* Imagem de Perfil */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  URL da Imagem de Perfil
+                </label>
+                <input
+                  type="url"
+                  value={newProfessional.profileImage}
+                  onChange={(e) => setNewProfessional({...newProfessional, profileImage: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+              </div>
+
+              {/* Serviços */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Serviços Oferecidos
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={newProfessional.newService}
+                    onChange={(e) => setNewProfessional({...newProfessional, newService: e.target.value})}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Adicionar serviço"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && newProfessional.newService.trim()) {
+                        setNewProfessional({
+                          ...newProfessional,
+                          services: [...newProfessional.services, newProfessional.newService.trim()],
+                          newService: ''
+                        })
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (newProfessional.newService.trim()) {
+                        setNewProfessional({
+                          ...newProfessional,
+                          services: [...newProfessional.services, newProfessional.newService.trim()],
+                          newService: ''
+                        })
+                      }
+                    }}
+                    className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {newProfessional.services.map((service, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {service}
+                      <button
+                        onClick={() => {
+                          setNewProfessional({
+                            ...newProfessional,
+                            services: newProfessional.services.filter((_, i) => i !== index)
+                          })
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Galeria */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Galeria de Fotos (URLs)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="url"
+                    value={newProfessional.newGalleryImage}
+                    onChange={(e) => setNewProfessional({...newProfessional, newGalleryImage: e.target.value})}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="https://exemplo.com/foto.jpg"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && newProfessional.newGalleryImage.trim()) {
+                        setNewProfessional({
+                          ...newProfessional,
+                          gallery: [...newProfessional.gallery, newProfessional.newGalleryImage.trim()],
+                          newGalleryImage: ''
+                        })
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={() => {
+                      if (newProfessional.newGalleryImage.trim()) {
+                        setNewProfessional({
+                          ...newProfessional,
+                          gallery: [...newProfessional.gallery, newProfessional.newGalleryImage.trim()],
+                          newGalleryImage: ''
+                        })
+                      }
+                    }}
+                    className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {newProfessional.gallery.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image}
+                        alt={`Foto ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = '/assents/fotobruna.jpeg'
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          setNewProfessional({
+                            ...newProfessional,
+                            gallery: newProfessional.gallery.filter((_, i) => i !== index)
+                          })
+                        }}
+                        className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm hover:bg-red-700"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowAddProfessionalModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAddProfessional}
+                  disabled={!newProfessional.name || !newProfessional.shortDescription || !newProfessional.fullDescription}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Adicionar Profissional
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
