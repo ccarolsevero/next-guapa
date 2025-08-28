@@ -1,28 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 
-const prisma = new PrismaClient()
+// Configuração do Supabase
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export async function GET() {
   try {
     console.log('=== INÍCIO GET /api/clients ===')
-    console.log('Tentando conectar ao banco de dados...')
-    
-    const clients = await prisma.client.findMany({
-      orderBy: {
-        createdAt: 'desc'
+    console.log('Tentando conectar ao Supabase via REST API...')
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/clients?select=*&order=created_at.desc`, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json'
       }
     })
 
-    console.log('Clientes encontrados:', clients.length)
+    if (!response.ok) {
+      throw new Error(`Supabase API error: ${response.status}`)
+    }
+
+    const clients = await response.json()
+    console.log('Clientes encontrados via Supabase:', clients.length)
     return NextResponse.json(clients)
   } catch (error) {
     console.error('=== ERRO GET /api/clients ===')
     console.error('Erro detalhado:', error)
     console.error('Tipo do erro:', typeof error)
     console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
-    
+
     // Fallback para dados de teste se o banco falhar
     console.log('Usando dados de teste como fallback')
     const testClients = [
@@ -33,8 +41,8 @@ export async function GET() {
         phone: '(19) 99999-9999',
         address: 'Rua Teste, 123',
         notes: 'Cliente teste',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
         id: 'test-2',
@@ -43,11 +51,11 @@ export async function GET() {
         phone: '(19) 88888-8888',
         address: 'Rua Teste Online, 456',
         notes: 'Cliente teste online',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ]
-    
+
     return NextResponse.json(testClients)
   }
 }
@@ -68,45 +76,64 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Tentar conectar ao banco real primeiro
+    // Tentar conectar ao Supabase via REST API primeiro
     try {
-      console.log('Tentando conectar ao banco real...')
+      console.log('Tentando conectar ao Supabase via REST API...')
       
       // Verificar se o email já existe
-      const existingClient = await prisma.client.findUnique({
-        where: { email }
+      const existingResponse = await fetch(`${SUPABASE_URL}/rest/v1/clients?email=eq.${encodeURIComponent(email)}&select=id`, {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json'
+        }
       })
 
-      if (existingClient) {
-        return NextResponse.json(
-          { error: 'Email já cadastrado' },
-          { status: 409 }
-        )
+      if (existingResponse.ok) {
+        const existingClients = await existingResponse.json()
+        if (existingClients.length > 0) {
+          return NextResponse.json(
+            { error: 'Email já cadastrado' },
+            { status: 409 }
+          )
+        }
       }
 
       // Criptografar senha
       const hashedPassword = await bcrypt.hash(password, 12)
 
-      // Criar cliente no banco real
-      const client = await prisma.client.create({
-        data: {
+      // Criar cliente no Supabase
+      const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
           name,
           email,
           phone,
-          birthDate: birthDate ? new Date(birthDate) : null,
+          birth_date: birthDate ? new Date(birthDate).toISOString() : null,
           address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
           password: hashedPassword,
           notes: notes || null
-        }
+        })
       })
 
-      console.log('Cliente criado no banco real:', client.id)
+      if (!createResponse.ok) {
+        throw new Error(`Supabase API error: ${createResponse.status}`)
+      }
+
+      const client = await createResponse.json()
+      console.log('Cliente criado no Supabase:', client[0].id)
 
       // Retornar cliente sem senha
-      const { password: _, ...clientWithoutPassword } = client
+      const { password: _, ...clientWithoutPassword } = client[0]
       return NextResponse.json(clientWithoutPassword, { status: 201 })
     } catch (dbError) {
-      console.error('Erro ao conectar ao banco real:', dbError)
+      console.error('Erro ao conectar ao Supabase:', dbError)
       
       // Fallback para cliente simulado
       console.log('Usando fallback simulado')
@@ -117,9 +144,9 @@ export async function POST(request: NextRequest) {
         phone,
         address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
         notes: notes || null,
-        birthDate: null,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        birth_date: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
       
       console.log('Cliente simulado criado:', simulatedClient.id)
