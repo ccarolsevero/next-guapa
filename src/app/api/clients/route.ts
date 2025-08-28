@@ -102,6 +102,9 @@ export async function POST(request: NextRequest) {
       // Criptografar senha
       const hashedPassword = await bcrypt.hash(password, 12)
 
+      // Gerar ID único
+      const clientId = `cl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
       // Criar cliente no Supabase
       const createResponse = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
         method: 'POST',
@@ -112,6 +115,7 @@ export async function POST(request: NextRequest) {
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
+          id: clientId,
           name,
           email,
           phone,
