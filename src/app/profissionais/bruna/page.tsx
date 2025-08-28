@@ -144,11 +144,11 @@ export default function BrunaPage() {
           
           <div className="relative max-w-4xl mx-auto">
             {/* Imagem Principal */}
-            <div className="relative h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl bg-gray-100">
+            <div className="relative rounded-lg overflow-hidden shadow-2xl">
               <img 
                 src={galleryImages[currentImageIndex]} 
                 alt={`Trabalho ${currentImageIndex + 1} da ${brunaInfo.name}`}
-                className="w-full h-full object-contain"
+                className="w-full max-h-96 lg:max-h-[500px] object-contain"
               />
             </div>
             
