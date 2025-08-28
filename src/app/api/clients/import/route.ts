@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import * as XLSX from 'xlsx'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import connectDB from '@/lib/mongodb'
+import Client from '@/models/Client'
 
 interface ExcelClient {
   nome: string
@@ -107,23 +106,24 @@ export async function POST(request: NextRequest) {
             row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
         }
 
+        await connectDB()
+        
         // Verificar se o cliente já existe
-        const existingClient = await prisma.client.findUnique({
-          where: { email: processedClient.email }
-        })
+        const existingClient = await Client.findOne({ email: processedClient.email })
 
         if (existingClient) {
           // Atualizar cliente existente
-          const updatedClient = await prisma.client.update({
-            where: { id: existingClient.id },
-            data: {
+          const updatedClient = await Client.findByIdAndUpdate(
+            existingClient._id,
+            {
               name: processedClient.name,
               phone: processedClient.phone,
               birthDate: processedClient.birthDate,
               address: processedClient.address,
               notes: processedClient.notes || existingClient.notes,
-            }
-          })
+            },
+            { new: true }
+          )
 
           results.updated++
           results.details.push({
@@ -135,16 +135,14 @@ export async function POST(request: NextRequest) {
           // Criar novo cliente
           const hashedPassword = await bcrypt.hash('123456', 12) // Senha padrão
           
-          const newClient = await prisma.client.create({
-            data: {
-              name: processedClient.name,
-              email: processedClient.email,
-              phone: processedClient.phone,
-              birthDate: processedClient.birthDate,
-              address: processedClient.address,
-              notes: `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${processedClient.totalAppointments}\nValor total: R$ ${processedClient.totalSpent.toFixed(2)}\nTicket médio: R$ ${processedClient.averageTicket.toFixed(2)}\nÚltima visita: ${processedClient.lastVisit ? processedClient.lastVisit.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${processedClient.servicesHistory.join(', ')}`,
-              password: hashedPassword
-            }
+          const newClient = await Client.create({
+            name: processedClient.name,
+            email: processedClient.email,
+            phone: processedClient.phone,
+            birthDate: processedClient.birthDate,
+            address: processedClient.address,
+            notes: `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${processedClient.totalAppointments}\nValor total: R$ ${processedClient.totalSpent.toFixed(2)}\nTicket médio: R$ ${processedClient.averageTicket.toFixed(2)}\nÚltima visita: ${processedClient.lastVisit ? processedClient.lastVisit.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${processedClient.servicesHistory.join(', ')}`,
+            password: hashedPassword
           })
 
           results.created++

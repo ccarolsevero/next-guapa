@@ -1,32 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
-
-const prisma = new PrismaClient()
+import connectDB from '@/lib/mongodb'
+import Client from '@/models/Client'
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const client = await prisma.client.findUnique({
-      where: { id: params.id },
-      include: {
-        appointments: {
-          include: {
-            service: true,
-            professional: true
-          },
-          orderBy: {
-            date: 'desc'
-          }
-        },
-        payments: {
-          orderBy: {
-            createdAt: 'desc'
-          }
-        }
-      }
-    })
+    await connectDB()
+    
+    const client = await Client.findById(params.id)
 
     if (!client) {
       return NextResponse.json(
@@ -36,7 +19,7 @@ export async function GET(
     }
 
     // Remover senha do retorno
-    const { password: _, ...clientWithoutPassword } = client
+    const { password: _, ...clientWithoutPassword } = client.toObject()
     return NextResponse.json(clientWithoutPassword)
   } catch (error) {
     console.error('Erro ao buscar cliente:', error)
@@ -52,13 +35,13 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    await connectDB()
+    
     const body = await request.json()
     const { name, email, phone, birthDate, address, notes } = body
 
     // Verificar se o cliente existe
-    const existingClient = await prisma.client.findUnique({
-      where: { id: params.id }
-    })
+    const existingClient = await Client.findById(params.id)
 
     if (!existingClient) {
       return NextResponse.json(
@@ -69,9 +52,7 @@ export async function PUT(
 
     // Verificar se o email já existe em outro cliente
     if (email && email !== existingClient.email) {
-      const clientWithEmail = await prisma.client.findUnique({
-        where: { email }
-      })
+      const clientWithEmail = await Client.findOne({ email })
 
       if (clientWithEmail) {
         return NextResponse.json(
@@ -82,20 +63,21 @@ export async function PUT(
     }
 
     // Atualizar cliente
-    const updatedClient = await prisma.client.update({
-      where: { id: params.id },
-      data: {
+    const updatedClient = await Client.findByIdAndUpdate(
+      params.id,
+      {
         name,
         email,
         phone,
         birthDate: birthDate ? new Date(birthDate) : null,
         address,
         notes
-      }
-    })
+      },
+      { new: true }
+    )
 
     // Retornar cliente sem senha
-    const { password: _, ...clientWithoutPassword } = updatedClient
+    const { password: _, ...clientWithoutPassword } = updatedClient.toObject()
     return NextResponse.json(clientWithoutPassword)
   } catch (error) {
     console.error('Erro ao atualizar cliente:', error)
@@ -111,10 +93,10 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    await connectDB()
+    
     // Verificar se o cliente existe
-    const existingClient = await prisma.client.findUnique({
-      where: { id: params.id }
-    })
+    const existingClient = await Client.findById(params.id)
 
     if (!existingClient) {
       return NextResponse.json(
@@ -123,10 +105,8 @@ export async function DELETE(
       )
     }
 
-    // Deletar cliente (cascade irá deletar appointments e payments relacionados)
-    await prisma.client.delete({
-      where: { id: params.id }
-    })
+    // Deletar cliente
+    await Client.findByIdAndDelete(params.id)
 
     return NextResponse.json(
       { message: 'Cliente deletado com sucesso' },

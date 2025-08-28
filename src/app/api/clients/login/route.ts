@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-
-const prisma = new PrismaClient()
+import connectDB from '@/lib/mongodb'
+import Client from '@/models/Client'
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +17,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    await connectDB()
+    
     // Buscar cliente pelo email
-    const client = await prisma.client.findUnique({
-      where: { email }
-    })
+    const client = await Client.findOne({ email })
 
     if (!client) {
       return NextResponse.json(
@@ -51,7 +50,7 @@ export async function POST(request: NextRequest) {
     )
 
     // Retornar dados do cliente (sem senha) e token
-    const { password: _, ...clientWithoutPassword } = client
+    const { password: _, ...clientWithoutPassword } = client.toObject()
     
     return NextResponse.json({
       client: clientWithoutPassword,
