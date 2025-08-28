@@ -41,6 +41,8 @@ interface Professional {
   isFeatured: boolean
   createdAt: string
   updatedAt: string
+  newService?: string
+  newGalleryImage?: string
 }
 
 interface SiteSettings {
@@ -473,6 +475,85 @@ export default function EditarSite() {
     })
   }
 
+  // Funções para editar profissional
+  const handleAddServiceToEdit = () => {
+    if (selectedProfessional?.newService?.trim()) {
+      const newService = selectedProfessional.newService.trim()
+      setSelectedProfessional({
+        ...selectedProfessional,
+        services: [...selectedProfessional.services, newService],
+        newService: ''
+      })
+    }
+  }
+
+  const handleAddGalleryImageToEdit = () => {
+    if (selectedProfessional?.newGalleryImage?.trim()) {
+      const newImage = selectedProfessional.newGalleryImage.trim()
+      setSelectedProfessional({
+        ...selectedProfessional,
+        gallery: [...selectedProfessional.gallery, newImage],
+        newGalleryImage: ''
+      })
+    }
+  }
+
+  const handleRemoveServiceFromEdit = (index: number) => {
+    if (selectedProfessional) {
+      setSelectedProfessional({
+        ...selectedProfessional,
+        services: selectedProfessional.services.filter((_, i) => i !== index)
+      })
+    }
+  }
+
+  const handleRemoveGalleryImageFromEdit = (index: number) => {
+    if (selectedProfessional) {
+      setSelectedProfessional({
+        ...selectedProfessional,
+        gallery: selectedProfessional.gallery.filter((_, i) => i !== index)
+      })
+    }
+  }
+
+  const handleSaveProfessionalEdit = async () => {
+    if (!selectedProfessional) return
+
+    try {
+      const response = await fetch(`/api/professionals/${selectedProfessional._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: selectedProfessional.name,
+          title: selectedProfessional.title,
+          email: selectedProfessional.email,
+          phone: selectedProfessional.phone,
+          shortDescription: selectedProfessional.shortDescription,
+          fullDescription: selectedProfessional.fullDescription,
+          services: selectedProfessional.services,
+          profileImage: selectedProfessional.profileImage,
+          gallery: selectedProfessional.gallery,
+          isActive: selectedProfessional.isActive,
+          isFeatured: selectedProfessional.isFeatured
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar profissional')
+      }
+
+      await loadProfessionals()
+      setShowEditProfessionalModal(false)
+      setSelectedProfessional(null)
+      alert('Profissional atualizado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao atualizar profissional:', error)
+      alert('Erro ao atualizar profissional')
+    }
+  }
+
   const saveSiteSettings = async () => {
     try {
       console.log('Salvando configurações do site...')
@@ -859,6 +940,229 @@ export default function EditarSite() {
           )}
         </div>
       </div>
+
+      {/* Modal de Editar Profissional */}
+      {showEditProfessionalModal && selectedProfessional && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-light text-[#D15556]">Editar Profissional</h3>
+              <button 
+                onClick={() => setShowEditProfessionalModal(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Informações Básicas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Nome *
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedProfessional.name}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, name: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Nome da profissional"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Função
+                  </label>
+                  <input
+                    type="text"
+                    value={selectedProfessional.title}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, title: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Ex: Cabeleireira"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={selectedProfessional.email}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, email: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="email@exemplo.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Telefone
+                  </label>
+                  <input
+                    type="tel"
+                    value={selectedProfessional.phone}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, phone: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="(19) 99999-9999"
+                  />
+                </div>
+              </div>
+
+              {/* Descrições */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição para Home *
+                </label>
+                <textarea
+                  value={selectedProfessional.shortDescription}
+                  onChange={(e) => setSelectedProfessional({...selectedProfessional, shortDescription: e.target.value})}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Descrição curta que aparece na página inicial"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição Completa *
+                </label>
+                <textarea
+                  value={selectedProfessional.fullDescription}
+                  onChange={(e) => setSelectedProfessional({...selectedProfessional, fullDescription: e.target.value})}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Descrição completa que aparece na página da profissional"
+                />
+              </div>
+
+              {/* Foto de Perfil */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  URL da Foto de Perfil
+                </label>
+                <input
+                  type="url"
+                  value={selectedProfessional.profileImage}
+                  onChange={(e) => setSelectedProfessional({...selectedProfessional, profileImage: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="https://exemplo.com/foto.jpg"
+                />
+              </div>
+
+              {/* Serviços */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Serviços Oferecidos
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    value={selectedProfessional.newService || ''}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, newService: e.target.value})}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="Ex: Corte, Coloração, Tratamento"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && selectedProfessional.newService?.trim()) {
+                        handleAddServiceToEdit()
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddServiceToEdit}
+                    className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedProfessional.services.map((service, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {service}
+                      <button
+                        onClick={() => handleRemoveServiceFromEdit(index)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Galeria */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Galeria de Fotos (URLs)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="url"
+                    value={selectedProfessional.newGalleryImage || ''}
+                    onChange={(e) => setSelectedProfessional({...selectedProfessional, newGalleryImage: e.target.value})}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                    placeholder="https://exemplo.com/foto.jpg"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && selectedProfessional.newGalleryImage?.trim()) {
+                        handleAddGalleryImageToEdit()
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddGalleryImageToEdit}
+                    className="bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {selectedProfessional.gallery.map((image, index) => (
+                    <div key={index} className="relative">
+                      <img
+                        src={image}
+                        alt={`Foto ${index + 1}`}
+                        className="w-full h-24 object-cover rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = '/assents/fotobruna.jpeg'
+                        }}
+                      />
+                      <button
+                        onClick={() => handleRemoveGalleryImageFromEdit(index)}
+                        className="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm hover:bg-red-700"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowEditProfessionalModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveProfessionalEdit}
+                  disabled={!selectedProfessional.name || !selectedProfessional.shortDescription || !selectedProfessional.fullDescription}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Adicionar Profissional */}
       {showAddProfessionalModal && (
