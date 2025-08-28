@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Eye, EyeOff, User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react'
 import LayoutPublic from '../layout-public'
+import { localDB } from '@/lib/localStorage'
 
 export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -11,10 +12,8 @@ export default function CadastroPage() {
     name: '',
     email: '',
     phone: '',
-    birthDate: '',
     address: '',
-    password: '',
-    confirmPassword: ''
+    notes: ''
   })
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -51,24 +50,8 @@ export default function CadastroPage() {
       newErrors.phone = 'Telefone é obrigatório'
     }
 
-    if (!formData.birthDate) {
-      newErrors.birthDate = 'Data de nascimento é obrigatória'
-    }
-
     if (!formData.address.trim()) {
       newErrors.address = 'Endereço é obrigatório'
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Senha é obrigatória'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Senha deve ter pelo menos 6 caracteres'
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Confirme sua senha'
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Senhas não coincidem'
     }
 
     setErrors(newErrors)
@@ -85,28 +68,23 @@ export default function CadastroPage() {
     setIsSubmitting(true)
 
     try {
-      // Simular cadastro - em produção, seria uma chamada para a API
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      // Cadastrar cliente na API
-      const response = await fetch('/api/clients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
+      // Cadastrar cliente usando localStorage
+      const newClient = await localDB.submitClientData({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        notes: formData.notes
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao cadastrar cliente')
-      }
-
-      const userData = await response.json()
+      console.log('Cliente cadastrado com sucesso:', newClient)
       
-      // Salvar token de autenticação
+      // Salvar dados do cliente no localStorage local
+      localStorage.setItem('currentClient', JSON.stringify(newClient))
       localStorage.setItem('isClientLoggedIn', 'true')
-      localStorage.setItem('clientToken', JSON.stringify(userData))
+      
+      // Mostrar mensagem de sucesso
+      alert('Cadastro realizado com sucesso! Seus dados foram enviados para o salão.')
       
       // Redirecionar para o painel do cliente
       window.location.href = '/painel-cliente'
@@ -209,28 +187,6 @@ export default function CadastroPage() {
                 )}
               </div>
 
-              {/* Data de Nascimento */}
-              <div>
-                <label htmlFor="birthDate" className="block text-sm font-medium text-[#f2dcbc] mb-2">
-                  <Calendar className="w-4 h-4 inline mr-2" />
-                  Data de Nascimento
-                </label>
-                <input
-                  type="date"
-                  id="birthDate"
-                  name="birthDate"
-                  value={formData.birthDate}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
-                    errors.birthDate ? 'border-red-300' : 'border-gray-300'
-                  }`}
-                  style={{ color: '#000000' }}
-                />
-                {errors.birthDate && (
-                  <p className="mt-1 text-sm text-red-400">{errors.birthDate}</p>
-                )}
-              </div>
-
               {/* Endereço */}
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-[#f2dcbc] mb-2">
@@ -254,59 +210,21 @@ export default function CadastroPage() {
                 )}
               </div>
 
-              {/* Senha */}
+              {/* Observações */}
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-[#f2dcbc] mb-2">
-                  <Lock className="w-4 h-4 inline mr-2" />
-                  Senha
+                <label htmlFor="notes" className="block text-sm font-medium text-[#f2dcbc] mb-2">
+                  Observações (opcional)
                 </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    style={{ color: '#000000' }}
-                    placeholder="Digite sua senha"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
-                )}
-              </div>
-
-              {/* Confirmar Senha */}
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#f2dcbc] mb-2">
-                  <Lock className="w-4 h-4 inline mr-2" />
-                  Confirmar Senha
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-3 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                <textarea
+                  id="notes"
+                  name="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200"
                   style={{ color: '#000000' }}
-                  placeholder="Confirme sua senha"
+                  placeholder="Alguma observação ou preferência..."
+                  rows={3}
                 />
-                {errors.confirmPassword && (
-                  <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
-                )}
               </div>
 
               {/* Botão de Cadastro */}
