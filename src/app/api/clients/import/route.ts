@@ -5,9 +5,12 @@ import connectDB from '@/lib/mongodb'
 import Client from '@/models/Client'
 
 interface ExcelClient {
-  nome: string
-  email: string
-  telefone: string
+  // Colunas obrigatórias
+  nome?: string
+  email?: string
+  telefone?: string
+  
+  // Colunas opcionais
   dataNascimento?: string
   endereco?: string
   observacoes?: string
@@ -16,6 +19,9 @@ interface ExcelClient {
   ultimaVisita?: string
   servicosRealizados?: string
   ticketMedio?: number
+  
+  // Mapeamento alternativo para colunas específicas
+  [key: string]: any // Permite qualquer coluna
 }
 
 interface ProcessedClient {
@@ -79,18 +85,24 @@ export async function POST(request: NextRequest) {
       const rowNumber = i + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
 
       try {
+        // Mapear colunas específicas do arquivo
+        const nome = row.nome || row['1'] || row['A'] || row['Cliente'] || row['Nome']
+        const email = row.email || row['F'] || row['Email'] || row['E-mail']
+        const telefone = row.telefone || row['E'] || row['Celular'] || row['Telefone'] || row['Phone']
+        const dataCadastro = row.dataCadastro || row['R'] || row['Data de cadastro'] || row['Cadastrado']
+        
         // Validar campos obrigatórios
-        if (!row.nome || !row.email || !row.telefone) {
-          results.errors.push(`Linha ${rowNumber}: Nome, email e telefone são obrigatórios`)
+        if (!nome || !email || !telefone) {
+          results.errors.push(`Linha ${rowNumber}: Nome, email e telefone são obrigatórios. Encontrado: nome="${nome}", email="${email}", telefone="${telefone}"`)
           continue
         }
 
         // Processar dados do cliente
         const processedClient: ProcessedClient = {
-          name: row.nome.trim(),
-          email: row.email.trim().toLowerCase(),
-          phone: row.telefone.trim(),
-          birthDate: row.dataNascimento ? new Date(row.dataNascimento) : undefined,
+          name: nome.trim(),
+          email: email.trim().toLowerCase(),
+          phone: telefone.trim(),
+          birthDate: dataCadastro ? new Date(dataCadastro) : undefined,
           address: row.endereco?.trim() || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
           notes: row.observacoes?.trim() || ''
         }
