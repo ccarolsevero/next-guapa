@@ -57,9 +57,9 @@ export async function POST(request: NextRequest) {
     console.log('Dados recebidos:', { name, email, phone, address, notes })
 
     // Validar campos obrigatórios
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !phone) {
       return NextResponse.json(
-        { error: 'Nome, email, telefone e senha são obrigatórios' },
+        { error: 'Nome, email e telefone são obrigatórios' },
         { status: 400 }
       )
     }
@@ -79,8 +79,9 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      // Criptografar senha
-      const hashedPassword = await bcrypt.hash(password, 12)
+      // Gerar senha padrão se não for fornecida
+      const defaultPassword = password || '123456'
+      const hashedPassword = await bcrypt.hash(defaultPassword, 12)
 
       // Criar cliente no MongoDB
       const client = await Client.create({

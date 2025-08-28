@@ -27,16 +27,42 @@ export default function NovoClientePage() {
     setIsLoading(true)
 
     try {
-      // Aqui você faria a chamada para a API
-      console.log('Novo cliente:', formData)
-      
-      // Simular delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirecionar para a lista de clientes
-      router.push('/admin/clientes')
+      // Validar campos obrigatórios
+      if (!formData.name || !formData.email || !formData.phone) {
+        alert('Nome, email e telefone são obrigatórios!')
+        return
+      }
+
+      // Preparar dados do cliente
+      const clientData = {
+        name: formData.name.trim(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        birthDate: formData.birthDate ? new Date(formData.birthDate) : undefined,
+        address: formData.address.trim() || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
+        notes: formData.notes.trim() || ''
+      }
+
+      // Fazer chamada para a API
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(clientData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert('Cliente cadastrado com sucesso!')
+        router.push('/admin/clientes')
+      } else {
+        alert(`Erro: ${data.error}`)
+      }
     } catch (error) {
       console.error('Erro ao criar cliente:', error)
+      alert('Erro ao cadastrar cliente. Tente novamente.')
     } finally {
       setIsLoading(false)
     }

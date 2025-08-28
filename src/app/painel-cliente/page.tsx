@@ -66,6 +66,13 @@ export default function PainelClientePage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [showEditProfileModal, setShowEditProfileModal] = useState(false)
   const [editProfileData, setEditProfileData] = useState<Partial<ClientData>>({})
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  })
+  const [passwordLoading, setPasswordLoading] = useState(false)
   const [appointments, setAppointments] = useState<Appointment[]>([
     {
       id: 1,
@@ -217,6 +224,53 @@ export default function PainelClientePage() {
       localStorage.setItem('clientData', JSON.stringify(updatedData))
       setShowEditProfileModal(false)
       alert('Perfil atualizado com sucesso!')
+    }
+  }
+
+  // Função para alterar senha
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      alert('As senhas não coincidem!')
+      return
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      alert('A nova senha deve ter pelo menos 6 caracteres!')
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      const response = await fetch('/api/clients/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        alert('Senha alterada com sucesso!')
+        setShowChangePasswordModal(false)
+        setPasswordData({
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        })
+      } else {
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error)
+      alert('Erro ao alterar senha. Tente novamente.')
+    } finally {
+      setPasswordLoading(false)
     }
   }
 
@@ -779,13 +833,22 @@ export default function PainelClientePage() {
                   </div>
 
                   <div className="mt-6 pt-6 border-t border-gray-200">
-                    <button 
-                      onClick={openEditProfileModal}
-                      className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
-                    >
-                      <Edit className="w-4 h-4 inline mr-2" />
-                      Editar Perfil
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <button 
+                        onClick={openEditProfileModal}
+                        className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
+                      >
+                        <Edit className="w-4 h-4 inline mr-2" />
+                        Editar Perfil
+                      </button>
+                      <button 
+                        onClick={() => setShowChangePasswordModal(true)}
+                        className="bg-[#006D5B] text-white px-6 py-3 rounded-lg hover:bg-[#005a4d] transition-colors font-medium"
+                      >
+                        <Settings className="w-4 h-4 inline mr-2" />
+                        Alterar Senha
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -948,6 +1011,83 @@ export default function PainelClientePage() {
                   className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Salvar Avaliação
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Alteração de Senha */}
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-light text-[#D15556]">Alterar Senha</h3>
+              <button 
+                onClick={() => setShowChangePasswordModal(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Senha Atual
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.currentPassword}
+                  onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Digite sua senha atual"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.newPassword}
+                  onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Digite a nova senha (mín. 6 caracteres)"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Confirmar Nova Senha
+                </label>
+                <input
+                  type="password"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Confirme a nova senha"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowChangePasswordModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleChangePassword}
+                  disabled={passwordLoading}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 flex items-center"
+                >
+                  {passwordLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Alterando...
+                    </>
+                  ) : (
+                    'Alterar Senha'
+                  )}
                 </button>
               </div>
             </div>
