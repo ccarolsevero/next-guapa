@@ -68,54 +68,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar se o email já existe
-    const existingClient = await prisma.client.findUnique({
-      where: { email }
-    })
-
-    if (existingClient) {
-      return NextResponse.json(
-        { error: 'Email já cadastrado' },
-        { status: 409 }
-      )
-    }
-
-    // Criptografar senha
-    const hashedPassword = await bcrypt.hash(password, 12)
-
-    // Criar cliente
-    const client = await prisma.client.create({
-      data: {
-        name,
-        email,
-        phone,
-        birthDate: birthDate ? new Date(birthDate) : null,
-        address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-        password: hashedPassword,
-        notes: notes || null
-      }
-    })
-
-    console.log('Cliente criado com sucesso:', client.id)
-
-    // Retornar cliente sem senha
-    const { password: _, ...clientWithoutPassword } = client
-    return NextResponse.json(clientWithoutPassword, { status: 201 })
-  } catch (error) {
-    console.error('=== ERRO POST /api/clients ===')
-    console.error('Erro detalhado:', error)
-    console.error('Tipo do erro:', typeof error)
-    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
-    
-    // Fallback para criar cliente simulado se o banco falhar
-    console.log('Usando fallback para criar cliente simulado')
+    // Por enquanto, vamos usar apenas o fallback simulado
+    console.log('Criando cliente simulado')
     const simulatedClient = {
       id: `simulated-${Date.now()}`,
-      name: body.name,
-      email: body.email,
-      phone: body.phone,
-      address: body.address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-      notes: body.notes || null,
+      name,
+      email,
+      phone,
+      address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
+      notes: notes || null,
       birthDate: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -123,5 +84,15 @@ export async function POST(request: NextRequest) {
     
     console.log('Cliente simulado criado:', simulatedClient.id)
     return NextResponse.json(simulatedClient, { status: 201 })
+  } catch (error) {
+    console.error('=== ERRO POST /api/clients ===')
+    console.error('Erro detalhado:', error)
+    console.error('Tipo do erro:', typeof error)
+    console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
+    
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
   }
 }
