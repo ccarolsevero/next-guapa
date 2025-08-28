@@ -122,7 +122,9 @@ export async function POST(request: NextRequest) {
           birth_date: birthDate ? new Date(birthDate).toISOString() : null,
           address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
           password: hashedPassword,
-          notes: notes || null
+          notes: notes || null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
       })
 
