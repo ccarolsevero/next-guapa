@@ -186,6 +186,50 @@ export default function ProdutosPage() {
     setSelectedProducts([])
   }
 
+  // Toggle ativo/inativo
+  const handleToggleActive = async (productId: string, newStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: newStatus })
+      })
+
+      if (response.ok) {
+        alert(`Produto ${newStatus ? 'ativado' : 'desativado'} com sucesso!`)
+        loadProducts() // Recarregar produtos
+      } else {
+        const data = await response.json()
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao alterar status do produto:', error)
+      alert('Erro ao alterar status do produto')
+    }
+  }
+
+  // Toggle destaque
+  const handleToggleFeatured = async (productId: string, newStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFeatured: newStatus })
+      })
+
+      if (response.ok) {
+        alert(`Produto ${newStatus ? 'adicionado ao' : 'removido do'} destaque!`)
+        loadProducts() // Recarregar produtos
+      } else {
+        const data = await response.json()
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao alterar destaque do produto:', error)
+      alert('Erro ao alterar destaque do produto')
+    }
+  }
+
   // Estatísticas
   const totalProducts = pagination.total
   const activeProducts = products.filter(p => p.isActive).length
@@ -523,15 +567,43 @@ export default function ProdutosPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex space-x-2">
+                            {/* Toggle Ativo/Inativo */}
+                            <button
+                              onClick={() => handleToggleActive(product._id, !product.isActive)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                product.isActive 
+                                  ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                  : 'bg-red-100 text-red-800 hover:bg-red-200'
+                              }`}
+                              title={product.isActive ? 'Desativar produto' : 'Ativar produto'}
+                            >
+                              {product.isActive ? 'Ativo' : 'Inativo'}
+                            </button>
+                            
+                            {/* Toggle Destaque */}
+                            <button
+                              onClick={() => handleToggleFeatured(product._id, !product.isFeatured)}
+                              className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                product.isFeatured 
+                                  ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' 
+                                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                              }`}
+                              title={product.isFeatured ? 'Remover destaque' : 'Adicionar destaque'}
+                            >
+                              <Star className={`w-3 h-3 ${product.isFeatured ? 'fill-current' : ''}`} />
+                            </button>
+                            
                             <Link
                               href={`/admin/produtos/editar/${product._id}`}
                               className="text-blue-600 hover:text-blue-900"
+                              title="Editar produto"
                             >
                               <Edit className="w-4 h-4" />
                             </Link>
                             <button
                               onClick={() => handleDeleteProduct(product._id)}
                               className="text-red-600 hover:text-red-900"
+                              title="Excluir produto"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

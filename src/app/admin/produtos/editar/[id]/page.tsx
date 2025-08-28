@@ -1,13 +1,37 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Save, Upload, X } from 'lucide-react'
+import { ArrowLeft, Save, Package, Star } from 'lucide-react'
 
-export default function NovoProdutoPage() {
+interface Product {
+  _id: string
+  name: string
+  description?: string
+  price: number
+  originalPrice?: number
+  discount: number
+  category: string
+  imageUrl?: string
+  stock: number
+  isActive: boolean
+  isFeatured: boolean
+  tags: string[]
+  brand?: string
+  sku?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export default function EditarProdutoPage() {
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+  const params = useParams()
+  const productId = params.id as string
+  
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [product, setProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -22,9 +46,50 @@ export default function NovoProdutoPage() {
     brand: ''
   })
 
+  // Carregar produto
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        setLoading(true)
+        const response = await fetch(`/api/products/${productId}`)
+        const data = await response.json()
+
+        if (response.ok) {
+          setProduct(data)
+          setFormData({
+            name: data.name,
+            description: data.description || '',
+            price: data.price.toString(),
+            discount: data.discount.toString(),
+            category: data.category,
+            imageUrl: data.imageUrl || '',
+            stock: data.stock.toString(),
+            isActive: data.isActive,
+            isFeatured: data.isFeatured,
+            tags: data.tags.join(', '),
+            brand: data.brand || ''
+          })
+        } else {
+          alert(`Erro: ${data.error}`)
+          router.push('/admin/produtos')
+        }
+      } catch (error) {
+        console.error('Erro ao carregar produto:', error)
+        alert('Erro ao carregar produto')
+        router.push('/admin/produtos')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (productId) {
+      loadProduct()
+    }
+  }, [productId, router])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setSaving(true)
 
     try {
       const productData = {
@@ -36,8 +101,8 @@ export default function NovoProdutoPage() {
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
       }
 
-      const response = await fetch('/api/products', {
-        method: 'POST',
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -47,16 +112,16 @@ export default function NovoProdutoPage() {
       const data = await response.json()
 
       if (response.ok) {
-        alert('Produto criado com sucesso!')
+        alert('Produto atualizado com sucesso!')
         router.push('/admin/produtos')
       } else {
         alert(`Erro: ${data.error}`)
       }
     } catch (error) {
-      console.error('Erro ao criar produto:', error)
-      alert('Erro ao criar produto')
+      console.error('Erro ao atualizar produto:', error)
+      alert('Erro ao atualizar produto')
     } finally {
-      setLoading(false)
+      setSaving(false)
     }
   }
 
@@ -76,6 +141,30 @@ export default function NovoProdutoPage() {
     }))
   }
 
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
+          <span className="ml-2 text-gray-600">Carregando produto...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!product) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <p className="text-gray-600">Produto não encontrado</p>
+          <Link href="/admin/produtos" className="text-pink-600 hover:text-pink-700">
+            Voltar para produtos
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6">
       <div className="mb-8">
@@ -86,7 +175,7 @@ export default function NovoProdutoPage() {
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Novo Produto</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Editar Produto</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="max-w-4xl">
@@ -147,8 +236,6 @@ export default function NovoProdutoPage() {
                 />
               </div>
 
-
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Desconto (%)
@@ -189,20 +276,6 @@ export default function NovoProdutoPage() {
                   type="text"
                   name="brand"
                   value={formData.brand}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
-                  style={{ color: '#000000' }}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SKU
-                </label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={formData.sku}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
                   style={{ color: '#000000' }}
@@ -296,10 +369,10 @@ export default function NovoProdutoPage() {
             </Link>
             <button
               type="submit"
-              disabled={loading}
+              disabled={saving}
               className="px-6 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50 flex items-center"
             >
-              {loading ? (
+              {saving ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                   Salvando...
@@ -307,7 +380,7 @@ export default function NovoProdutoPage() {
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Produto
+                  Salvar Alterações
                 </>
               )}
             </button>
