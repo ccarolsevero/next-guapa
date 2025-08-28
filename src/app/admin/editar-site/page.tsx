@@ -51,10 +51,23 @@ export default function EditarSite() {
 
   const loadHomeGallery = async () => {
     try {
-      const photos = await localDB.getHomePhotos()
+      console.log('Carregando fotos do banco de dados...')
+      const response = await fetch('/api/home-gallery')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar fotos')
+      }
+      const photos = await response.json()
+      console.log('Fotos carregadas:', photos.length)
       setHomeGallery(photos.filter(photo => photo.isActive).sort((a, b) => a.order - b.order))
     } catch (error) {
       console.error('Erro ao carregar galeria da home:', error)
+      // Fallback para localStorage se a API falhar
+      try {
+        const photos = await localDB.getHomePhotos()
+        setHomeGallery(photos.filter(photo => photo.isActive).sort((a, b) => a.order - b.order))
+      } catch (localError) {
+        console.error('Erro no fallback localStorage:', localError)
+      }
     }
   }
 
@@ -97,12 +110,33 @@ export default function EditarSite() {
       console.log('Imagem convertida para base64 com sucesso')
       console.log('Tamanho do base64:', imageUrl.length, 'caracteres')
 
+      // Verificar se o base64 não é muito grande (limite de 1MB para base64)
+      if (imageUrl.length > 1000000) {
+        throw new Error('A imagem é muito grande. Use uma imagem menor.')
+      }
+
       if (type === 'home-gallery') {
-        console.log('Salvando foto no localStorage...')
-        const newPhoto = await localDB.addHomePhoto(imageUrl)
+        console.log('Salvando foto no banco de dados...')
+        
+        // Salvar no banco de dados via API
+        const response = await fetch('/api/home-gallery', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ imageUrl })
+        })
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('Resposta da API:', response.status, errorText)
+          throw new Error(`Erro ao salvar foto no banco de dados: ${response.status} - ${errorText}`)
+        }
+        
+        const newPhoto = await response.json()
         console.log('Foto adicionada com sucesso:', newPhoto)
         await loadHomeGallery()
-        alert('Foto adicionada com sucesso!')
+        alert('Foto adicionada com sucesso no banco de dados!')
       } else if (type === 'professional-gallery') {
         // Implementar para galeria de profissionais
         alert('Funcionalidade de galeria de profissionais em desenvolvimento')
@@ -123,6 +157,16 @@ export default function EditarSite() {
       const reader = new FileReader()
       reader.onload = () => {
         const base64 = reader.result as string
+        console.log('Base64 gerado:', base64.substring(0, 100) + '...')
+        console.log('Tamanho do base64:', base64.length)
+        console.log('Formato do base64:', base64.startsWith('data:image/') ? 'Válido' : 'Inválido')
+        
+        // Validar se o base64 está correto
+        if (!base64.startsWith('data:image/')) {
+          reject(new Error('Formato de imagem inválido'))
+          return
+        }
+        
         resolve(base64)
       }
       reader.onerror = () => {
@@ -135,11 +179,19 @@ export default function EditarSite() {
   const deleteHomePhoto = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta foto?')) {
       try {
-        console.log('Tentando deletar foto:', id)
-        await localDB.deleteHomePhoto(id)
-        console.log('Foto deletada com sucesso')
+        console.log('Tentando deletar foto do banco de dados:', id)
+        
+        const response = await fetch(`/api/home-gallery?id=${id}`, {
+          method: 'DELETE'
+        })
+        
+        if (!response.ok) {
+          throw new Error('Erro ao deletar foto do banco de dados')
+        }
+        
+        console.log('Foto deletada com sucesso do banco de dados')
         await loadHomeGallery()
-        alert('Foto removida com sucesso!')
+        alert('Foto removida com sucesso do banco de dados!')
       } catch (error) {
         console.error('Erro ao deletar foto:', error)
         alert('Erro ao deletar foto')
@@ -157,8 +209,24 @@ export default function EditarSite() {
     setHomeGallery(items)
 
     try {
-      await localDB.updateHomePhotoOrder(items)
-      alert('Ordem das fotos atualizada com sucesso!')
+      console.log('Atualizando ordem das fotos no banco de dados...')
+      
+      const response = await fetch('/api/home-gallery', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(items.map((item, index) => ({
+          id: item.id,
+          order: index + 1
+        })))
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar ordem no banco de dados')
+      }
+      
+      alert('Ordem das fotos atualizada com sucesso no banco de dados!')
     } catch (error) {
       console.error('Erro ao atualizar ordem:', error)
       alert('Erro ao atualizar ordem das fotos')
@@ -317,6 +385,11 @@ export default function EditarSite() {
                   src={photo.imageUrl}
                   alt={`Foto ${index + 1}`}
                   className="w-full h-48 object-cover"
+                  onLoad={() => console.log('Imagem carregada com sucesso:', photo.id)}
+                  onError={(e) => {
+                    console.error('Erro ao carregar imagem:', photo.id, e)
+                    console.error('URL da imagem:', photo.imageUrl.substring(0, 100) + '...')
+                  }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                   <button

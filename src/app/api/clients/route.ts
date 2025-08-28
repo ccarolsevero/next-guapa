@@ -25,7 +25,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, email, phone, birthDate, address, password } = body
+    const { name, email, phone, birthDate, address, password, notes } = body
 
     // Validar campos obrigatórios
     if (!name || !email || !phone || !password) {
@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
         phone,
         birthDate: birthDate ? new Date(birthDate) : null,
         address: address || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-        password: hashedPassword
+        password: hashedPassword,
+        notes: notes || null
       }
     })
 

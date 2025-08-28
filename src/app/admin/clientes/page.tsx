@@ -20,7 +20,7 @@ import {
   BarChart3,
   TrendingUp
 } from 'lucide-react'
-import { localDB, Client } from '@/lib/localStorage'
+import { Client } from '@/lib/localStorage'
 
 export default function ClientesPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -31,18 +31,20 @@ export default function ClientesPage() {
   const [showAnalytics, setShowAnalytics] = useState(false)
   const [hasPendingSync, setHasPendingSync] = useState(false)
 
-  // Carregar clientes do localStorage
+  // Carregar clientes do banco de dados
   useEffect(() => {
     const loadClients = async () => {
       try {
         setIsLoading(true)
-        const data = await localDB.getClients()
-        console.log('Clientes carregados do localStorage:', data)
+        console.log('Carregando clientes do banco de dados...')
+        const response = await fetch('/api/clients')
+        if (!response.ok) {
+          throw new Error('Erro ao carregar clientes')
+        }
+        const data = await response.json()
+        console.log('Clientes carregados do banco:', data.length)
         setClients(data)
-        
-        // Verificar se há dados pendentes
-        const pending = await localDB.hasPendingData()
-        setHasPendingSync(pending)
+        setHasPendingSync(false) // Não há mais sincronização pendente com banco real
       } catch (error) {
         console.error('Erro ao carregar clientes:', error)
         setClients([])

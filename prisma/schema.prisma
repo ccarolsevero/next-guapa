@@ -5,6 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  schemas  = ["public"]
 }
 
 model User {
@@ -17,6 +18,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   @@map("users")
+  @@schema("public")
 }
 
 model Client {
@@ -34,16 +36,18 @@ model Client {
   payments     Payment[]
 
   @@map("clients")
+  @@schema("public")
 }
 
 model Professional {
   id           String                @id @default(cuid())
   name         String
+  title        String?               // Título profissional
   email        String?               @unique
   phone        String?
-  bio          String?
-  specialties  String
-  imageUrl     String?
+  bio          String?               // Biografia
+  specialties  String?               // Especialidades
+  imageUrl     String?               // Foto de perfil
   isActive     Boolean               @default(true)
   createdAt    DateTime              @default(now())
   updatedAt    DateTime              @updatedAt
@@ -52,6 +56,7 @@ model Professional {
   services     Service[]             @relation("ProfessionalToService")
 
   @@map("professionals")
+  @@schema("public")
 }
 
 model Service {
@@ -69,6 +74,7 @@ model Service {
   professionals Professional[] @relation("ProfessionalToService")
 
   @@map("services")
+  @@schema("public")
 }
 
 model ServiceType {
@@ -84,6 +90,7 @@ model ServiceType {
   service      Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@map("service_types")
+  @@schema("public")
 }
 
 model Appointment {
@@ -107,6 +114,7 @@ model Appointment {
   payments       Payment[]
 
   @@map("appointments")
+  @@schema("public")
 }
 
 model Payment {
@@ -123,6 +131,7 @@ model Payment {
   client        Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
 
   @@map("payments")
+  @@schema("public")
 }
 
 model Category {
@@ -136,6 +145,7 @@ model Category {
   products    Product[]
 
   @@map("categories")
+  @@schema("public")
 }
 
 model Product {
@@ -154,6 +164,7 @@ model Product {
   category    Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@map("products")
+  @@schema("public")
 }
 
 model Order {
@@ -169,6 +180,7 @@ model Order {
   items       OrderItem[]
 
   @@map("orders")
+  @@schema("public")
 }
 
 model OrderItem {
@@ -183,6 +195,7 @@ model OrderItem {
   product   Product  @relation(fields: [productId], references: [id])
 
   @@map("order_items")
+  @@schema("public")
 }
 
 model HomeGallery {
@@ -194,6 +207,7 @@ model HomeGallery {
   updatedAt DateTime @updatedAt
 
   @@map("home_gallery")
+  @@schema("public")
 }
 
 model ProfessionalGallery {
@@ -207,6 +221,7 @@ model ProfessionalGallery {
   professional   Professional @relation(fields: [professionalId], references: [id], onDelete: Cascade)
 
   @@map("professional_gallery")
+  @@schema("public")
 }
 
 model SiteSettings {
@@ -220,11 +235,14 @@ model SiteSettings {
   updatedAt   DateTime @updatedAt
 
   @@map("site_settings")
+  @@schema("public")
 }
 
 enum UserRole {
   ADMIN
   PROFESSIONAL
+
+  @@schema("public")
 }
 
 enum AppointmentStatus {
@@ -234,6 +252,8 @@ enum AppointmentStatus {
   COMPLETED
   CANCELLED
   NO_SHOW
+
+  @@schema("public")
 }
 
 enum PaymentMethod {
@@ -242,6 +262,8 @@ enum PaymentMethod {
   CREDIT_CARD
   DEBIT_CARD
   BANK_TRANSFER
+
+  @@schema("public")
 }
 
 enum PaymentStatus {
@@ -249,6 +271,8 @@ enum PaymentStatus {
   PAID
   CANCELLED
   REFUNDED
+
+  @@schema("public")
 }
 
 enum OrderStatus {
@@ -258,4 +282,6 @@ enum OrderStatus {
   READY
   DELIVERED
   CANCELLED
+
+  @@schema("public")
 }

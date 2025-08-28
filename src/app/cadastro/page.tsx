@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Eye, EyeOff, User, Mail, Phone, MapPin, Calendar, Lock } from 'lucide-react'
 import LayoutPublic from '../layout-public'
-import { localDB } from '@/lib/localStorage'
+
 
 export default function CadastroPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -68,29 +68,44 @@ export default function CadastroPage() {
     setIsSubmitting(true)
 
     try {
-      // Cadastrar cliente usando localStorage
-      const newClient = await localDB.submitClientData({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-        notes: formData.notes
+      console.log('Enviando dados do cliente para o banco de dados...')
+      
+      // Cadastrar cliente usando API real
+      const response = await fetch('/api/clients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          address: formData.address,
+          notes: formData.notes,
+          password: 'senha123' // Senha padrão temporária
+        })
       })
 
-      console.log('Cliente cadastrado com sucesso:', newClient)
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao cadastrar cliente')
+      }
+
+      const newClient = await response.json()
+      console.log('Cliente cadastrado com sucesso no banco:', newClient)
       
-      // Salvar dados do cliente no localStorage local
+      // Salvar dados do cliente no localStorage local para sessão
       localStorage.setItem('currentClient', JSON.stringify(newClient))
       localStorage.setItem('isClientLoggedIn', 'true')
       
       // Mostrar mensagem de sucesso
-      alert('Cadastro realizado com sucesso! Seus dados foram enviados para o salão.')
+      alert('Cadastro realizado com sucesso! Seus dados foram salvos no banco de dados.')
       
       // Redirecionar para o painel do cliente
       window.location.href = '/painel-cliente'
     } catch (error) {
       console.error('Erro no cadastro:', error)
-      setErrors({ submit: 'Erro ao realizar cadastro. Tente novamente.' })
+      setErrors({ submit: error instanceof Error ? error.message : 'Erro ao realizar cadastro. Tente novamente.' })
     } finally {
       setIsSubmitting(false)
     }
