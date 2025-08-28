@@ -821,13 +821,13 @@ export default function EditarSite() {
           {/* Lista de Profissionais */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {professionals.map((professional) => (
-              <div key={professional._id} className="border rounded-lg overflow-hidden">
+              <div key={professional._id} className={`border rounded-lg overflow-hidden ${!professional.isActive ? 'opacity-60 bg-gray-100' : ''}`}>
                 {/* Imagem de Perfil */}
                 <div className="relative h-48 bg-gray-200">
                   <img
                     src={professional.profileImage}
                     alt={professional.name}
-                    className="w-full h-full object-cover"
+                    className={`w-full h-full object-cover ${!professional.isActive ? 'grayscale' : ''}`}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement
                       target.src = '/assents/fotobruna.jpeg'
@@ -857,23 +857,40 @@ export default function EditarSite() {
                       {professional.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                     </button>
                   </div>
+                  {/* Indicador de status */}
+                  {!professional.isActive && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      DESATIVADA
+                    </div>
+                  )}
                 </div>
 
                 {/* Informações */}
                 <div className="p-4">
                   <div className="flex justify-between items-start mb-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800">{professional.name}</h3>
-                      <p className="text-gray-600 text-sm">{professional.title}</p>
+                      <h3 className={`text-lg font-semibold ${!professional.isActive ? 'text-gray-500' : 'text-gray-800'}`}>
+                        {professional.name}
+                      </h3>
+                      <p className={`text-sm ${!professional.isActive ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {professional.title}
+                      </p>
                     </div>
-                    {professional.isFeatured && (
-                      <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
-                        Destaque
-                      </span>
-                    )}
+                    <div className="flex gap-1">
+                      {professional.isFeatured && (
+                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs font-medium">
+                          Destaque
+                        </span>
+                      )}
+                      {!professional.isActive && (
+                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                          Inativa
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <p className="text-gray-700 text-sm mb-3 line-clamp-2">
+                  <p className={`text-sm mb-3 line-clamp-2 ${!professional.isActive ? 'text-gray-400' : 'text-gray-700'}`}>
                     {professional.shortDescription}
                   </p>
 

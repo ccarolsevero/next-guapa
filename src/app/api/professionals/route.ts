@@ -7,7 +7,7 @@ export async function GET() {
     console.log('Buscando profissionais do MongoDB...')
     
     await connectDB()
-    const professionals = await Professional.find({ isActive: true }).sort({ name: 1 })
+    const professionals = await Professional.find({}).sort({ name: 1 })
     console.log('Profissionais encontrados:', professionals.length)
     
     return NextResponse.json(professionals)
