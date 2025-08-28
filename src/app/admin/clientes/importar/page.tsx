@@ -247,16 +247,33 @@ export default function ImportarClientesPage() {
             <p className="text-sm text-gray-600 mb-4">
               Formatos aceitos: .xlsx, .xls (máximo 10MB)
             </p>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Selecionar Arquivo
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Selecionar Arquivo
+              </button>
+              <button
+                onClick={() => {
+                  const input = document.createElement('input')
+                  input.type = 'file'
+                  input.onchange = (e) => {
+                    const target = e.target as HTMLInputElement
+                    if (target.files && target.files[0]) {
+                      handleFile(target.files[0])
+                    }
+                  }
+                  input.click()
+                }}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors block w-full"
+              >
+                Selecionar Arquivo (Alternativo)
+              </button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls"
               onChange={handleFileSelect}
               className="hidden"
             />
