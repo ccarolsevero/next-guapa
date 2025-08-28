@@ -13,7 +13,9 @@ export default function CadastroPage() {
     email: '',
     phone: '',
     address: '',
-    notes: ''
+    notes: '',
+    password: '',
+    confirmPassword: ''
   })
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,6 +56,18 @@ export default function CadastroPage() {
       newErrors.address = 'Endereço é obrigatório'
     }
 
+    if (!formData.password.trim()) {
+      newErrors.password = 'Senha é obrigatória'
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Senha deve ter pelo menos 6 caracteres'
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      newErrors.confirmPassword = 'Confirme sua senha'
+    } else if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Senhas não coincidem'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -87,7 +101,7 @@ export default function CadastroPage() {
           phone: formData.phone,
           address: formData.address,
           notes: formData.notes,
-          password: 'senha123' // Senha padrão temporária
+          password: formData.password
         })
       })
 
@@ -234,6 +248,70 @@ export default function CadastroPage() {
                 />
                 {errors.address && (
                   <p className="mt-1 text-sm text-red-400">{errors.address}</p>
+                )}
+              </div>
+
+              {/* Senha */}
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-[#f2dcbc] mb-2">
+                  <Lock className="w-4 h-4 inline mr-2" />
+                  Senha
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
+                      errors.password ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    style={{ color: '#000000' }}
+                    placeholder="Digite sua senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+                )}
+              </div>
+
+              {/* Confirmar Senha */}
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#f2dcbc] mb-2">
+                  <Lock className="w-4 h-4 inline mr-2" />
+                  Confirmar Senha
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={`w-full px-4 py-3 pr-12 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
+                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    }`}
+                    style={{ color: '#000000' }}
+                    placeholder="Confirme sua senha"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>
                 )}
               </div>
 
