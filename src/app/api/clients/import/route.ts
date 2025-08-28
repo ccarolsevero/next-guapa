@@ -25,11 +25,6 @@ interface ProcessedClient {
   birthDate?: Date
   address?: string
   notes?: string
-  totalAppointments: number
-  totalSpent: number
-  lastVisit?: Date
-  averageTicket: number
-  servicesHistory: string[]
 }
 
 export async function POST(request: NextRequest) {
@@ -97,14 +92,16 @@ export async function POST(request: NextRequest) {
           phone: row.telefone.trim(),
           birthDate: row.dataNascimento ? new Date(row.dataNascimento) : undefined,
           address: row.endereco?.trim() || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-          notes: row.observacoes?.trim() || '',
-          totalAppointments: parseInt(row.totalVisitas?.toString() || '0'),
-          totalSpent: parseFloat(row.valorTotal?.toString() || '0'),
-          lastVisit: row.ultimaVisita ? new Date(row.ultimaVisita) : undefined,
-          averageTicket: parseFloat(row.ticketMedio?.toString() || '0'),
-          servicesHistory: row.servicosRealizados ? 
-            row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
+          notes: row.observacoes?.trim() || ''
         }
+
+        // Preparar dados adicionais para as observações
+        const totalVisitas = parseInt(row.totalVisitas?.toString() || '0')
+        const valorTotal = parseFloat(row.valorTotal?.toString() || '0')
+        const ticketMedio = parseFloat(row.ticketMedio?.toString() || '0')
+        const ultimaVisita = row.ultimaVisita ? new Date(row.ultimaVisita) : undefined
+        const servicosRealizados = row.servicosRealizados ? 
+          row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
 
         await connectDB()
         
@@ -113,6 +110,9 @@ export async function POST(request: NextRequest) {
 
         if (existingClient) {
           // Atualizar cliente existente
+          // Preparar observações atualizadas
+          const updatedNotes = `${processedClient.notes || existingClient.notes || ''}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
+
           const updatedClient = await Client.findByIdAndUpdate(
             existingClient._id,
             {
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
               phone: processedClient.phone,
               birthDate: processedClient.birthDate,
               address: processedClient.address,
-              notes: processedClient.notes || existingClient.notes,
+              notes: updatedNotes,
             },
             { new: true }
           )
@@ -135,13 +135,16 @@ export async function POST(request: NextRequest) {
           // Criar novo cliente
           const hashedPassword = await bcrypt.hash('123456', 12) // Senha padrão
           
+          // Preparar observações para novo cliente
+          const newClientNotes = `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
+
           const newClient = await Client.create({
             name: processedClient.name,
             email: processedClient.email,
             phone: processedClient.phone,
             birthDate: processedClient.birthDate,
             address: processedClient.address,
-            notes: `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${processedClient.totalAppointments}\nValor total: R$ ${processedClient.totalSpent.toFixed(2)}\nTicket médio: R$ ${processedClient.averageTicket.toFixed(2)}\nÚltima visita: ${processedClient.lastVisit ? processedClient.lastVisit.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${processedClient.servicesHistory.join(', ')}`,
+            notes: newClientNotes,
             password: hashedPassword
           })
 
