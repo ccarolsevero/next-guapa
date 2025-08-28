@@ -100,39 +100,26 @@ export default function HomePage() {
   const [homePhotos, setHomePhotos] = useState<HomePhoto[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Buscar fotos da home do banco de dados
+  // Carregar fotos estáticas da home
   useEffect(() => {
-    const fetchHomePhotos = async () => {
+    const loadHomePhotos = () => {
       try {
-        const response = await fetch('/api/home-gallery')
-        if (response.ok) {
-          const photos = await response.json()
-          setHomePhotos(photos)
-        } else {
-          console.error('Erro ao buscar fotos da home')
-          // Fallback para imagens estáticas se não conseguir buscar do banco
-          setHomePhotos([
-            { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
-            { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
-            { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
-            { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
-          ])
-        }
-      } catch (error) {
-        console.error('Erro ao buscar fotos da home:', error)
-        // Fallback para imagens estáticas
-        setHomePhotos([
+        // Usar fotos estáticas diretamente
+        const staticPhotos = [
           { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
           { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
           { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
           { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
-        ])
+        ]
+        setHomePhotos(staticPhotos)
+      } catch (error) {
+        console.error('Erro ao carregar fotos da home:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchHomePhotos()
+    loadHomePhotos()
   }, [])
 
   // Auto slide para as fotos da home
