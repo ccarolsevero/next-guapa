@@ -87,12 +87,35 @@ export async function POST(request: NextRequest) {
       try {
         // Debug: mostrar todas as colunas disponíveis
         console.log(`Linha ${rowNumber} - Colunas disponíveis:`, Object.keys(row))
+        console.log(`Linha ${rowNumber} - Dados completos:`, row)
         
-        // Mapear colunas específicas do arquivo - tentar múltiplas opções
-        const nome = row.nome || row['1'] || row['A'] || row['Cliente'] || row['Nome'] || row['NOME'] || row['Name'] || row['name']
-        const email = row.email || row['F'] || row['Email'] || row['E-mail'] || row['EMAIL'] || row['email']
-        const telefone = row.telefone || row['E'] || row['Celular'] || row['Telefone'] || row['Phone'] || row['TELEFONE'] || row['telefone'] || row['Phone']
-        const dataCadastro = row.dataCadastro || row['R'] || row['Data de cadastro'] || row['Cadastrado'] || row['DATA'] || row['data']
+        // Mapeamento automático baseado no conteúdo das colunas
+        let nome = ''
+        let email = ''
+        let telefone = ''
+        let dataCadastro = ''
+        
+        // Procurar por nome (primeira coluna ou coluna com "nome", "cliente", etc.)
+        for (const [key, value] of Object.entries(row)) {
+          const keyLower = key.toLowerCase()
+          const valueStr = String(value || '').trim()
+          
+          if (!nome && (keyLower.includes('nome') || keyLower.includes('cliente') || key === '1' || key === 'A')) {
+            nome = valueStr
+          }
+          
+          if (!email && (keyLower.includes('email') || key === 'F' || valueStr.includes('@'))) {
+            email = valueStr
+          }
+          
+          if (!telefone && (keyLower.includes('telefone') || keyLower.includes('celular') || key === 'E' || keyLower.includes('phone'))) {
+            telefone = valueStr
+          }
+          
+          if (!dataCadastro && (keyLower.includes('data') || keyLower.includes('cadastro') || key === 'R')) {
+            dataCadastro = valueStr
+          }
+        }
         
         // Debug: mostrar valores encontrados
         console.log(`Linha ${rowNumber} - Valores encontrados:`, { nome, email, telefone, dataCadastro })
