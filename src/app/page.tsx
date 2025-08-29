@@ -92,17 +92,33 @@ const testimonials = [
   }
 ]
 
+interface Professional {
+  _id: string
+  name: string
+  title: string
+  email: string
+  phone: string
+  shortDescription: string
+  fullDescription: string
+  services: string[]
+  profileImage: string
+  gallery: string[]
+  isActive: boolean
+  isFeatured: boolean
+}
+
 export default function HomePage() {
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [currentSlide, setCurrentSlide] = useState(0)
   const [homePhotos, setHomePhotos] = useState<HomePhoto[]>([])
+  const [professionals, setProfessionals] = useState<Professional[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Carregar fotos estáticas da home
+  // Carregar fotos estáticas da home e profissionais
   useEffect(() => {
-    const loadHomePhotos = () => {
+    const loadData = async () => {
       try {
         // Usar fotos estáticas diretamente
         const staticPhotos = [
@@ -112,14 +128,21 @@ export default function HomePage() {
           { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
         ]
         setHomePhotos(staticPhotos)
+
+        // Carregar profissionais do banco
+        const response = await fetch('/api/professionals')
+        if (response.ok) {
+          const data = await response.json()
+          setProfessionals(data)
+        }
       } catch (error) {
-        console.error('Erro ao carregar fotos da home:', error)
+        console.error('Erro ao carregar dados:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    loadHomePhotos()
+    loadData()
   }, [])
 
   // Auto slide para as fotos da home
@@ -649,34 +672,36 @@ export default function HomePage() {
                 </div>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
-                    <img 
-                      src="/assents/ciceraperfil.jpeg" 
-                      alt="Cicera Canovas" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = '/assents/fotobruna.jpeg'
-                      }}
-                    />
+              {professionals.filter(p => p.name.toLowerCase().includes('cicera')).map((professional, index) => (
+                <div key={professional._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
+                  <div className="text-center mb-4 md:mb-6">
+                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
+                      <img 
+                        src={professional.profileImage} 
+                        alt={professional.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = '/assents/fotobruna.jpeg'
+                        }}
+                      />
+                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>{professional.name}</h3>
+                    <p className="text-[#d34d4c] font-medium font-body">{professional.title}</p>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>Cicera Canovas</h3>
-                  <p className="text-[#d34d4c] font-medium font-body">Terapeuta Capilar Naturalista</p>
+                  <p className="text-base md:text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
+                    {professional.shortDescription}
+                  </p>
+                  <div className="mt-4 md:mt-6 flex justify-center">
+                    <Link 
+                      href={`/profissionais/${professional.name.toLowerCase()}`}
+                      className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
+                    >
+                      Saiba Mais
+                    </Link>
+                  </div>
                 </div>
-                <p className="text-base md:text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
-                  Terapeuta capilar naturalista, trata de todas as disfunções do couro cabeludo com procedimentos não invasivos e naturalistas.
-                </p>
-                <div className="mt-4 md:mt-6 flex justify-center">
-                  <Link 
-                    href="/profissionais/cicera"
-                    className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
-                  >
-                    Saiba Mais
-                  </Link>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
