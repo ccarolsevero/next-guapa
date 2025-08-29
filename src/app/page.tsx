@@ -651,15 +651,22 @@ export default function HomePage() {
               
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
                 <div className="text-center mb-4 md:mb-6">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 flex items-center justify-center">
-                    <User className="w-12 h-12 md:w-16 md:h-16 text-white" />
+                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
+                    <img 
+                      src="/assents/ciceraperfil.jpeg" 
+                      alt="Cicera Canovas" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = '/assents/fotobruna.jpeg'
+                      }}
+                    />
                   </div>
                   <h3 className="text-xl md:text-2xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>Cicera Canovas</h3>
-                  <p className="text-[#d34d4c] font-medium font-body">Tricoterapeuta</p>
+                  <p className="text-[#d34d4c] font-medium font-body">Terapeuta Capilar Naturalista</p>
                 </div>
                 <p className="text-base md:text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
-                  Especialista em tratamentos naturais do couro cabeludo e fios. 
-                  Utiliza técnicas 100% naturalistas, sem química, priorizando a saúde capilar.
+                  Terapeuta capilar naturalista, trata de todas as disfunções do couro cabeludo com procedimentos não invasivos e naturalistas.
                 </p>
                 <div className="mt-4 md:mt-6 flex justify-center">
                   <Link 
