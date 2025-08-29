@@ -457,11 +457,11 @@ export default function HomePage() {
                     style={{ marginBottom: '0', display: 'block', marginTop: '0', paddingBottom: '0' }}
                   />
                   <p className="text-2xl md:text-4xl mb-4 md:mb-8 leading-none font-medium font-heading text-center md:text-left" style={{ color: '#f2dcbc', marginTop: '-80px' }}>
-                    Beleza é liberdade. Belo é ser livre.
+                    Um salão que não parece salão. Sua beleza natural e criativa.
                   </p>
                 </div>
                 <p className="text-base md:text-lg mb-6 md:mb-12 leading-relaxed font-medium text-center md:text-left" style={{ color: '#f2dcbc' }}>
-                  Bem-vinda ao Espaço Guapa – onde a beleza natural dos seus cabelos é respeitada e valorizada. Aqui, você encontra um refúgio de cuidado, com tratamentos sem química que respeitam cada fio e preservam a saúde do couro cabeludo.
+                  Bem vinda ao Espaço Guapa! Onde sua beleza natural é respeitada, e os seus desejos criativos atendidos. Somos o primeiro salão visagista especialista em cabelos livres de química em Leme.
                 </p>
                 <div className="text-center md:text-left mb-8 md:mb-0">
                   <Link 
@@ -566,7 +566,11 @@ export default function HomePage() {
               Sobre Nós
             </h2>
             <p className="text-lg md:text-xl leading-relaxed font-body mb-0" style={{ color: '#f2dcbc' }}>
-              No Espaço Guapa, nossa missão é ajudar você a descobrir e expressar a beleza natural dos seus cabelos. Sob o olhar atencioso das nossas cabeleireiras, unimos consultoria capilar, cortes personalizados e colorimetria, tudo com consciência e respeito à fibra capilar. A tricoterapeuta naturalista Cícera Canovas complementa esse cuidado com tratamentos naturais especializados que fortalecem e revitalizam desde a raiz, sem abrir mão da saúde do seu cabelo. Trabalhamos com produtos da Keune Haircosmetics, referência em qualidade e inovação.
+              Somos um jovem salão, idealizado pela cabeleireira visagista Bruna Canovas (<a href="https://www.instagram.com/brudoscabelos/" target="_blank" rel="noopener noreferrer" className="text-[#d34d4c] hover:underline">@brudoscabelos</a>) que inaugurou em janeiro de 2021 seu primeiro espaço. Cresceu, ganhou forças com a parceria de uma equipe alinhada e hoje existe como o Espaço Guapa, um salão que vai além da beleza puramente pela estética, mas que se conecta com intenção em cada atendimento, que é exclusivo.
+              <br /><br />
+              Aqui, atendemos com hora agendada, sem esperas e encaixes, respeitamos seu tempo e a sua confiança no nosso trabalho.
+              <br /><br />
+              E sob o olhar atencioso das nossas cabeleireiras, unimos visagismo, consultoria capilar, cortes personalizados e colorimetria, tudo com consciência e respeito à saúde capilar. A tricoterapeuta naturalista Cícera Canovas complementa esse cuidado com tratamentos naturais especializados que fortalecem e revitalizam o couro cabeludo, sem abrir mão da saúde do seu cabelo. Trabalhamos com produtos da Keune Haircosmetics, referência mundial em qualidade e inovação.
             </p>
           </div>
         </section>
