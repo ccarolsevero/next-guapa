@@ -2,27 +2,38 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Professional from '@/models/Professional'
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    console.log('Buscando profissional:', params.id)
+    const { id } = params
+    console.log('Buscando profissional com ID/nome:', id)
     
     await connectDB()
-    const professional = await Professional.findById(params.id)
     
-    if (!professional) {
-      return NextResponse.json(
-        { error: 'Profissional não encontrado' },
-        { status: 404 }
-      )
+    let professional
+    
+    // Se o ID parece ser um ObjectId válido, busca por ID
+    if (/^[0-9a-fA-F]{24}$/.test(id)) {
+      professional = await Professional.findById(id)
+    } else {
+      // Se não é um ObjectId, busca por nome
+      professional = await Professional.findOne({ 
+        name: { $regex: new RegExp(id, 'i') } 
+      })
     }
     
+    if (!professional) {
+      console.log('Profissional não encontrado:', id)
+      return NextResponse.json({ error: 'Profissional não encontrado' }, { status: 404 })
+    }
+    
+    console.log('Profissional encontrado:', professional.name)
     return NextResponse.json(professional)
   } catch (error) {
     console.error('Erro ao buscar profissional:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }
 

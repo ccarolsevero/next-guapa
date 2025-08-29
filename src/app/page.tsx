@@ -694,7 +694,7 @@ export default function HomePage() {
                   </p>
                   <div className="mt-4 md:mt-6 flex justify-center">
                     <Link 
-                      href={`/profissionais/${professional.name.toLowerCase()}`}
+                      href="/profissionais/cicera"
                       className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
                     >
                       Saiba Mais
@@ -719,8 +719,16 @@ export default function HomePage() {
               <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
                 <div className="text-center">
                   <div className="mb-6">
-                    <div className="h-24 w-24 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
-                      <span className="text-white text-2xl font-bold">K</span>
+                    <div className="h-24 w-24 mx-auto mb-4 flex items-center justify-center">
+                      <img 
+                        src="/assents/keunehome.png" 
+                        alt="Keune Haircosmetics" 
+                        className="h-full w-full object-contain"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = '/assents/fotobruna.jpeg'
+                        }}
+                      />
                     </div>
                   </div>
                   <h3 className="text-3xl font-bold font-heading mb-4" style={{ color: '#f2dcbc' }}>
