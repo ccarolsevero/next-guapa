@@ -677,28 +677,7 @@ export default function EditarSite() {
     }
   }
 
-  const exportData = async () => {
-    try {
-      // Por enquanto, vamos apenas mostrar uma mensagem
-      alert('Funcionalidade de exportação em desenvolvimento')
-    } catch (error) {
-      console.error('Erro ao exportar dados:', error)
-      alert('Erro ao exportar dados')
-    }
-  }
 
-  const importData = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    try {
-      // Por enquanto, vamos apenas mostrar uma mensagem
-      alert('Funcionalidade de importação em desenvolvimento')
-    } catch (error) {
-      console.error('Erro ao importar dados:', error)
-      alert('Erro ao importar dados')
-    }
-  }
 
   if (loading) {
     return (
@@ -717,27 +696,7 @@ export default function EditarSite() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Editar Site</h1>
 
-        {/* Backup/Restore */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Backup e Restore</h2>
-          <div className="flex gap-4">
-            <button
-              onClick={exportData}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-            >
-              Exportar Dados
-            </button>
-            <label className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 cursor-pointer">
-              Importar Dados
-              <input
-                type="file"
-                accept=".json"
-                onChange={importData}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
+
 
         {/* Galeria da Home */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -832,79 +791,7 @@ export default function EditarSite() {
           </div>
         </div>
 
-        {/* Configurações do Site */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Configurações do Site</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nome do Site
-              </label>
-              <input
-                type="text"
-                value={siteSettings.siteName}
-                onChange={(e) => setSiteSettings({...siteSettings, siteName: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Descrição
-              </label>
-              <input
-                type="text"
-                value={siteSettings.description}
-                onChange={(e) => setSiteSettings({...siteSettings, description: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Endereço
-              </label>
-              <input
-                type="text"
-                value={siteSettings.address}
-                onChange={(e) => setSiteSettings({...siteSettings, address: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WhatsApp
-              </label>
-              <input
-                type="text"
-                value={siteSettings.whatsapp}
-                onChange={(e) => setSiteSettings({...siteSettings, whatsapp: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email
-              </label>
-              <input
-                type="email"
-                value={siteSettings.email}
-                onChange={(e) => setSiteSettings({...siteSettings, email: e.target.value})}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-          
-          <button
-            onClick={saveSiteSettings}
-            className="mt-4 bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-          >
-            Salvar Configurações
-          </button>
-        </div>
+
 
         {/* Profissionais */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
