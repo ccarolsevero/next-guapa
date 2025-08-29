@@ -5,14 +5,21 @@ import Service from '@/models/Service'
 export async function GET() {
   try {
     console.log('Buscando serviços do MongoDB...')
+    console.log('MONGODB_URI:', process.env.MONGODB_URI ? 'Configurada' : 'NÃO CONFIGURADA')
     
     await connectDB()
     const services = await Service.find({ isActive: true }).sort({ category: 1, order: 1 })
     console.log('Serviços encontrados:', services.length)
     
+    if (services.length === 0) {
+      console.log('Nenhum serviço encontrado no banco, usando fallback...')
+      throw new Error('Nenhum serviço no banco')
+    }
+    
     return NextResponse.json(services)
   } catch (error) {
     console.error('Erro ao buscar serviços:', error)
+    console.log('Usando dados de fallback...')
     
     // Fallback para dados estáticos
     const fallbackServices = [

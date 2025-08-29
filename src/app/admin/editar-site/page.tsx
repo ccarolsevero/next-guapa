@@ -508,24 +508,38 @@ export default function EditarSite() {
   // Funções para modal de serviços
   const openServicesModal = (professional: Professional) => {
     setSelectedProfessional(professional)
-    setSelectedServices(professional.services)
+    // Converter IDs para nomes se necessário
+    const serviceNames = professional.services.map(serviceId => {
+      const service = availableServices.find(s => s._id === serviceId)
+      return service ? service.name : serviceId
+    })
+    setSelectedServices(serviceNames)
     setShowServicesModal(true)
   }
 
   const handleServiceToggle = (serviceId: string) => {
+    console.log('Toggle service:', serviceId)
+    const service = availableServices.find(s => s._id === serviceId)
+    if (!service) return
+    
     setSelectedServices(prev => {
-      if (prev.includes(serviceId)) {
-        return prev.filter(id => id !== serviceId)
-      } else {
-        return [...prev, serviceId]
-      }
+      const newServices = prev.includes(service.name) 
+        ? prev.filter(name => name !== service.name)
+        : [...prev, service.name]
+      console.log('New selected services:', newServices)
+      return newServices
     })
   }
 
   const handleSaveServices = async () => {
+    console.log('Salvando serviços...')
+    console.log('Selected professional:', selectedProfessional)
+    console.log('Selected services:', selectedServices)
+    
     try {
       if (selectedProfessional) {
         // Editando profissional existente
+        console.log('Editando profissional existente...')
         const response = await fetch(`/api/professionals/${selectedProfessional._id}`, {
           method: 'PUT',
           headers: {
@@ -545,6 +559,7 @@ export default function EditarSite() {
         alert('Serviços salvos com sucesso!')
       } else {
         // Criando novo profissional
+        console.log('Atualizando novo profissional...')
         setNewProfessional({
           ...newProfessional,
           services: selectedServices
@@ -1169,26 +1184,23 @@ export default function EditarSite() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedProfessional.services.map((serviceId, index) => {
-                    const service = availableServices.find(s => s._id === serviceId)
-                    return service ? (
-                      <span
-                        key={index}
-                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                  {selectedProfessional.services.map((serviceName, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {serviceName}
+                      <button
+                        onClick={() => {
+                          const newServices = selectedProfessional.services.filter((_, i) => i !== index)
+                          setSelectedProfessional({...selectedProfessional, services: newServices})
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
                       >
-                        {service.name}
-                        <button
-                          onClick={() => {
-                            const newServices = selectedProfessional.services.filter((_, i) => i !== index)
-                            setSelectedProfessional({...selectedProfessional, services: newServices})
-                          }}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ) : null
-                  })}
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -1389,26 +1401,23 @@ export default function EditarSite() {
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {newProfessional.services.map((serviceId, index) => {
-                    const service = availableServices.find(s => s._id === serviceId)
-                    return service ? (
-                      <span
-                        key={index}
-                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                  {newProfessional.services.map((serviceName, index) => (
+                    <span
+                      key={index}
+                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {serviceName}
+                      <button
+                        onClick={() => {
+                          const newServices = newProfessional.services.filter((_, i) => i !== index)
+                          setNewProfessional({...newProfessional, services: newServices})
+                        }}
+                        className="text-blue-600 hover:text-blue-800"
                       >
-                        {service.name}
-                        <button
-                          onClick={() => {
-                            const newServices = newProfessional.services.filter((_, i) => i !== index)
-                            setNewProfessional({...newProfessional, services: newServices})
-                          }}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          ×
-                        </button>
-                      </span>
-                    ) : null
-                  })}
+                        ×
+                      </button>
+                    </span>
+                  ))}
                 </div>
               </div>
 
@@ -1506,21 +1515,26 @@ export default function EditarSite() {
                 {availableServices.map((service) => (
                   <div
                     key={service._id}
-                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                    className={`border rounded-lg p-4 transition-colors ${
                       selectedServices.includes(service._id)
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
-                    onClick={() => handleServiceToggle(service._id)}
                   >
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
-                        checked={selectedServices.includes(service._id)}
-                        onChange={() => handleServiceToggle(service._id)}
-                        className="mt-1"
+                        checked={selectedServices.includes(service.name)}
+                        onChange={(e) => {
+                          e.stopPropagation()
+                          handleServiceToggle(service._id)
+                        }}
+                        className="mt-1 cursor-pointer"
                       />
-                      <div className="flex-1">
+                      <div 
+                        className="flex-1 cursor-pointer"
+                        onClick={() => handleServiceToggle(service._id)}
+                      >
                         <h4 className="font-medium text-gray-900">{service.name}</h4>
                         <p className="text-sm text-gray-600 mt-1">{service.description}</p>
                         <p className="text-sm font-medium text-[#D15556] mt-1">
