@@ -26,6 +26,16 @@ interface HomePhoto {
   updatedAt: string
 }
 
+interface Service {
+  _id: string
+  name: string
+  category: string
+  description: string
+  price: number
+  isActive: boolean
+  order: number
+}
+
 interface Professional {
   _id: string
   name: string
@@ -68,7 +78,10 @@ export default function EditarSite() {
   const [loading, setLoading] = useState(true)
   const [showAddProfessionalModal, setShowAddProfessionalModal] = useState(false)
   const [showEditProfessionalModal, setShowEditProfessionalModal] = useState(false)
+  const [showServicesModal, setShowServicesModal] = useState(false)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+  const [availableServices, setAvailableServices] = useState<Service[]>([])
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [newProfessional, setNewProfessional] = useState({
     name: '',
     title: 'Cabeleireira',
@@ -106,7 +119,8 @@ export default function EditarSite() {
       await Promise.all([
         loadHomeGallery(),
         loadProfessionals(),
-        loadSiteSettings()
+        loadSiteSettings(),
+        loadAvailableServices()
       ])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -161,6 +175,22 @@ export default function EditarSite() {
       setSiteSettings(settings)
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
+    }
+  }
+
+  const loadAvailableServices = async () => {
+    try {
+      console.log('Carregando serviços disponíveis...')
+      const response = await fetch('/api/services')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar serviços')
+      }
+      const services: Service[] = await response.json()
+      console.log('Serviços carregados:', services.length)
+      setAvailableServices(services.filter(service => service.isActive))
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error)
+      setAvailableServices([])
     }
   }
 
@@ -473,6 +503,62 @@ export default function EditarSite() {
       ...newProfessional,
       gallery: newProfessional.gallery.filter((_, i) => i !== index)
     })
+  }
+
+  // Funções para modal de serviços
+  const openServicesModal = (professional: Professional) => {
+    setSelectedProfessional(professional)
+    setSelectedServices(professional.services)
+    setShowServicesModal(true)
+  }
+
+  const handleServiceToggle = (serviceId: string) => {
+    setSelectedServices(prev => {
+      if (prev.includes(serviceId)) {
+        return prev.filter(id => id !== serviceId)
+      } else {
+        return [...prev, serviceId]
+      }
+    })
+  }
+
+  const handleSaveServices = async () => {
+    try {
+      if (selectedProfessional) {
+        // Editando profissional existente
+        const response = await fetch(`/api/professionals/${selectedProfessional._id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...selectedProfessional,
+            services: selectedServices
+          })
+        })
+
+        if (!response.ok) {
+          throw new Error('Erro ao salvar serviços')
+        }
+
+        await loadProfessionals()
+        alert('Serviços salvos com sucesso!')
+      } else {
+        // Criando novo profissional
+        setNewProfessional({
+          ...newProfessional,
+          services: selectedServices
+        })
+        alert('Serviços selecionados! Continue preenchendo os outros campos.')
+      }
+
+      setShowServicesModal(false)
+      setSelectedProfessional(null)
+      setSelectedServices([])
+    } catch (error) {
+      console.error('Erro ao salvar serviços:', error)
+      alert('Erro ao salvar serviços')
+    }
   }
 
   // Funções para editar profissional
@@ -1075,40 +1161,34 @@ export default function EditarSite() {
                   Serviços Oferecidos
                 </label>
                 <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={selectedProfessional.newService || ''}
-                    onChange={(e) => setSelectedProfessional({...selectedProfessional, newService: e.target.value})}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
-                    placeholder="Ex: Corte, Coloração, Tratamento"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && selectedProfessional.newService?.trim()) {
-                        handleAddServiceToEdit()
-                      }
-                    }}
-                  />
                   <button
-                    onClick={handleAddServiceToEdit}
+                    onClick={() => openServicesModal(selectedProfessional)}
                     className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    +
+                    Selecionar Serviços
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {selectedProfessional.services.map((service, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                    >
-                      {service}
-                      <button
-                        onClick={() => handleRemoveServiceFromEdit(index)}
-                        className="text-blue-600 hover:text-blue-800"
+                  {selectedProfessional.services.map((serviceId, index) => {
+                    const service = availableServices.find(s => s._id === serviceId)
+                    return service ? (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        {service.name}
+                        <button
+                          onClick={() => {
+                            const newServices = selectedProfessional.services.filter((_, i) => i !== index)
+                            setSelectedProfessional({...selectedProfessional, services: newServices})
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ) : null
+                  })}
                 </div>
               </div>
 
@@ -1298,40 +1378,37 @@ export default function EditarSite() {
                   Serviços Oferecidos
                 </label>
                 <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    value={newProfessional.newService}
-                    onChange={(e) => setNewProfessional({...newProfessional, newService: e.target.value})}
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
-                    placeholder="Adicionar serviço"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && newProfessional.newService.trim()) {
-                        handleAddService()
-                      }
-                    }}
-                  />
                   <button
-                    onClick={handleAddService}
+                    onClick={() => {
+                      setSelectedServices(newProfessional.services)
+                      setShowServicesModal(true)
+                    }}
                     className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    +
+                    Selecionar Serviços
                   </button>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {newProfessional.services.map((service, index) => (
-                    <span
-                      key={index}
-                      className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                    >
-                      {service}
-                      <button
-                        onClick={() => handleRemoveService(index)}
-                        className="text-blue-600 hover:text-blue-800"
+                  {newProfessional.services.map((serviceId, index) => {
+                    const service = availableServices.find(s => s._id === serviceId)
+                    return service ? (
+                      <span
+                        key={index}
+                        className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
                       >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                        {service.name}
+                        <button
+                          onClick={() => {
+                            const newServices = newProfessional.services.filter((_, i) => i !== index)
+                            setNewProfessional({...newProfessional, services: newServices})
+                          }}
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ) : null
+                  })}
                 </div>
               </div>
 
@@ -1397,6 +1474,83 @@ export default function EditarSite() {
                   className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Adicionar Profissional
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Seleção de Serviços */}
+      {showServicesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-[#006D5B]">
+                  Selecionar Serviços
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowServicesModal(false)
+                    setSelectedProfessional(null)
+                    setSelectedServices([])
+                  }}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {availableServices.map((service) => (
+                  <div
+                    key={service._id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-colors ${
+                      selectedServices.includes(service._id)
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleServiceToggle(service._id)}
+                  >
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedServices.includes(service._id)}
+                        onChange={() => handleServiceToggle(service._id)}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{service.name}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{service.description}</p>
+                        <p className="text-sm font-medium text-[#D15556] mt-1">
+                          R$ {service.price.toFixed(2)}
+                        </p>
+                        <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded mt-2">
+                          {service.category}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setShowServicesModal(false)
+                    setSelectedProfessional(null)
+                    setSelectedServices([])
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveServices}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
+                >
+                  Salvar Serviços
                 </button>
               </div>
             </div>

@@ -6,6 +6,16 @@ import { ArrowLeft, ArrowRight, Calendar, Scissors, Sparkles, User, MapPin, Phon
 import LayoutPublic from '../../layout-public'
 import { useParams } from 'next/navigation'
 
+interface Service {
+  _id: string
+  name: string
+  category: string
+  description: string
+  price: number
+  isActive: boolean
+  order: number
+}
+
 interface Professional {
   _id: string
   name: string
@@ -36,12 +46,19 @@ export default function ProfessionalPage() {
   const professionalId = params.id as string
   
   const [professional, setProfessional] = useState<Professional | null>(null)
+  const [professionalServices, setProfessionalServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
 
   useEffect(() => {
     loadProfessional()
   }, [professionalId])
+
+  useEffect(() => {
+    if (professional) {
+      loadProfessionalServices()
+    }
+  }, [professional])
 
   const loadProfessional = async () => {
     try {
@@ -78,6 +95,29 @@ export default function ProfessionalPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadProfessionalServices = async () => {
+    if (!professional) return
+
+    try {
+      // Buscar todos os serviços
+      const response = await fetch('/api/services')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar serviços')
+      }
+      const allServices: Service[] = await response.json()
+      
+      // Filtrar apenas os serviços que a profissional oferece
+      const services = allServices.filter(service => 
+        professional.services.includes(service._id)
+      )
+      
+      setProfessionalServices(services)
+    } catch (error) {
+      console.error('Erro ao carregar serviços da profissional:', error)
+      setProfessionalServices([])
     }
   }
 
@@ -185,26 +225,37 @@ export default function ProfessionalPage() {
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {defaultServices.map((service, index) => (
-              <div key={service.name} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#d34d4c] rounded-full flex items-center justify-center">
-                    <Scissors className="w-6 h-6 text-white" />
+            {professionalServices.length > 0 ? (
+              professionalServices.map((service) => (
+                <div key={service._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-[#d34d4c] rounded-full flex items-center justify-center">
+                      <Scissors className="w-6 h-6 text-white" />
+                    </div>
+                    <span className="text-xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
                   </div>
-                  <span className="text-xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
+                  <h3 className="text-xl font-bold font-heading mb-3" style={{ color: '#f2dcbc' }}>{service.name}</h3>
+                  <p className="text-base md:text-lg font-body leading-relaxed mb-4" style={{ color: '#f2dcbc' }}>
+                    {service.description}
+                  </p>
+                  <div className="mb-4">
+                    <span className="inline-block bg-[#d34d4c]/20 text-[#d34d4c] text-xs px-2 py-1 rounded">
+                      {service.category}
+                    </span>
+                  </div>
+                  <Link 
+                    href="/login-cliente"
+                    className="bg-[#d34d4c] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 text-sm font-medium inline-block w-full text-center"
+                  >
+                    Agendar
+                  </Link>
                 </div>
-                <h3 className="text-xl font-bold font-heading mb-3" style={{ color: '#f2dcbc' }}>{service.name}</h3>
-                <p className="text-base md:text-lg font-body leading-relaxed mb-4" style={{ color: '#f2dcbc' }}>
-                  {service.description}
-                </p>
-                <Link 
-                  href="/login-cliente"
-                  className="bg-[#d34d4c] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 text-sm font-medium inline-block w-full text-center"
-                >
-                  Agendar
-                </Link>
+              ))
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <p className="text-lg text-[#f2dcbc]">Nenhum serviço cadastrado para esta profissional.</p>
               </div>
-            ))}
+            )}
           </div>
         </div>
       </section>
