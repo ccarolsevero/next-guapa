@@ -482,8 +482,11 @@ export default function EditarSite() {
   }
 
   const handleAddGalleryImage = () => {
-    console.log('Tentando adicionar foto:', newProfessional.newGalleryImage)
-    if (newProfessional.newGalleryImage.trim()) {
+    console.log('handleAddGalleryImage chamada')
+    console.log('newProfessional:', newProfessional)
+    console.log('newGalleryImage:', newProfessional.newGalleryImage)
+    
+    if (newProfessional.newGalleryImage?.trim()) {
       const newImage = newProfessional.newGalleryImage.trim()
       console.log('Adicionando foto:', newImage)
       setNewProfessional({
@@ -492,6 +495,8 @@ export default function EditarSite() {
         newGalleryImage: ''
       })
       console.log('Galeria após adicionar:', [...newProfessional.gallery, newImage])
+    } else {
+      console.log('newGalleryImage está vazio ou undefined')
     }
   }
 
@@ -634,13 +639,21 @@ export default function EditarSite() {
   }
 
   const handleAddGalleryImageToEdit = () => {
+    console.log('handleAddGalleryImageToEdit chamada')
+    console.log('selectedProfessional:', selectedProfessional)
+    console.log('newGalleryImage:', selectedProfessional?.newGalleryImage)
+    
     if (selectedProfessional?.newGalleryImage?.trim()) {
       const newImage = selectedProfessional.newGalleryImage.trim()
+      console.log('Adicionando nova imagem:', newImage)
       setSelectedProfessional({
         ...selectedProfessional,
         gallery: [...selectedProfessional.gallery, newImage],
         newGalleryImage: ''
       })
+      console.log('Galeria atualizada')
+    } else {
+      console.log('newGalleryImage está vazio ou undefined')
     }
   }
 
@@ -1207,7 +1220,7 @@ export default function EditarSite() {
                       <img
                         src={image}
                         alt={`Foto ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
+                        className="w-full h-24 object-contain rounded-lg bg-[#006D5B]"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
                           target.src = '/assents/fotobruna.jpeg'
@@ -1461,7 +1474,7 @@ export default function EditarSite() {
                       <img
                         src={image}
                         alt={`Foto ${index + 1}`}
-                        className="w-full h-24 object-cover rounded-lg"
+                        className="w-full h-24 object-contain rounded-lg bg-[#006D5B]"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
                           target.src = '/assents/fotobruna.jpeg'

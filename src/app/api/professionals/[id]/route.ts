@@ -19,9 +19,24 @@ export async function GET(
       professional = await Professional.findById(id)
     } else {
       // Se não é um ObjectId, busca por nome
+      // Busca por nome que contenha o termo (case-insensitive)
       professional = await Professional.findOne({ 
         name: { $regex: new RegExp(id, 'i') } 
       })
+      
+      // Se não encontrar, tenta buscar por nome que comece com o termo
+      if (!professional) {
+        professional = await Professional.findOne({ 
+          name: { $regex: new RegExp(`^${id}`, 'i') } 
+        })
+      }
+      
+      // Se ainda não encontrar, tenta buscar por nome que contenha o termo em qualquer parte
+      if (!professional) {
+        professional = await Professional.findOne({ 
+          name: { $regex: new RegExp(`.*${id}.*`, 'i') } 
+        })
+      }
     }
     
     if (!professional) {

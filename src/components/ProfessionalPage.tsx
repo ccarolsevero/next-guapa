@@ -246,7 +246,7 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
                 <img 
                   src={professional.gallery[currentImageIndex]} 
                   alt={`Trabalho ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-[#006D5B]"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = '/assents/fotobruna.jpeg'

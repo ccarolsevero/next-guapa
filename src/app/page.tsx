@@ -618,42 +618,36 @@ export default function HomePage() {
               <div className="w-24 h-1 bg-[#006D5B] mx-auto mt-6 md:mt-8"></div>
             </div>
             
-            {/* Cards dos Serviços em Destaque */}
-            {featuredServices.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
-                {featuredServices.slice(0, 3).map((service, index) => (
-                  <div 
-                    key={service._id}
-                    className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
-                  >
-                    <div className="text-center mb-4 md:mb-6">
-                      <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                        {service.category === 'Cortes' ? (
-                          <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        ) : service.category === 'Colorimetria' ? (
-                          <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        ) : (
-                          <Star className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                        )}
-                      </div>
-                      <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
-                        {service.name}
-                      </h3>
+            {/* Cards dos Serviços Estáticos */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
+              {servicosEspacoGuapa.map((service, index) => (
+                <div 
+                  key={service.id}
+                  className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
+                >
+                  <div className="text-center mb-4 md:mb-6">
+                    <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                      {service.name.includes('Avaliação') ? (
+                        <Star className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      ) : service.name.includes('Back To Natural') ? (
+                        <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      ) : (
+                        <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      )}
                     </div>
-                    <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
-                      {service.description}
-                    </p>
-                    <div className="text-center mt-4">
-                      <span className="text-2xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
-                    </div>
+                    <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
+                      {service.name}
+                    </h3>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-[#f2dcbc] text-lg">Carregando serviços...</p>
-              </div>
-            )}
+                  <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
+                    {service.description}
+                  </p>
+                  <div className="text-center mt-4">
+                    <span className="text-2xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
