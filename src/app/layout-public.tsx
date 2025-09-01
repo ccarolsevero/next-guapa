@@ -53,20 +53,20 @@ function LayoutPublicContent({ children }: LayoutPublicProps) {
       {/* Header */}
       <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-1 md:py-0">
+          <div className="flex justify-between items-center py-2 sm:py-3 lg:py-4">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <img 
                   src="/assents/logonavbarg.svg" 
                   alt="Espaço Guapa" 
-                  className="h-16 md:h-[120px] w-auto"
+                  className="h-12 sm:h-16 md:h-20 lg:h-24 xl:h-[120px] w-auto transition-all duration-300"
                   style={{ 
                     filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
                   }}
                 />
               </Link>
             </div>
-            <nav className="hidden md:flex space-x-12">
+            <nav className="hidden lg:flex space-x-6 xl:space-x-8 2xl:space-x-12">
               <button 
                 onClick={() => smoothScrollTo('inicio')}
                 className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer"
@@ -100,15 +100,15 @@ function LayoutPublicContent({ children }: LayoutPublicProps) {
             </nav>
             
             {/* Botão Agendar, Carrinho e Menu Mobile */}
-            <div className="flex items-center space-x-3 md:space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4">
               {/* Ícone do Carrinho */}
               <CartIcon onClick={() => setIsCartOpen(true)} />
               
               {isLoggedIn ? (
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3">
                   <Link 
                     href="/painel-cliente"
-                    className="text-[#d34d4c] font-medium text-sm hidden md:block hover:text-[#b83e3d] transition-colors cursor-pointer"
+                    className="text-[#d34d4c] font-medium text-sm hidden xl:block hover:text-[#b83e3d] transition-colors cursor-pointer"
                   >
                     Olá, {client?.name}
                   </Link>
@@ -122,7 +122,7 @@ function LayoutPublicContent({ children }: LayoutPublicProps) {
               ) : (
                 <Link 
                   href="/login-cliente"
-                  className="bg-[#d34d4c] text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm md:text-base"
+                  className="bg-[#d34d4c] text-white px-3 sm:px-4 lg:px-6 xl:px-8 py-2 lg:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm lg:text-base"
                 >
                   Agendar
                 </Link>
@@ -131,7 +131,7 @@ function LayoutPublicContent({ children }: LayoutPublicProps) {
               {/* Menu Mobile */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="md:hidden text-[#d34d4c] p-2"
+                className="lg:hidden text-[#d34d4c] p-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   {isMobileMenuOpen ? (
@@ -147,12 +147,12 @@ function LayoutPublicContent({ children }: LayoutPublicProps) {
       </header>
 
       {/* Spacer para compensar navbar fixa */}
-      <div className="-h-8 md:h-20"></div>
+      <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32"></div>
 
       {/* Menu Mobile Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed top-16 left-0 right-0 z-50 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
-          <nav className="flex flex-col space-y-4 p-6">
+        <div className="lg:hidden fixed top-16 sm:top-20 md:top-24 left-0 right-0 z-50 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
+          <nav className="flex flex-col space-y-4 p-4 sm:p-6">
             <button 
               onClick={() => {
                 smoothScrollTo('inicio')

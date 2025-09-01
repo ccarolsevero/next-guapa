@@ -73,9 +73,23 @@ export default function ProdutosPage() {
             <h1 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>
               Nossa Lojinha
             </h1>
-            <p className="text-lg md:text-xl leading-relaxed font-body" style={{ color: '#f2dcbc' }}>
+            <p className="text-lg md:text-xl leading-relaxed font-body mb-4" style={{ color: '#f2dcbc' }}>
               Produtos profissionais Keune para cuidar dos seus cabelos em casa
             </p>
+            
+            {/* Texto explicativo sobre reserva */}
+            <div className="bg-[#d34d4c]/20 backdrop-blur-sm border border-[#d34d4c]/30 rounded-lg p-4 md:p-6 max-w-3xl mx-auto">
+              <div className="flex items-center justify-center space-x-3 mb-3">
+                <ShoppingCart className="w-6 h-6 text-[#d34d4c]" />
+                <h2 className="text-lg md:text-xl font-semibold font-heading text-[#d34d4c]">
+                  Como Funciona
+                </h2>
+              </div>
+              <p className="text-base md:text-lg text-center font-body" style={{ color: '#f2dcbc' }}>
+                <strong>Reserve online</strong> os produtos que deseja e <strong>retire no salão</strong> quando for para sua consulta. 
+                Desta forma, garantimos que os produtos estarão disponíveis para você e você aproveita o tempo da consulta para levar tudo!
+              </p>
+            </div>
           </div>
         </div>
       </section>
