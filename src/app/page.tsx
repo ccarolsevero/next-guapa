@@ -9,21 +9,21 @@ import { MessageCircle as WhatsAppIcon } from 'lucide-react'
 const servicosEspacoGuapa = [
   {
     id: 1,
-    name: "Avaliação",
-    price: 60.00,
-    description: "Conversa com a profissional para avaliar seu cabelo e a possibilidade de realizar um procedimento ou não."
+    name: "Cortes que Celebram a Natureza do Cabelo",
+    price: 0,
+    description: "Cada corte é pensado para valorizar o movimento, a textura e a forma única dos seus fios sem desrespeitar sua essência. Sempre buscando alinhar a praticidade do dia a dia com a potência dos cabelos naturais."
   },
   {
     id: 2,
-    name: "Back To Natural - G",
-    price: 319.00,
-    description: "Técnica exclusiva da Keune que repigmenta cabelos loiros no tom desejado, sem avermelhar e priorizando a saúde dos fios."
+    name: "Colorimetria Criativa",
+    price: 0,
+    description: "Trabalhamos com colorações, loiros, iluminados e cores fantasia com cuidado máximo, evitando processos que comprometam a saúde capilar. Sempre buscando a melhor manutenção para a sua rotina, alinhada com as cores que representam sua personalidade"
   },
   {
     id: 3,
-    name: "Back To Natural - P",
-    price: 231.00,
-    description: "Técnica exclusiva da Keune que repigmenta cabelos loiros no tom desejado, sem avermelhar e priorizando a saúde dos fios."
+    name: "Tratamentos Naturais Tricoterapêuticos",
+    price: 0,
+    description: "Técnicas especiais que cuidam especialmente do couro cabeludo, mas também do comprimento, com fórmulas naturais e sem uso de química. Realizados com a linha Keune So Pure, o resultado: cabelo mais forte, saudável e com brilho natural."
   }
 ]
 
@@ -627,12 +627,12 @@ export default function HomePage() {
                 >
                   <div className="text-center mb-4 md:mb-6">
                     <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                      {service.name.includes('Avaliação') ? (
-                        <Star className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                      ) : service.name.includes('Back To Natural') ? (
+                      {service.name.includes('Cortes que Celebram a Natureza do Cabelo') ? (
+                        <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                      ) : service.name.includes('Colorimetria Criativa') ? (
                         <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
                       ) : (
-                        <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                        <MessageCircle className="w-6 h-6 md:w-8 md:h-8 text-white" />
                       )}
                     </div>
                     <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
@@ -642,9 +642,7 @@ export default function HomePage() {
                   <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
                     {service.description}
                   </p>
-                  <div className="text-center mt-4">
-                    <span className="text-2xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
-                  </div>
+                  {/* Removido o preço pois os novos serviços não têm preço definido */}
                 </div>
               ))}
             </div>
@@ -704,7 +702,7 @@ export default function HomePage() {
                   
                   <div className="mt-4 md:mt-6 flex justify-center">
                     <Link 
-                      href={`/profissionais/${professional.name.toLowerCase().replace(/\s+/g, '-')}`}
+                      href={`/profissionais/${professional._id}`}
                       className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
                     >
                       Saiba Mais
