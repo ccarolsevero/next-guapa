@@ -82,36 +82,43 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
 
   const loadProfessionalServices = async () => {
     if (!professional?.services) {
-      console.log('Profissional não tem serviços ou services é undefined')
+      console.log('❌ Profissional não tem serviços ou services é undefined')
+      console.log('Professional completo:', professional)
       return
     }
     
-    console.log('Carregando serviços para:', professional.name)
-    console.log('Serviços da profissional:', professional.services)
+    console.log('🔍 Carregando serviços para:', professional.name)
+    console.log('📋 Serviços da profissional:', professional.services)
+    console.log('📋 Tipo de services:', typeof professional.services)
+    console.log('📋 Array?', Array.isArray(professional.services))
     
     try {
       const response = await fetch('/api/services')
+      console.log('📡 Resposta da API de serviços:', response.status, response.ok)
+      
       if (response.ok) {
         const allServices = await response.json()
-        console.log('Todos os serviços disponíveis:', allServices.length)
-        console.log('Primeiros 3 serviços:', allServices.slice(0, 3).map(s => s.name))
+        console.log('📊 Todos os serviços disponíveis:', allServices.length)
+        console.log('📊 Primeiros 3 serviços:', allServices.slice(0, 3).map(s => s.name))
         
         // Filtrar serviços que correspondem aos nomes da profissional
         const filteredServices = allServices.filter((service: Service) => {
           const isIncluded = professional.services.includes(service.name)
-          console.log(`Serviço "${service.name}" está incluído? ${isIncluded}`)
+          console.log(`🔍 Serviço "${service.name}" está incluído? ${isIncluded}`)
           return isIncluded
         })
         
-        console.log('Serviços filtrados encontrados:', filteredServices.length)
-        console.log('Serviços filtrados:', filteredServices.map(s => s.name))
+        console.log('✅ Serviços filtrados encontrados:', filteredServices.length)
+        console.log('✅ Serviços filtrados:', filteredServices.map(s => s.name))
         
         setProfessionalServices(filteredServices)
       } else {
-        console.error('Erro na resposta da API de serviços:', response.status)
+        console.error('❌ Erro na resposta da API de serviços:', response.status)
+        const errorText = await response.text()
+        console.error('❌ Texto do erro:', errorText)
       }
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error)
+      console.error('❌ Erro ao carregar serviços:', error)
     }
   }
 
