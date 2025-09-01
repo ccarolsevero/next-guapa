@@ -111,8 +111,15 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
         
         // Filtrar serviços que correspondem aos nomes da profissional
         const filteredServices = allServices.filter((service: Service) => {
-          const isIncluded = professional.services.includes(service.name)
-          console.log(`🔍 Serviço "${service.name}" está incluído? ${isIncluded}`)
+          // Normalizar strings para comparação (remover acentos e converter para minúsculas)
+          const normalizeString = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+          
+          const normalizedServiceName = normalizeString(service.name)
+          const isIncluded = professional.services.some(serviceName => 
+            normalizeString(serviceName) === normalizedServiceName
+          )
+          
+          console.log(`🔍 Serviço "${service.name}" (normalizado: "${normalizedServiceName}") está incluído? ${isIncluded}`)
           return isIncluded
         })
         
