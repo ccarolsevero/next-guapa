@@ -186,6 +186,69 @@ export default function ProdutosPage() {
     setSelectedProducts([])
   }
 
+  // Funções para gerenciar categorias
+  const handleAddCategory = () => {
+    setEditingCategory(null)
+    setCategoryForm({ name: '', description: '' })
+    setShowCategoryModal(true)
+  }
+
+  const handleEditCategory = (categoryName: string) => {
+    setEditingCategory(categoryName)
+    setCategoryForm({ name: categoryName, description: '' })
+    setShowCategoryModal(true)
+  }
+
+  const handleSaveCategory = () => {
+    if (!categoryForm.name.trim()) {
+      alert('Nome da categoria é obrigatório')
+      return
+    }
+
+    if (editingCategory) {
+      // Editar categoria existente - atualizar produtos
+      const updatedProducts = products.map(product => 
+        product.category === editingCategory 
+          ? { ...product, category: categoryForm.name }
+          : product
+      )
+      setProducts(updatedProducts)
+    } else {
+      // Nova categoria - apenas adicionar à lista
+      if (!categories.includes(categoryForm.name)) {
+        // Não precisamos fazer nada aqui pois as categorias são extraídas dos produtos
+      }
+    }
+
+    setShowCategoryModal(false)
+    setCategoryForm({ name: '', description: '' })
+    setEditingCategory(null)
+  }
+
+  const handleDeleteCategory = (categoryName: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a categoria "${categoryName}"?`)) return
+
+    // Remover categoria dos produtos (definir como "Sem categoria")
+    const updatedProducts = products.map(product => 
+      product.category === categoryName 
+        ? { ...product, category: 'Sem categoria' }
+        : product
+    )
+    setProducts(updatedProducts)
+  }
+
+  const addDefaultCategories = () => {
+    // Adicionar categorias padrão apenas aos produtos que não têm categoria
+    const updatedProducts = products.map(product => {
+      if (!product.category || product.category === 'Sem categoria' || product.category.trim() === '') {
+        const randomCategory = defaultProductCategories[Math.floor(Math.random() * defaultProductCategories.length)]
+        return { ...product, category: randomCategory }
+      }
+      return product
+    })
+    setProducts(updatedProducts)
+  }
+
   // Toggle ativo/inativo
   const handleToggleActive = async (productId: string, newStatus: boolean) => {
     try {
@@ -239,19 +302,49 @@ export default function ProdutosPage() {
 
   // Categorias únicas
   const categories = Array.from(new Set(products.map(p => p.category)))
+  
+  // Estado para gerenciamento de categorias
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<string | null>(null)
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: ''
+  })
+  
+  // Categorias padrão para produtos
+  const defaultProductCategories = [
+    "Shampoo", "Condicionador", "Máscara", "Óleo", "Protetor Térmico",
+    "Tratamentos", "Finalizadores", "Acessórios", "Coloração", "Hidratação"
+  ]
 
   return (
     <div className="p-6">
       <div className="mb-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Gerenciar Produtos</h1>
-          <Link
-            href="/admin/produtos/novo"
-            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Produto
-          </Link>
+          <div className="flex space-x-3">
+            <button
+              onClick={addDefaultCategories}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+            >
+              <Tag className="w-4 h-4 mr-2" />
+              Adicionar Categorias Padrão
+            </button>
+            <button
+              onClick={handleAddCategory}
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            >
+              <Tag className="w-4 h-4 mr-2" />
+              Gerenciar Categorias
+            </button>
+            <Link
+              href="/admin/produtos/novo"
+              className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Produto
+            </Link>
+          </div>
         </div>
 
         {/* Estatísticas */}
@@ -337,19 +430,28 @@ export default function ProdutosPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                style={{ color: '#000000' }}
-              >
-                <option value="all">Todas as categorias</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
+              <div className="flex space-x-2">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="flex-1 px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  style={{ color: '#000000' }}
+                >
+                  <option value="all">Todas as categorias</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleAddCategory}
+                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  title="Adicionar nova categoria"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             <div>
@@ -685,6 +787,130 @@ export default function ProdutosPage() {
           )}
         </div>
       </div>
+
+      {/* Modal para Gerenciar Categorias */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-medium text-gray-900">
+                  Gerenciar Categorias de Produtos
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowCategoryModal(false)
+                    setCategoryForm({ name: '', description: '' })
+                    setEditingCategory(null)
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Formulário para nova categoria */}
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
+                <h4 className="text-lg font-medium text-gray-900 mb-4">
+                  {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+                </h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nome da Categoria *
+                    </label>
+                    <input
+                      type="text"
+                      value={categoryForm.name}
+                      onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="Nome da categoria"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descrição
+                    </label>
+                    <input
+                      type="text"
+                      value={categoryForm.description}
+                      onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      placeholder="Descrição da categoria"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-4">
+                  <button
+                    onClick={handleSaveCategory}
+                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
+                  >
+                    <Save className="w-4 h-4 mr-2" />
+                    {editingCategory ? 'Atualizar' : 'Criar'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de categorias existentes */}
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-4">Categorias Existentes</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Nome
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Produtos
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {categories.map((category) => (
+                        <tr key={category} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {category}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                              {products.filter(p => p.category === category).length} produtos
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => handleEditCategory(category)}
+                                className="text-blue-600 hover:text-blue-900 p-1"
+                                title="Editar categoria"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCategory(category)}
+                                className="text-red-600 hover:text-red-900 p-1"
+                                title="Excluir categoria"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
