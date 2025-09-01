@@ -717,7 +717,7 @@ export default function EditarSite() {
   const saveSiteSettings = async () => {
     try {
       console.log('Salvando configurações do site...')
-      const response = await fetch('/api/site-settings', {
+              const response = await fetch('/api/site-settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

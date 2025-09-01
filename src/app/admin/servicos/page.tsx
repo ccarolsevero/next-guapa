@@ -1,31 +1,47 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp } from 'lucide-react'
 
-// Mock data para serviços
-const mockServices = [
-  {
-    id: 1,
-    name: "Avaliação",
-    description: "Conversa com a profissional para avaliar seu cabelo e a possibilidade de realizar um procedimento ou não. Não garante realização no mesmo dia.",
-    price: 60.00,
-    duration: 30,
-    category: "Consultoria",
-    isActive: true,
-    professionalId: "bruna"
-  },
-  {
-    id: 2,
-    name: "Back To Natural - G",
-    description: "Técnica exclusiva da Keune que repigmenta cabelos loiros no tom desejado, sem avermelhar e priorizando a saúde dos fios.",
-    price: 319.00,
-    duration: 180,
-    category: "Coloração",
-    isActive: true,
-    professionalId: "bruna"
-  },
+interface Service {
+  _id: string
+  name: string
+  description: string
+  price: number
+  category: string
+  isActive: boolean
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+// Dados reais dos serviços (serão carregados da API)
+const [services, setServices] = useState<Service[]>([])
+const [loading, setLoading] = useState(true)
+
+// Carregar serviços da API
+const loadServices = async () => {
+  try {
+    setLoading(true)
+    const response = await fetch('/api/services')
+    if (!response.ok) {
+      throw new Error('Erro ao carregar serviços')
+    }
+    const data = await response.json()
+    setServices(data)
+  } catch (error) {
+    console.error('Erro ao carregar serviços:', error)
+    alert('Erro ao carregar serviços')
+  } finally {
+    setLoading(false)
+  }
+}
+
+useEffect(() => {
+  loadServices()
+}, [])
+
   {
     id: 3,
     name: "Back To Natural - P",
@@ -200,14 +216,13 @@ export default function ServicosPage() {
   const [selectedProfessional, setSelectedProfessional] = useState('Todos')
   const [showInactive, setShowInactive] = useState(false)
 
-  const filteredServices = mockServices.filter(service => {
+  const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          service.description.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = selectedCategory === 'Todos' || service.category === selectedCategory
-    const matchesProfessional = selectedProfessional === 'Todos' || service.professionalId === selectedProfessional
     const matchesStatus = showInactive ? true : service.isActive
 
-    return matchesSearch && matchesCategory && matchesProfessional && matchesStatus
+    return matchesSearch && matchesCategory && matchesStatus
   })
 
   const handleDelete = (id: number) => {
