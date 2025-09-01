@@ -249,7 +249,7 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
           {professional.gallery && professional.gallery.length > 0 ? (
             <div className="relative max-w-4xl mx-auto">
               {/* Imagem Principal */}
-              <div className="relative h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl">
+              <div className="relative h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl bg-white/10 backdrop-blur-sm border border-white/20">
                 <img 
                   src={professional.gallery[currentImageIndex]} 
                   alt={`Trabalho ${currentImageIndex + 1}`}
