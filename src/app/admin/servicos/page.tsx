@@ -16,31 +16,7 @@ interface Service {
   updatedAt: string
 }
 
-// Dados reais dos serviços (serão carregados da API)
-const [services, setServices] = useState<Service[]>([])
-const [loading, setLoading] = useState(true)
 
-// Carregar serviços da API
-const loadServices = async () => {
-  try {
-    setLoading(true)
-    const response = await fetch('/api/services')
-    if (!response.ok) {
-      throw new Error('Erro ao carregar serviços')
-    }
-    const data = await response.json()
-    setServices(data)
-  } catch (error) {
-    console.error('Erro ao carregar serviços:', error)
-    alert('Erro ao carregar serviços')
-  } finally {
-    setLoading(false)
-  }
-}
-
-useEffect(() => {
-  loadServices()
-}, [])
 
 
 const categories = ["Todos", "Consultoria e Avaliação", "Cortes", "Colorimetria", "Tratamentos"]
@@ -50,10 +26,34 @@ const professionals = [
 ]
 
 export default function ServicosPage() {
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todos')
   const [selectedProfessional, setSelectedProfessional] = useState('Todos')
   const [showInactive, setShowInactive] = useState(false)
+
+  // Carregar serviços da API
+  const loadServices = async () => {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/services')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar serviços')
+      }
+      const data = await response.json()
+      setServices(data)
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error)
+      alert('Erro ao carregar serviços')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadServices()
+  }, [])
 
   const filteredServices = services.filter(service => {
     const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
