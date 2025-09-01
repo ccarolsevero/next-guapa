@@ -109,17 +109,17 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
         console.log('📊 Todos os serviços disponíveis:', allServices.length)
         console.log('📊 Primeiros 3 serviços:', allServices.slice(0, 3).map((s: Service) => s.name))
         
-        // Filtrar serviços que correspondem aos nomes da profissional
+        // LÓGICA SIMPLIFICADA: Comparação direta sem normalização
+        console.log('🔍 COMPARAÇÃO:')
+        console.log('📋 Serviços da profissional (exatos):', professional.services)
+        console.log('📋 Primeiros 5 serviços do banco:', allServices.slice(0, 5).map((s: Service) => s.name))
+        
         const filteredServices = allServices.filter((service: Service) => {
-          // Normalizar strings para comparação (remover acentos e converter para minúsculas)
-          const normalizeString = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-          
-          const normalizedServiceName = normalizeString(service.name)
-          const isIncluded = professional.services.some(serviceName => 
-            normalizeString(serviceName) === normalizedServiceName
-          )
-          
-          console.log(`🔍 Serviço "${service.name}" (normalizado: "${normalizedServiceName}") está incluído? ${isIncluded}`)
+          const isIncluded = professional.services.includes(service.name)
+          console.log(`🔍 Serviço "${service.name}" está incluído? ${isIncluded}`)
+          if (isIncluded) {
+            console.log(`✅ MATCH ENCONTRADO: "${service.name}"`)
+          }
           return isIncluded
         })
         
