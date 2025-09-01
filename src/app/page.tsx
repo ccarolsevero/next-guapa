@@ -702,7 +702,13 @@ export default function HomePage() {
                   
                   <div className="mt-4 md:mt-6 flex justify-center">
                     <Link 
-                      href={`/profissionais/${professional._id}`}
+                      href={`/profissionais/${professional.name
+                        .toLowerCase()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                        .replace(/\s+/g, '-') // Substitui espaços por hífens
+                        .replace(/[^a-z0-9-]/g, '') // Remove caracteres especiais
+                      }`}
                       className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
                     >
                       Saiba Mais
