@@ -46,7 +46,10 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
 
   useEffect(() => {
     if (professional) {
+      console.log('🔄 useEffect: professional mudou, chamando loadProfessionalServices')
       loadProfessionalServices()
+    } else {
+      console.log('🔄 useEffect: professional é null/undefined')
     }
   }, [professional])
 
@@ -81,6 +84,9 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
   }
 
   const loadProfessionalServices = async () => {
+    console.log('🚀 loadProfessionalServices chamado')
+    console.log('📊 Professional atual:', professional)
+    
     if (!professional?.services) {
       console.log('❌ Profissional não tem serviços ou services é undefined')
       console.log('Professional completo:', professional)
@@ -91,15 +97,17 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
     console.log('📋 Serviços da profissional:', professional.services)
     console.log('📋 Tipo de services:', typeof professional.services)
     console.log('📋 Array?', Array.isArray(professional.services))
+    console.log('📋 Length:', professional.services.length)
     
     try {
+      console.log('📡 Fazendo fetch para /api/services...')
       const response = await fetch('/api/services')
       console.log('📡 Resposta da API de serviços:', response.status, response.ok)
       
       if (response.ok) {
         const allServices = await response.json()
         console.log('📊 Todos os serviços disponíveis:', allServices.length)
-        console.log('📊 Primeiros 3 serviços:', allServices.slice(0, 3).map(s => s.name))
+        console.log('📊 Primeiros 3 serviços:', allServices.slice(0, 3).map((s: Service) => s.name))
         
         // Filtrar serviços que correspondem aos nomes da profissional
         const filteredServices = allServices.filter((service: Service) => {
@@ -109,9 +117,11 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
         })
         
         console.log('✅ Serviços filtrados encontrados:', filteredServices.length)
-        console.log('✅ Serviços filtrados:', filteredServices.map(s => s.name))
+        console.log('✅ Serviços filtrados:', filteredServices.map((s: Service) => s.name))
         
+        console.log('🔄 Chamando setProfessionalServices com:', filteredServices.length, 'serviços')
         setProfessionalServices(filteredServices)
+        console.log('✅ setProfessionalServices executado')
       } else {
         console.error('❌ Erro na resposta da API de serviços:', response.status)
         const errorText = await response.text()
