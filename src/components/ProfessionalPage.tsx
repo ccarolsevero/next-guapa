@@ -263,6 +263,14 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
             <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os serviços oferecidos pela {professional.name}</p>
           </div>
           
+          {/* DEBUG INFO */}
+          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
+            <h3 className="text-red-400 font-bold mb-2">🔍 DEBUG INFO:</h3>
+            <p className="text-red-300 text-sm">professionalServices: {JSON.stringify(professionalServices)}</p>
+            <p className="text-red-300 text-sm">Length: {professionalServices?.length || 0}</p>
+            <p className="text-red-300 text-sm">Professional services: {JSON.stringify(professional?.services)}</p>
+          </div>
+          
           {professionalServices && professionalServices.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {professionalServices.map((service, index) => (
