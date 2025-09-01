@@ -703,11 +703,11 @@ export default function HomePage() {
                   <div className="mt-4 md:mt-6 flex justify-center">
                     <Link 
                       href={`/profissionais/${professional.name
+                        .split(' ')[0] // Pega apenas o primeiro nome
                         .toLowerCase()
                         .normalize('NFD')
                         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                        .replace(/\s+/g, '-') // Substitui espaços por hífens
-                        .replace(/[^a-z0-9-]/g, '') // Remove caracteres especiais
+                        .replace(/[^a-z0-9]/g, '') // Remove caracteres especiais
                       }`}
                       className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
                     >

@@ -151,11 +151,11 @@ export default function ProfissionaisPage() {
                   <div className="text-center">
                     <Link 
                       href={`/profissionais/${professional.name
+                        .split(' ')[0] // Pega apenas o primeiro nome
                         .toLowerCase()
                         .normalize('NFD')
                         .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-                        .replace(/\s+/g, '-') // Substitui espaços por hífens
-                        .replace(/[^a-z0-9-]/g, '') // Remove caracteres especiais
+                        .replace(/[^a-z0-9]/g, '') // Remove caracteres especiais
                       }`}
                       className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium inline-block"
                     >
