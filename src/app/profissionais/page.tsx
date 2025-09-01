@@ -150,7 +150,7 @@ export default function ProfissionaisPage() {
                   
                   <div className="text-center">
                     <Link 
-                      href={`/profissionais/${professional._id}`}
+                      href={`/profissionais/${professional.name.toLowerCase().replace(/\s+/g, '-')}`}
                       className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium inline-block"
                     >
                       Ver Perfil Completo
