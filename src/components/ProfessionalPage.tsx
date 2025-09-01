@@ -255,6 +255,37 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
         </div>
       </section>
 
+      {/* Serviços */}
+      <section className="py-12 md:py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Serviços Especializados</h2>
+            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os serviços oferecidos pela {professional.name}</p>
+          </div>
+          
+          {professionalServices && professionalServices.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {professionalServices.map((service, index) => (
+                <div key={service._id || index} className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6 hover:bg-white/20 transition-all duration-300">
+                  <h3 className="text-xl font-semibold mb-3 font-body" style={{ color: '#f2dcbc' }}>{service.name}</h3>
+                  <p className="text-gray-300 mb-4 font-body">{service.description}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#d34d4c] font-semibold font-body">
+                      R$ {service.price?.toFixed(2) || '0.00'}
+                    </span>
+                    <span className="text-sm text-gray-400 font-body">{service.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-[#f2dcbc] text-lg">Nenhum serviço cadastrado para esta profissional.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Galeria */}
       <section className="py-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
