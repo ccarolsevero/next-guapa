@@ -167,7 +167,7 @@ export default function ServicosPage() {
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total de Serviços</p>
-              <p className="text-2xl font-semibold text-gray-900">{mockServices.length}</p>
+                              <p className="text-2xl font-semibold text-gray-900">{services.length}</p>
             </div>
           </div>
         </div>
@@ -180,7 +180,7 @@ export default function ServicosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Serviços Ativos</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {mockServices.filter(s => s.isActive).length}
+                {services.filter(s => s.isActive).length}
               </p>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default function ServicosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Preço Médio</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(mockServices.reduce((sum, s) => sum + s.price, 0) / mockServices.length)}
+                {formatCurrency(services.reduce((sum, s) => sum + s.price, 0) / services.length)}
               </p>
             </div>
           </div>
@@ -208,7 +208,7 @@ export default function ServicosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Duração Média</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {Math.round(mockServices.reduce((sum, s) => sum + s.duration, 0) / mockServices.length)} min
+                {Math.round(services.reduce((sum, s) => sum + (s.duration || 0), 0) / services.length)} min
               </p>
             </div>
           </div>
