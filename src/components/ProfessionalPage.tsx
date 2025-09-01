@@ -47,6 +47,11 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
   useEffect(() => {
     if (professional) {
       console.log('🔄 useEffect: professional mudou, chamando loadProfessionalServices')
+      console.log('📊 Professional data:', {
+        name: professional.name,
+        services: professional.services,
+        servicesLength: professional.services?.length
+      })
       loadProfessionalServices()
     } else {
       console.log('🔄 useEffect: professional é null/undefined')
@@ -269,6 +274,9 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
             <p className="text-red-300 text-sm">professionalServices: {JSON.stringify(professionalServices)}</p>
             <p className="text-red-300 text-sm">Length: {professionalServices?.length || 0}</p>
             <p className="text-red-300 text-sm">Professional services: {JSON.stringify(professional?.services)}</p>
+            <p className="text-red-300 text-sm">Professional ID: {professional?._id}</p>
+            <p className="text-red-300 text-sm">Professional Name: {professional?.name}</p>
+            <p className="text-red-300 text-sm">URL Parameter: {professionalName}</p>
           </div>
           
           {professionalServices && professionalServices.length > 0 ? (
