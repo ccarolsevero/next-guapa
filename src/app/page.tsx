@@ -27,11 +27,27 @@ const servicosEspacoGuapa = [
   }
 ]
 
+interface Service {
+  _id: string
+  name: string
+  category: string
+  description: string
+  price: number
+  isActive: boolean
+  order: number
+  isFeatured: boolean
+}
+
 interface Product {
-  id: number
+  _id: string
   name: string
   price: number
   description: string
+  imageUrl?: string
+  isActive: boolean
+  isFeatured: boolean
+  discount?: number
+  originalPrice?: number
 }
 
 interface HomePhoto {
@@ -101,6 +117,7 @@ interface Professional {
   shortDescription: string
   fullDescription: string
   services: string[]
+  featuredServices: string[]
   profileImage: string
   gallery: string[]
   isActive: boolean
@@ -114,6 +131,8 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [homePhotos, setHomePhotos] = useState<HomePhoto[]>([])
   const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [featuredServices, setFeaturedServices] = useState<Service[]>([])
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
 
   // Carregar fotos estáticas da home e profissionais
@@ -134,6 +153,21 @@ export default function HomePage() {
         if (response.ok) {
           const data = await response.json()
           setProfessionals(data)
+        }
+
+        // Carregar serviços em destaque do banco
+        const servicesResponse = await fetch('/api/services')
+        if (servicesResponse.ok) {
+          const allServices = await servicesResponse.json()
+          const featured = allServices.filter((service: Service) => service.isFeatured && service.isActive)
+          setFeaturedServices(featured)
+        }
+
+        // Carregar produtos em destaque do banco
+        const productsResponse = await fetch('/api/products?isFeatured=true&isActive=true')
+        if (productsResponse.ok) {
+          const productsData = await productsResponse.json()
+          setFeaturedProducts(productsData.products || [])
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error)
@@ -584,59 +618,42 @@ export default function HomePage() {
               <div className="w-24 h-1 bg-[#006D5B] mx-auto mt-6 md:mt-8"></div>
             </div>
             
-            {/* Cards dos Serviços Principais */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
-              {/* Card Cortes */}
-              <div 
-                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
-              >
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
+            {/* Cards dos Serviços em Destaque */}
+            {featuredServices.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
+                {featuredServices.slice(0, 3).map((service, index) => (
+                  <div 
+                    key={service._id}
+                    className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
+                  >
+                    <div className="text-center mb-4 md:mb-6">
+                      <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
+                        {service.category === 'Cortes' ? (
+                          <Scissors className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                        ) : service.category === 'Colorimetria' ? (
+                          <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                        ) : (
+                          <Star className="w-6 h-6 md:w-8 md:h-8 text-white" />
+                        )}
+                      </div>
+                      <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
+                        {service.name}
+                      </h3>
+                    </div>
+                    <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
+                      {service.description}
+                    </p>
+                    <div className="text-center mt-4">
+                      <span className="text-2xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
-                    Cortes que Celebram a Natureza do Cabelo
-                  </h3>
-                </div>
-                <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
-                  Cada corte é pensado para valorizar o movimento, a textura e a forma única dos seus fios sem desrespeitar sua essência. Sempre buscando alinhar a praticidade do dia a dia com a potência dos cabelos naturais.
-                </p>
+                ))}
               </div>
-
-              {/* Card Coloração */}
-              <div 
-                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
-              >
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
-                    Colorimetria Criativa
-                  </h3>
-                </div>
-                <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
-                  Trabalhamos com colorações, loiros, iluminados e cores fantasia com cuidado máximo, evitando processos que comprometam a saúde capilar. Sempre buscando a melhor manutenção para a sua rotina, alinhada com as cores que representam sua personalidade.
-                </p>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-[#f2dcbc] text-lg">Carregando serviços...</p>
               </div>
-
-              {/* Card Tratamentos */}
-              <div 
-                className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" 
-              >
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-12 h-12 md:w-16 md:h-16 bg-[#d34d4c] rounded-full flex items-center justify-center mx-auto mb-3 md:mb-4">
-                    <Star className="w-6 h-6 md:w-8 md:h-8 text-white" />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold font-heading mb-3 md:mb-4" style={{ color: '#f2dcbc' }}>
-                    Tratamentos Naturais Tricoterapêuticos
-                  </h3>
-                </div>
-                <p className="text-base md:text-lg font-body leading-relaxed text-center" style={{ color: '#f2dcbc' }}>
-                  Técnicas especiais que cuidam especialmente do couro cabeludo, mas também do comprimento, com fórmulas naturais e sem uso de química. Realizados com a linha Keune So Pure, o resultado: cabelo mais forte, saudável e com brilho natural.
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         </section>
 
@@ -649,35 +666,13 @@ export default function HomePage() {
               <div className="w-24 h-1 bg-[#d34d4c] mx-auto mt-6 md:mt-8"></div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '200ms' }}>
-                <div className="text-center mb-4 md:mb-6">
-                  <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
-                    <img 
-                      src="/assents/fotobruna.jpeg" 
-                      alt="Bruna - Cabeleireira Visagista" 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <h3 className="text-xl md:text-2xl font-bold font-heading mb-2" style={{ color: '#f2dcbc' }}>Bruna</h3>
-                  <p className="text-[#d34d4c] font-medium font-body">Cabeleireira Visagista</p>
-                </div>
-                <p className="text-base md:text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
-                  Especialista em consultoria de visagismo, cortes e colorações dos mais variados tipos. 
-                  Trabalha com técnicas modernas mantendo sempre a saúde dos fios.
-                </p>
-                <div className="mt-4 md:mt-6 flex justify-center">
-                  <Link 
-                    href="/profissionais/bruna"
-                    className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
-                  >
-                    Saiba Mais
-                  </Link>
-                </div>
-              </div>
-              
-              {professionals.filter(p => p.name.toLowerCase().includes('cicera')).map((professional, index) => (
-                <div key={professional._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '400ms' }}>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+              {professionals.map((professional, index) => (
+                <div 
+                  key={professional._id} 
+                  className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20" 
+                  style={{ transitionDelay: `${(index + 1) * 200}ms` }}
+                >
                   <div className="text-center mb-4 md:mb-6">
                     <div className="w-24 h-24 md:w-32 md:h-32 rounded-full mx-auto mb-3 md:mb-4 overflow-hidden">
                       <img 
@@ -696,9 +691,26 @@ export default function HomePage() {
                   <p className="text-base md:text-lg leading-relaxed text-center font-body" style={{ color: '#f2dcbc' }}>
                     {professional.shortDescription}
                   </p>
+                  
+                  {/* Serviços em Destaque */}
+                  {professional.featuredServices && professional.featuredServices.length > 0 && (
+                    <div className="mt-4">
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {professional.featuredServices.map((service, serviceIndex) => (
+                          <span 
+                            key={serviceIndex}
+                            className="bg-[#d34d4c] text-white px-3 py-1 rounded-full text-xs font-medium"
+                          >
+                            {service}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="mt-4 md:mt-6 flex justify-center">
                     <Link 
-                      href="/profissionais/cicera"
+                      href={`/profissionais/${professional.name.toLowerCase().replace(/\s+/g, '-')}`}
                       className="bg-[#d34d4c] text-white px-4 md:px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
                     >
                       Saiba Mais
@@ -768,61 +780,56 @@ export default function HomePage() {
               <div className="w-24 h-1 bg-[#d34d4c] mx-auto mt-8"></div>
             </div>
             
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-              {/* Produto 1 */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '100ms' }}>
-                <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Package className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold font-heading mb-2 text-center" style={{ color: '#f2dcbc' }}>Shampoo Keune</h3>
-                <p className="text-lg font-body text-center mb-4" style={{ color: '#f2dcbc' }}>
-                  Shampoo profissional para todos os tipos de cabelo
-                </p>
-                <p className="text-2xl font-light text-[#d34d4c] text-center mb-4">R$ 45,00</p>
-                <Link 
-                  href="/produtos"
-                  className="block w-full bg-[#d34d4c] text-white text-center py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
-                >
-                  Comprar
-                </Link>
+            {featuredProducts.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+                {featuredProducts.slice(0, 3).map((product, index) => (
+                  <div key={product._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: `${(index + 1) * 100}ms` }}>
+                    <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
+                      {product.imageUrl ? (
+                        <img 
+                          src={product.imageUrl} 
+                          alt={product.name}
+                          className="w-8 h-8 object-cover rounded"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement
+                            target.style.display = 'none'
+                            target.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <Package className={`w-8 h-8 text-white ${product.imageUrl ? 'hidden' : ''}`} />
+                    </div>
+                    <h3 className="text-xl font-bold font-heading mb-2 text-center" style={{ color: '#f2dcbc' }}>{product.name}</h3>
+                    <p className="text-lg font-body text-center mb-4" style={{ color: '#f2dcbc' }}>
+                      {product.description}
+                    </p>
+                    <div className="text-center mb-4">
+                      {product.discount && product.discount > 0 ? (
+                        <div>
+                          <p className="text-lg line-through text-gray-400">R$ {product.originalPrice?.toFixed(2) || product.price.toFixed(2)}</p>
+                          <p className="text-2xl font-light text-[#d34d4c]">R$ {(product.price * (1 - product.discount / 100)).toFixed(2)}</p>
+                          <span className="text-sm text-[#d34d4c] font-medium">-{product.discount}% OFF</span>
+                        </div>
+                      ) : (
+                        <p className="text-2xl font-light text-[#d34d4c]">R$ {product.price.toFixed(2)}</p>
+                      )}
+                    </div>
+                    <Link 
+                      href="/produtos"
+                      className="block w-full bg-[#d34d4c] text-white text-center py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
+                    >
+                      Comprar
+                    </Link>
+                  </div>
+                ))}
               </div>
-
-              {/* Produto 2 */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '200ms' }}>
-                <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Package className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold font-heading mb-2 text-center" style={{ color: '#f2dcbc' }}>Condicionador Keune</h3>
-                <p className="text-lg font-body text-center mb-4" style={{ color: '#f2dcbc' }}>
-                  Condicionador hidratante para cabelos saudáveis
-                </p>
-                <p className="text-2xl font-light text-[#d34d4c] text-center mb-4">R$ 42,00</p>
-                <Link 
-                  href="/produtos"
-                  className="block w-full bg-[#d34d4c] text-white text-center py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
-                >
-                  Comprar
-                </Link>
+            ) : (
+              <div className="col-span-full text-center py-12">
+                <Package className="w-16 h-16 text-[#d34d4c] mx-auto mb-4" />
+                <p className="text-lg text-[#f2dcbc]">Nenhum produto em destaque no momento.</p>
+                <p className="text-sm text-[#f2dcbc] mt-2">Acesse nossa loja para ver todos os produtos.</p>
               </div>
-
-              {/* Produto 3 */}
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-700 transform hover:scale-105 border border-white/20" style={{ transitionDelay: '300ms' }}>
-                <div className="w-16 h-16 bg-[#d34d4c] rounded-full mx-auto mb-4 flex items-center justify-center">
-                  <Package className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-xl font-bold font-heading mb-2 text-center" style={{ color: '#f2dcbc' }}>Máscara Keune</h3>
-                <p className="text-lg font-body text-center mb-4" style={{ color: '#f2dcbc' }}>
-                  Máscara de reparação profunda para cabelos danificados
-                </p>
-                <p className="text-2xl font-light text-[#d34d4c] text-center mb-4">R$ 65,00</p>
-                <Link 
-                  href="/produtos"
-                  className="block w-full bg-[#d34d4c] text-white text-center py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium"
-                >
-                  Comprar
-                </Link>
-              </div>
-            </div>
+            )}
             
             <div className="text-center mt-12">
               <Link 

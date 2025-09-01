@@ -25,6 +25,7 @@ export async function GET() {
         shortDescription: 'Especialista em coloração e tratamentos capilares',
         fullDescription: 'Bruna é uma profissional experiente e dedicada aos cuidados capilares. Especialista em coloração, tratamentos e cortes modernos. Com anos de experiência, ela oferece serviços personalizados para cada cliente.',
         services: ['Coloração', 'Tratamentos', 'Cortes', 'Hidratação', 'Escova'],
+        featuredServices: ['Coloração', 'Tratamentos'],
         profileImage: '/assents/fotobruna.jpeg',
         gallery: [
           '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16.jpeg',
@@ -45,6 +46,7 @@ export async function GET() {
         shortDescription: 'Especialista em penteados e maquiagem',
         fullDescription: 'Cicera é especialista em penteados, maquiagem e tratamentos capilares. Com técnica apurada e criatividade, ela transforma o visual de suas clientes com penteados únicos e maquiagens deslumbrantes.',
         services: ['Penteados', 'Maquiagem', 'Tratamentos', 'Escova', 'Finalização'],
+        featuredServices: ['Penteados', 'Maquiagem'],
         profileImage: '/assents/fotobruna.jpeg',
         gallery: [
           '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (3).jpeg',
@@ -73,6 +75,7 @@ export async function POST(request: NextRequest) {
       shortDescription, 
       fullDescription, 
       services, 
+      featuredServices,
       profileImage, 
       gallery 
     } = body
@@ -89,6 +92,7 @@ export async function POST(request: NextRequest) {
       shortDescription: shortDescription || 'Especialista em tratamentos capilares',
       fullDescription: fullDescription || 'Profissional experiente e dedicada aos cuidados capilares',
       services: services || [],
+      featuredServices: featuredServices || [],
       profileImage: profileImage || '/assents/fotobruna.jpeg',
       gallery: gallery || [],
       isActive: true,

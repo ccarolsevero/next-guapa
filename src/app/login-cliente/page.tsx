@@ -4,8 +4,10 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react'
 import LayoutPublic from '../layout-public'
+import { useAuth } from '@/contexts/AuthContext'
 
-export default function LoginClientePage() {
+function LoginClienteContent() {
+  const { login } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -73,10 +75,8 @@ export default function LoginClientePage() {
 
       const { client, token } = await response.json()
       
-      // Salvar dados de autenticação
-      localStorage.setItem('isClientLoggedIn', 'true')
-      localStorage.setItem('clientToken', token)
-      localStorage.setItem('loggedInClient', JSON.stringify(client))
+      // Usar o contexto de autenticação
+      login(client, token)
       
       // Redirecionar para o painel do cliente
       window.location.href = '/painel-cliente'
@@ -89,9 +89,7 @@ export default function LoginClientePage() {
   }
 
   return (
-    <LayoutPublic>
-      {/* Content */}
-      <div className="flex items-center justify-center min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+    <div className="flex items-center justify-center min-h-screen pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-light text-[#f2dcbc] mb-2">
@@ -123,10 +121,9 @@ export default function LoginClientePage() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
+                    className={`w-full pl-10 pr-4 py-3 border rounded-lg bg-white text-gray-900 font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    style={{ color: '#000000' }}
                     placeholder="seu@email.com"
                   />
                 </div>
@@ -148,10 +145,9 @@ export default function LoginClientePage() {
                     name="password"
                     value={formData.password}
                     onChange={handleInputChange}
-                    className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white/90 text-black font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
+                    className={`w-full pl-10 pr-12 py-3 border rounded-lg bg-white text-gray-900 font-medium focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] transition-all duration-200 ${
                       errors.password ? 'border-red-300' : 'border-gray-300'
                     }`}
-                    style={{ color: '#000000' }}
                     placeholder="Digite sua senha"
                   />
                   <button
@@ -188,6 +184,13 @@ export default function LoginClientePage() {
           </form>
         </div>
       </div>
+    )
+}
+
+export default function LoginClientePage() {
+  return (
+    <LayoutPublic>
+      <LoginClienteContent />
     </LayoutPublic>
   )
 }

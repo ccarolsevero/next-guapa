@@ -34,6 +34,10 @@ const professionalSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
+  featuredServices: [{
+    type: String,
+    trim: true
+  }],
   profileImage: {
     type: String,
     default: '/assents/fotobruna.jpeg'

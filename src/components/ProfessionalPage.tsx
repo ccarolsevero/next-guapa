@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Calendar, Scissors, Sparkles, User, MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
-import LayoutPublic from '../../layout-public'
-import { useParams } from 'next/navigation'
+import LayoutPublic from '../app/layout-public'
 
 interface Service {
   _id: string
@@ -31,20 +30,11 @@ interface Professional {
   isFeatured: boolean
 }
 
-// Serviços padrão (você pode expandir isso no futuro)
-const defaultServices = [
-  { name: "Avaliação", price: 60.00, description: "Conversa com a profissional para avaliar seu cabelo" },
-  { name: "Consultoria/Corte", price: 198.00, description: "Consultoria de visagismo + corte personalizado" },
-  { name: "Corte", price: 132.00, description: "Corte de cabelo com manutenção das pontas" },
-  { name: "Tratamento", price: 150.00, description: "Tratamento capilar personalizado" },
-  { name: "Coloração", price: 200.00, description: "Coloração profissional" },
-  { name: "Escova", price: 80.00, description: "Escova e finalização" }
-]
+interface ProfessionalPageProps {
+  professionalName: string
+}
 
-export default function ProfessionalPage() {
-  const params = useParams()
-  const professionalId = params.id as string
-  
+export default function ProfessionalPage({ professionalName }: ProfessionalPageProps) {
   const [professional, setProfessional] = useState<Professional | null>(null)
   const [professionalServices, setProfessionalServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
@@ -52,7 +42,7 @@ export default function ProfessionalPage() {
 
   useEffect(() => {
     loadProfessional()
-  }, [professionalId])
+  }, [professionalName])
 
   useEffect(() => {
     if (professional) {
@@ -60,86 +50,81 @@ export default function ProfessionalPage() {
     }
   }, [professional])
 
+  // Auto-play da galeria
+  useEffect(() => {
+    if (professional?.gallery && professional.gallery.length > 0) {
+      const interval = setInterval(() => {
+        setCurrentImageIndex((prev) => (prev + 1) % professional.gallery.length)
+      }, 4000) // Troca a cada 4 segundos
+
+      return () => clearInterval(interval)
+    }
+  }, [professional])
+
   const loadProfessional = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/professionals/${professionalId}`)
+      console.log('Carregando profissional:', professionalName)
+      const response = await fetch(`/api/professionals/${professionalName}`)
       if (!response.ok) {
         throw new Error('Profissional não encontrado')
       }
       const data = await response.json()
+      console.log('Dados carregados:', data)
       setProfessional(data)
     } catch (error) {
       console.error('Erro ao carregar profissional:', error)
-      // Fallback para dados da Bruna se não encontrar
-      setProfessional({
-        _id: 'bruna',
-        name: 'Bruna',
-        title: 'Cabeleireira Visagista',
-        email: 'bruna@guapa.com',
-        phone: '(19) 99999-9999',
-        shortDescription: 'Especialista em coloração e tratamentos capilares',
-        fullDescription: 'Especialista em cabelos naturais com mais de 8 anos de experiência em consultoria de visagismo, cortes e colorações dos mais variados tipos. Trabalha com técnicas modernas mantendo sempre a saúde dos fios, desde iluminados e loiros até coloridos fantasia.',
-        services: ['Coloração', 'Tratamentos', 'Cortes', 'Hidratação', 'Escova', 'Penteado', 'Finalização', 'Avaliação Capilar'],
-        profileImage: '/assents/fotobruna.jpeg',
-        gallery: [
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16.jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (1).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (2).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (3).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (4).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (5).jpeg"
-        ],
-        isActive: true,
-        isFeatured: true
-      })
+      setProfessional(null)
     } finally {
       setLoading(false)
     }
   }
 
   const loadProfessionalServices = async () => {
-    if (!professional) return
-
+    if (!professional?.services) {
+      console.log('Profissional não tem serviços ou services é undefined')
+      return
+    }
+    
+    console.log('Carregando serviços para:', professional.name)
+    console.log('Serviços da profissional:', professional.services)
+    
     try {
-      // Buscar todos os serviços
       const response = await fetch('/api/services')
-      if (!response.ok) {
-        throw new Error('Erro ao carregar serviços')
+      if (response.ok) {
+        const allServices = await response.json()
+        console.log('Todos os serviços disponíveis:', allServices.length)
+        console.log('Primeiros 3 serviços:', allServices.slice(0, 3).map(s => s.name))
+        
+        // Filtrar serviços que correspondem aos nomes da profissional
+        const filteredServices = allServices.filter((service: Service) => {
+          const isIncluded = professional.services.includes(service.name)
+          console.log(`Serviço "${service.name}" está incluído? ${isIncluded}`)
+          return isIncluded
+        })
+        
+        console.log('Serviços filtrados encontrados:', filteredServices.length)
+        console.log('Serviços filtrados:', filteredServices.map(s => s.name))
+        
+        setProfessionalServices(filteredServices)
+      } else {
+        console.error('Erro na resposta da API de serviços:', response.status)
       }
-      const allServices: Service[] = await response.json()
-      
-      // Filtrar apenas os serviços que a profissional oferece
-      const services = allServices.filter(service => 
-        professional.services.includes(service._id)
-      )
-      
-      setProfessionalServices(services)
     } catch (error) {
-      console.error('Erro ao carregar serviços da profissional:', error)
-      setProfessionalServices([])
+      console.error('Erro ao carregar serviços:', error)
     }
   }
 
-  // Auto-play da galeria
-  useEffect(() => {
-    if (!professional || professional.gallery.length === 0) return
-
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % professional.gallery.length)
-    }, 4000) // Troca a cada 4 segundos
-
-    return () => clearInterval(interval)
-  }, [professional])
-
   const nextImage = () => {
-    if (!professional) return
-    setCurrentImageIndex((prev) => (prev + 1) % professional.gallery.length)
+    if (professional?.gallery) {
+      setCurrentImageIndex((prev) => (prev + 1) % professional.gallery.length)
+    }
   }
 
   const prevImage = () => {
-    if (!professional) return
-    setCurrentImageIndex((prev) => prev === 0 ? professional.gallery.length - 1 : prev - 1)
+    if (professional?.gallery) {
+      setCurrentImageIndex((prev) => prev === 0 ? professional.gallery.length - 1 : prev - 1)
+    }
   }
 
   if (loading) {
@@ -148,7 +133,7 @@ export default function ProfessionalPage() {
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#d34d4c] mx-auto mb-4"></div>
-            <p className="text-[#f2dcbc] text-xl">Carregando profissional...</p>
+            <p className="text-[#f2dcbc] text-lg">Carregando...</p>
           </div>
         </div>
       </LayoutPublic>
@@ -160,13 +145,7 @@ export default function ProfessionalPage() {
       <LayoutPublic>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-[#f2dcbc] mb-4">Profissional não encontrado</h1>
-            <Link 
-              href="/profissionais"
-              className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300"
-            >
-              Voltar para Profissionais
-            </Link>
+            <p className="text-[#f2dcbc] text-lg">Profissional não encontrado</p>
           </div>
         </div>
       </LayoutPublic>
@@ -181,10 +160,10 @@ export default function ProfessionalPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Foto e Info */}
             <div className="text-center lg:text-left">
-              <div className="w-56 h-56 md:w-64 md:h-64 mx-auto lg:mx-0 mb-8 rounded-full overflow-hidden bg-[#d34d4c]">
+              <div className="w-56 h-56 md:w-64 md:h-64 mx-auto lg:mx-0 mb-8 rounded-full overflow-hidden">
                 <img 
                   src={professional.profileImage} 
-                  alt={`${professional.name} - ${professional.title}`} 
+                  alt={professional.name} 
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
@@ -217,17 +196,17 @@ export default function ProfessionalPage() {
       <section className="py-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Serviços Especializados</h2>
-            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os serviços oferecidos pela {professional.name}</p>
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Tratamentos Especializados</h2>
+            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os tratamentos oferecidos pela {professional.name}</p>
           </div>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {professionalServices.length > 0 ? (
-              professionalServices.map((service) => (
+              professionalServices.map((service, index) => (
                 <div key={service._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-[#d34d4c] rounded-full flex items-center justify-center">
-                      <Scissors className="w-6 h-6 text-white" />
+                      <Sparkles className="w-6 h-6 text-white" />
                     </div>
                     <span className="text-xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
                   </div>
@@ -235,11 +214,6 @@ export default function ProfessionalPage() {
                   <p className="text-base md:text-lg font-body leading-relaxed mb-4" style={{ color: '#f2dcbc' }}>
                     {service.description}
                   </p>
-                  <div className="mb-4">
-                    <span className="inline-block bg-[#d34d4c]/20 text-[#d34d4c] text-xs px-2 py-1 rounded">
-                      {service.category}
-                    </span>
-                  </div>
                   <Link 
                     href="/login-cliente"
                     className="bg-[#d34d4c] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 text-sm font-medium inline-block w-full text-center"
@@ -249,8 +223,8 @@ export default function ProfessionalPage() {
                 </div>
               ))
             ) : (
-              <div className="col-span-full text-center py-12">
-                <p className="text-lg text-[#f2dcbc]">Nenhum serviço cadastrado para esta profissional.</p>
+              <div className="col-span-full text-center">
+                <p className="text-[#f2dcbc] text-lg">Carregando serviços...</p>
               </div>
             )}
           </div>
@@ -258,21 +232,21 @@ export default function ProfessionalPage() {
       </section>
 
       {/* Galeria */}
-      {professional.gallery.length > 0 && (
-        <section className="py-12 md:py-24 relative">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Galeria de Trabalhos</h2>
-              <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Confira alguns dos trabalhos realizados pela {professional.name}</p>
-            </div>
-            
+      <section className="py-12 md:py-24 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Galeria de Trabalhos</h2>
+            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Confira alguns dos tratamentos realizados pela {professional.name}</p>
+          </div>
+          
+          {professional.gallery && professional.gallery.length > 0 ? (
             <div className="relative max-w-4xl mx-auto">
               {/* Imagem Principal */}
-              <div className="relative rounded-lg overflow-hidden shadow-2xl">
+              <div className="relative h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl">
                 <img 
                   src={professional.gallery[currentImageIndex]} 
-                  alt={`Trabalho ${currentImageIndex + 1} da ${professional.name}`}
-                  className="w-full max-h-96 lg:max-h-[500px] object-contain"
+                  alt={`Trabalho ${currentImageIndex + 1}`}
+                  className="w-full h-full object-cover"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = '/assents/fotobruna.jpeg'
@@ -310,9 +284,13 @@ export default function ProfessionalPage() {
                 ))}
               </div>
             </div>
-          </div>
-        </section>
-      )}
+          ) : (
+            <div className="text-center">
+              <p className="text-[#f2dcbc] text-lg">Galeria não disponível</p>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="py-12 md:py-24 relative">
@@ -321,7 +299,7 @@ export default function ProfessionalPage() {
             Pronto para Agendar com {professional.name}?
           </h2>
           <p className="text-lg md:text-xl leading-relaxed font-body mb-8" style={{ color: '#f2dcbc' }}>
-            Agende sua consulta e descubra como podemos cuidar dos seus fios com carinho e profissionalismo.
+            Agende sua consulta e descubra como podemos cuidar dos seus fios com tratamentos naturais e eficazes.
           </p>
           <a 
             href="/login-cliente"

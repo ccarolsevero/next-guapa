@@ -29,6 +29,10 @@ const serviceSchema = new mongoose.Schema({
   order: {
     type: Number,
     default: 0
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

@@ -38,3 +38,7 @@ async function connectDB() {
 }
 
 export default connectDB
+
+export async function connectToDatabase() {
+  return await connectDB()
+}

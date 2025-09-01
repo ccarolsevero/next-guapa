@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { League_Spartan, Lato } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const leagueSpartan = League_Spartan({
   variable: "--font-league-spartan",
@@ -28,7 +29,9 @@ export default function RootLayout({
       <body
         className={`${leagueSpartan.variable} ${lato.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

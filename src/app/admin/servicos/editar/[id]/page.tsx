@@ -35,6 +35,7 @@ export default function EditarServicoPage() {
     category: '',
     professionalId: '',
     isActive: true,
+    isFeatured: false,
     instructions: '',
     requirements: '',
     maxGroupSize: 1,
@@ -57,6 +58,7 @@ export default function EditarServicoPage() {
         category: '',
         professionalId: '',
         isActive: true,
+        isFeatured: false,
         instructions: '',
         requirements: '',
         maxGroupSize: 1,
@@ -73,6 +75,7 @@ export default function EditarServicoPage() {
         category: 'Cortes',
         professionalId: 'ana',
         isActive: true,
+        isFeatured: false,
         instructions: 'Chegar com o cabelo seco. Trazer foto de referência se desejar.',
         requirements: 'Não há restrições',
         maxGroupSize: 1,
@@ -309,7 +312,7 @@ export default function EditarServicoPage() {
               </div>
 
               <div className="md:col-span-2">
-                <div className="flex items-center">
+                <div className="flex items-center mb-4">
                   <input
                     type="checkbox"
                     id="isActive"
@@ -320,6 +323,20 @@ export default function EditarServicoPage() {
                   />
                   <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
                     Serviço ativo (disponível para agendamento)
+                  </label>
+                </div>
+                
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="isFeatured"
+                    name="isFeatured"
+                    checked={service.isFeatured}
+                    onChange={(e) => setService(prev => ({ ...prev, isFeatured: e.target.checked }))}
+                    className="h-4 w-4 text-[#D15556] focus:ring-[#D15556] border-gray-300 rounded"
+                  />
+                  <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
+                    Serviço em destaque (aparece na home)
                   </label>
                 </div>
               </div>

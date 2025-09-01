@@ -18,6 +18,7 @@ import {
   Eye,
   X
 } from 'lucide-react'
+import { useAuth, AuthProvider } from '@/contexts/AuthContext'
 
 interface ClientData {
   id: number
@@ -54,7 +55,8 @@ interface Order {
   createdAt: string
 }
 
-export default function PainelClientePage() {
+function PainelClienteContent() {
+  const { client, logout } = useAuth()
   const [clientData, setClientData] = useState<ClientData | null>(null)
   const [activeTab, setActiveTab] = useState('dashboard')
   const [showReviewModal, setShowReviewModal] = useState(false)
@@ -332,28 +334,28 @@ export default function PainelClientePage() {
   return (
     <div className="min-h-screen bg-[#F5F0E8]">
       {/* Header */}
-      <header className="bg-[#D15556] border-b border-[#c04546] fixed top-0 left-0 right-0 z-50">
+      <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-2">
+          <div className="flex justify-between items-center py-1 md:py-0">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <img 
-                  src="/assents/logonavbar.svg" 
+                  src="/assents/logonavbarg.svg" 
                   alt="Espaço Guapa" 
+                  className="h-16 md:h-[120px] w-auto"
                   style={{ 
-                    height: '60px', 
-                    width: 'auto'
+                    filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
                   }}
                 />
               </Link>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-white text-sm">
-                Olá, {clientData.name.split(' ')[0]}!
+              <span className="text-[#d34d4c] font-medium text-sm">
+                Olá, {client?.name.split(' ')[0]}!
               </span>
               <button
-                onClick={handleLogout}
-                className="bg-white text-[#D15556] px-4 py-2 rounded-lg hover:bg-[#EED7B6] transition-colors font-medium text-sm"
+                onClick={logout}
+                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm"
               >
                 <LogOut className="w-4 h-4 inline mr-1" />
                 Sair
@@ -364,7 +366,7 @@ export default function PainelClientePage() {
       </header>
 
       {/* Spacer para compensar navbar fixa */}
-      <div className="h-20"></div>
+      <div className="h-20 md:h-24"></div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -1184,4 +1186,8 @@ export default function PainelClientePage() {
       )}
     </div>
   )
+}
+
+export default function PainelClientePage() {
+  return <PainelClienteContent />
 }

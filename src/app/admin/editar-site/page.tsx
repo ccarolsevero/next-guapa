@@ -34,6 +34,7 @@ interface Service {
   price: number
   isActive: boolean
   order: number
+  isFeatured: boolean
 }
 
 interface Professional {
@@ -45,6 +46,7 @@ interface Professional {
   shortDescription: string
   fullDescription: string
   services: string[]
+  featuredServices: string[] // Serviços em destaque para aparecer na home
   profileImage: string
   gallery: string[]
   isActive: boolean
@@ -82,6 +84,7 @@ export default function EditarSite() {
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
   const [availableServices, setAvailableServices] = useState<Service[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [isEditingFeaturedServices, setIsEditingFeaturedServices] = useState(false)
   const [newProfessional, setNewProfessional] = useState({
     name: '',
     title: 'Cabeleireira',
@@ -90,6 +93,7 @@ export default function EditarSite() {
     shortDescription: '',
     fullDescription: '',
     services: [] as string[],
+    featuredServices: [] as string[], // Serviços em destaque para aparecer na home
     profileImage: '/assents/fotobruna.jpeg',
     gallery: [] as string[],
     newService: '',
@@ -416,23 +420,24 @@ export default function EditarSite() {
 
   const handleAddProfessional = async () => {
     try {
-      const response = await fetch('/api/professionals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: newProfessional.name,
-          title: newProfessional.title,
-          email: newProfessional.email,
-          phone: newProfessional.phone,
-          shortDescription: newProfessional.shortDescription,
-          fullDescription: newProfessional.fullDescription,
-          services: newProfessional.services,
-          profileImage: newProfessional.profileImage,
-          gallery: newProfessional.gallery
+              const response = await fetch('/api/professionals', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: newProfessional.name,
+            title: newProfessional.title,
+            email: newProfessional.email,
+            phone: newProfessional.phone,
+            shortDescription: newProfessional.shortDescription,
+            fullDescription: newProfessional.fullDescription,
+            services: newProfessional.services,
+            featuredServices: newProfessional.featuredServices,
+            profileImage: newProfessional.profileImage,
+            gallery: newProfessional.gallery
+          })
         })
-      })
 
       if (!response.ok) {
         throw new Error('Erro ao adicionar profissional')
@@ -448,6 +453,7 @@ export default function EditarSite() {
         shortDescription: '',
         fullDescription: '',
         services: [],
+        featuredServices: [], // Resetado para novos profissionais
         profileImage: '/assents/fotobruna.jpeg',
         gallery: [],
         newService: '',
@@ -517,6 +523,25 @@ export default function EditarSite() {
     setShowServicesModal(true)
   }
 
+  const openFeaturedServicesModal = (professional: Professional) => {
+    setSelectedProfessional(professional)
+    setIsEditingFeaturedServices(true)
+    // Converter IDs para nomes se necessário
+    const serviceNames = professional.featuredServices?.map(serviceId => {
+      const service = availableServices.find(s => s._id === serviceId)
+      return service ? service.name : serviceId
+    }) || []
+    setSelectedServices(serviceNames)
+    setShowServicesModal(true)
+  }
+
+  const openFeaturedServicesModalForNew = () => {
+    setSelectedProfessional(null)
+    setIsEditingFeaturedServices(true)
+    setSelectedServices(newProfessional.featuredServices || [])
+    setShowServicesModal(true)
+  }
+
   const handleServiceToggle = (serviceId: string) => {
     console.log('Toggle service:', serviceId)
     const service = availableServices.find(s => s._id === serviceId)
@@ -535,41 +560,61 @@ export default function EditarSite() {
     console.log('Salvando serviços...')
     console.log('Selected professional:', selectedProfessional)
     console.log('Selected services:', selectedServices)
+    console.log('Is editing featured services:', isEditingFeaturedServices)
     
     try {
       if (selectedProfessional) {
         // Editando profissional existente
         console.log('Editando profissional existente...')
+        
+        const updateData = isEditingFeaturedServices
+          ? { ...selectedProfessional, featuredServices: selectedServices }
+          : { ...selectedProfessional, services: selectedServices }
+        
+        console.log('Update data being sent:', updateData)
+        console.log('Is editing featured services:', isEditingFeaturedServices)
+        console.log('Selected services:', selectedServices)
+        
         const response = await fetch(`/api/professionals/${selectedProfessional._id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            ...selectedProfessional,
-            services: selectedServices
-          })
+          body: JSON.stringify(updateData)
         })
 
         if (!response.ok) {
           throw new Error('Erro ao salvar serviços')
         }
 
+        const responseData = await response.json()
+        console.log('API response:', responseData)
+        console.log('Featured services in response:', responseData.featuredServices)
+
         await loadProfessionals()
-        alert('Serviços salvos com sucesso!')
+        alert(`Serviços ${isEditingFeaturedServices ? 'em destaque ' : ''}salvos com sucesso!`)
       } else {
         // Criando novo profissional
         console.log('Atualizando novo profissional...')
-        setNewProfessional({
-          ...newProfessional,
-          services: selectedServices
-        })
-        alert('Serviços selecionados! Continue preenchendo os outros campos.')
+        if (isEditingFeaturedServices) {
+          setNewProfessional({
+            ...newProfessional,
+            featuredServices: selectedServices
+          })
+          alert('Serviços em destaque selecionados! Continue preenchendo os outros campos.')
+        } else {
+          setNewProfessional({
+            ...newProfessional,
+            services: selectedServices
+          })
+          alert('Serviços selecionados! Continue preenchendo os outros campos.')
+        }
       }
 
       setShowServicesModal(false)
       setSelectedProfessional(null)
       setSelectedServices([])
+      setIsEditingFeaturedServices(false)
     } catch (error) {
       console.error('Erro ao salvar serviços:', error)
       alert('Erro ao salvar serviços')
@@ -634,6 +679,7 @@ export default function EditarSite() {
           shortDescription: selectedProfessional.shortDescription,
           fullDescription: selectedProfessional.fullDescription,
           services: selectedProfessional.services,
+          featuredServices: selectedProfessional.featuredServices, // Adicionado para profissionais existentes
           profileImage: selectedProfessional.profileImage,
           gallery: selectedProfessional.gallery,
           isActive: selectedProfessional.isActive,
@@ -1064,7 +1110,10 @@ export default function EditarSite() {
                 </label>
                 <div className="flex gap-2 mb-2">
                   <button
-                    onClick={() => openServicesModal(selectedProfessional)}
+                    onClick={() => {
+                      setIsEditingFeaturedServices(false)
+                      openServicesModal(selectedProfessional)
+                    }}
                     className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     Selecionar Serviços
@@ -1088,6 +1137,42 @@ export default function EditarSite() {
                       </button>
                     </span>
                   ))}
+                </div>
+              </div>
+
+              {/* Serviços em Destaque */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Serviços em Destaque (para aparecer na home)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    onClick={() => openFeaturedServicesModal(selectedProfessional)}
+                    className="bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 transition-colors"
+                  >
+                    Selecionar Serviços em Destaque
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {selectedProfessional.featuredServices?.map((serviceName, index) => (
+                    <span
+                      key={index}
+                      className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {serviceName}
+                      <button
+                        onClick={() => {
+                          const newFeaturedServices = selectedProfessional.featuredServices?.filter((_, i) => i !== index) || []
+                          setSelectedProfessional({...selectedProfessional, featuredServices: newFeaturedServices})
+                        }}
+                        className="text-yellow-600 hover:text-yellow-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )) || (
+                    <span className="text-gray-500 text-sm">Nenhum serviço em destaque selecionado</span>
+                  )}
                 </div>
               </div>
 
@@ -1280,6 +1365,7 @@ export default function EditarSite() {
                   <button
                     onClick={() => {
                       setSelectedServices(newProfessional.services)
+                      setIsEditingFeaturedServices(false)
                       setShowServicesModal(true)
                     }}
                     className="bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -1305,6 +1391,42 @@ export default function EditarSite() {
                       </button>
                     </span>
                   ))}
+                </div>
+              </div>
+
+              {/* Serviços em Destaque */}
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Serviços em Destaque (para aparecer na home)
+                </label>
+                <div className="flex gap-2 mb-2">
+                  <button
+                    onClick={openFeaturedServicesModalForNew}
+                    className="bg-yellow-600 text-white px-4 py-3 rounded-lg hover:bg-yellow-700 transition-colors"
+                  >
+                    Selecionar Serviços em Destaque
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {newProfessional.featuredServices?.map((serviceName, index) => (
+                    <span
+                      key={index}
+                      className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {serviceName}
+                      <button
+                        onClick={() => {
+                          const newFeaturedServices = newProfessional.featuredServices?.filter((_, i) => i !== index) || []
+                          setNewProfessional({...newProfessional, featuredServices: newFeaturedServices})
+                        }}
+                        className="text-yellow-600 hover:text-yellow-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )) || (
+                    <span className="text-gray-500 text-sm">Nenhum serviço em destaque selecionado</span>
+                  )}
                 </div>
               </div>
 
@@ -1384,7 +1506,7 @@ export default function EditarSite() {
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-xl font-semibold text-[#006D5B]">
-                  Selecionar Serviços
+                  {isEditingFeaturedServices ? 'Selecionar Serviços em Destaque' : 'Selecionar Serviços'}
                 </h3>
                 <button
                   onClick={() => {
@@ -1451,7 +1573,7 @@ export default function EditarSite() {
                   onClick={handleSaveServices}
                   className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
                 >
-                  Salvar Serviços
+                  {isEditingFeaturedServices ? 'Salvar Serviços em Destaque' : 'Salvar Serviços'}
                 </button>
               </div>
             </div>

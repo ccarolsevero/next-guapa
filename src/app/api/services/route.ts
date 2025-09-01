@@ -220,7 +220,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { name, category, description, price, order } = body
+    const { name, category, description, price, order, isFeatured } = body
 
     console.log('Adicionando novo serviço no MongoDB...')
     
@@ -232,7 +232,8 @@ export async function POST(request: NextRequest) {
       description,
       price,
       order: order || 0,
-      isActive: true
+      isActive: true,
+      isFeatured: isFeatured || false
     })
     
     console.log('Serviço adicionado com sucesso:', newService._id)
@@ -259,7 +260,7 @@ export async function PUT(request: NextRequest) {
     const updatedService = await Service.findByIdAndUpdate(
       id,
       updateData,
-      { new: true }
+      { new: true, runValidators: true }
     )
     
     if (!updatedService) {

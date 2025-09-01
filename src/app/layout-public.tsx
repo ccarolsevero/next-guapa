@@ -3,14 +3,21 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
+import { CartProvider } from '@/contexts/CartContext'
+import { ToastProvider } from '@/contexts/ToastContext'
+import { AuthProvider, useAuth } from '@/contexts/AuthContext'
+import Cart from '@/components/Cart'
+import CartIcon from '@/components/CartIcon'
 
 interface LayoutPublicProps {
   children: React.ReactNode
 }
 
-export default function LayoutPublic({ children }: LayoutPublicProps) {
+function LayoutPublicContent({ children }: LayoutPublicProps) {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const { isLoggedIn, client, logout } = useAuth()
 
 
 
@@ -41,6 +48,8 @@ export default function LayoutPublic({ children }: LayoutPublicProps) {
 
   return (
     <div className="min-h-screen relative overflow-hidden scroll-smooth" style={{ backgroundColor: '#022b28' }}>
+      {/* Cart Component */}
+      <Cart isOpen={isCartOpen} onClose={() => setIsCartOpen(false)} />
       {/* Header */}
       <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -90,14 +99,34 @@ export default function LayoutPublic({ children }: LayoutPublicProps) {
               </button>
             </nav>
             
-            {/* Botão Agendar e Menu Mobile */}
-            <div className="flex items-center space-x-3 md:space-x-0">
-              <Link 
-                href="/login-cliente"
-                className="bg-[#d34d4c] text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm md:text-base"
-              >
-                Agendar
-              </Link>
+            {/* Botão Agendar, Carrinho e Menu Mobile */}
+            <div className="flex items-center space-x-3 md:space-x-4">
+              {/* Ícone do Carrinho */}
+              <CartIcon onClick={() => setIsCartOpen(true)} />
+              
+              {isLoggedIn ? (
+                <div className="flex items-center space-x-3">
+                  <Link 
+                    href="/painel-cliente"
+                    className="text-[#d34d4c] font-medium text-sm hidden md:block hover:text-[#b83e3d] transition-colors cursor-pointer"
+                  >
+                    Olá, {client?.name}
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm"
+                  >
+                    Sair
+                  </button>
+                </div>
+              ) : (
+                <Link 
+                  href="/login-cliente"
+                  className="bg-[#d34d4c] text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm md:text-base"
+                >
+                  Agendar
+                </Link>
+              )}
               
               {/* Menu Mobile */}
               <button
@@ -172,13 +201,42 @@ export default function LayoutPublic({ children }: LayoutPublicProps) {
             >
               Contato
             </button>
-            <Link 
-              href="/login-cliente"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-center mt-4"
-            >
-              Agendar
-            </Link>
+            {/* Ícone do Carrinho no Mobile */}
+            <div className="flex justify-center mt-4">
+              <CartIcon onClick={() => {
+                setIsCartOpen(true)
+                setIsMobileMenuOpen(false)
+              }} />
+            </div>
+            
+            {isLoggedIn ? (
+              <div className="space-y-3 mt-4">
+                <Link 
+                  href="/painel-cliente"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="text-[#d34d4c] font-medium text-sm text-center block hover:text-[#b83e3d] transition-colors py-2"
+                >
+                  Olá, {client?.name}
+                </Link>
+                <button
+                  onClick={() => {
+                    logout()
+                    setIsMobileMenuOpen(false)
+                  }}
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm w-full text-center py-2"
+                >
+                  Sair
+                </button>
+              </div>
+            ) : (
+              <Link 
+                href="/login-cliente"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-center mt-4 block"
+              >
+                Agendar
+              </Link>
+            )}
           </nav>
         </div>
       )}
@@ -229,6 +287,16 @@ export default function LayoutPublic({ children }: LayoutPublicProps) {
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    )
+}
+
+export default function LayoutPublic({ children }: LayoutPublicProps) {
+  return (
+    <ToastProvider>
+      <CartProvider>
+        <LayoutPublicContent>{children}</LayoutPublicContent>
+      </CartProvider>
+    </ToastProvider>
   )
 }

@@ -150,7 +150,7 @@ export default function ProfissionaisPage() {
                   
                   <div className="text-center">
                     <Link 
-                      href={`/profissionais/${professional._id}`}
+                      href={`/profissionais/${professional.name.toLowerCase()}`}
                       className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium inline-block"
                     >
                       Ver Perfil Completo
@@ -167,7 +167,7 @@ export default function ProfissionaisPage() {
       <section className="py-12 md:py-24 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>
-            Pronto para Ser Atendida?
+            Pronta para Ser Atendida?
           </h2>
           <p className="text-lg md:text-xl leading-relaxed font-body mb-8" style={{ color: '#f2dcbc' }}>
             Agende sua consulta e descubra qual profissional é ideal para o seu caso.

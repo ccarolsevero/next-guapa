@@ -3,11 +3,12 @@
 import LayoutPublic from '../layout-public'
 import { useState, useEffect } from 'react'
 import { Package, Star, ShoppingCart } from 'lucide-react'
+import AddToCartButton from '@/components/AddToCartButton'
 
 interface Product {
   _id: string
   name: string
-  description?: string
+  description: string
   price: number
   originalPrice?: number
   discount: number
@@ -191,12 +192,12 @@ export default function ProdutosPage() {
                         </div>
                       )}
                     </div>
-                    <a 
-                      href="/login-cliente"
-                      className="w-full bg-[#d34d4c] text-white py-2 px-4 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 font-medium text-center block"
-                    >
-                      Comprar
-                    </a>
+                    <div className="relative z-50">
+                      <AddToCartButton 
+                        product={product}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 </div>
               ))}
