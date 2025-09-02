@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
             telefone = valueStr
           }
           
-          // Mapeamento mais inteligente para data
+          // Mapeamento mais inteligente para data (apenas se for uma data válida)
           if (!dataCadastro && (
             keyLower.includes('data') || 
             keyLower.includes('cadastro') || 
@@ -167,7 +167,13 @@ export async function POST(request: NextRequest) {
             key === 'R' ||
             key === 'Cadastrado'
           )) {
-            dataCadastro = valueStr
+            // Validar se é uma data válida antes de usar
+            if (valueStr && valueStr !== '') {
+              const testDate = new Date(valueStr)
+              if (!isNaN(testDate.getTime()) && testDate.getTime() > 0) {
+                dataCadastro = valueStr
+              }
+            }
           }
         }
         
@@ -191,9 +197,21 @@ export async function POST(request: NextRequest) {
           name: nome.trim(),
           email: email.trim().toLowerCase(),
           phone: telefone.trim(),
-          birthDate: dataCadastro ? new Date(dataCadastro) : undefined,
+          birthDate: undefined, // Inicialmente undefined
           address: row.endereco?.trim() || 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
           notes: row.observacoes?.trim() || ''
+        }
+        
+        // Processar data de nascimento apenas se for válida
+        if (dataCadastro && dataCadastro.trim() !== '') {
+          try {
+            const parsedDate = new Date(dataCadastro)
+            if (!isNaN(parsedDate.getTime()) && parsedDate.getTime() > 0) {
+              processedClient.birthDate = parsedDate
+            }
+          } catch (dateError) {
+            console.log(`⚠️ Data inválida na linha ${rowNumber}: "${dataCadastro}" - ignorando`)
+          }
         }
 
         // Preparar dados adicionais para as observações
