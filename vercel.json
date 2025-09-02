@@ -1,0 +1,13 @@
+{
+  "functions": {
+    "src/app/api/clients/import/route.ts": {
+      "maxDuration": 900
+    }
+  },
+  "regions": ["iad1"],
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
+}
