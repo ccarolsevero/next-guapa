@@ -124,13 +124,18 @@ export async function POST(request: NextRequest) {
       if (currentPart === 0) {
         try {
           const existingClientsCount = await Client.countDocuments()
-          currentPart = Math.floor(existingClientsCount / maxClientsPerBatch) + 1
+          // Calcular a próxima parte baseada no número de clientes existentes
+          // Se temos 900 clientes e cada parte tem 300, já processamos 3 partes (1,2,3)
+          // Então a próxima parte deve ser a 4
+          currentPart = Math.ceil(existingClientsCount / maxClientsPerBatch)
           
           // Se já processou tudo, começar do início
-          if (currentPart > totalParts) {
+          if (currentPart >= totalParts) {
             currentPart = 1
             console.log('🔄 Todos os clientes já foram importados. Começando do início...')
           } else {
+            // Ajustar para a próxima parte (não a atual)
+            currentPart = currentPart + 1
             console.log(`🔄 Detectado automaticamente: continuar da parte ${currentPart}/${totalParts}`)
           }
         } catch (error) {
