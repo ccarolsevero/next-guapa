@@ -20,7 +20,23 @@ import {
   BarChart3,
   TrendingUp
 } from 'lucide-react'
-import { Client } from '@/lib/localStorage'
+
+// Interface atualizada para MongoDB
+interface Client {
+  _id: string
+  name: string
+  email: string | null
+  phone: string
+  address: string | null
+  birthDate: string | null
+  notes: string | null
+  profileComplete: boolean
+  onboardingRequired: boolean
+  firstAccess: boolean
+  profileCompletionDate: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 export default function ClientesPage() {
   const [clients, setClients] = useState<Client[]>([])
@@ -29,7 +45,6 @@ export default function ClientesPage() {
   const [sortOrder, setSortOrder] = useState('asc')
   const [isLoading, setIsLoading] = useState(true)
   const [showAnalytics, setShowAnalytics] = useState(false)
-  const [hasPendingSync, setHasPendingSync] = useState(false)
 
   // Carregar clientes do banco de dados
   useEffect(() => {
@@ -44,7 +59,6 @@ export default function ClientesPage() {
         const data = await response.json()
         console.log('Clientes carregados do banco:', data.length)
         setClients(data)
-        setHasPendingSync(false) // Não há mais sincronização pendente com banco real
       } catch (error) {
         console.error('Erro ao carregar clientes:', error)
         setClients([])
@@ -93,49 +107,20 @@ export default function ClientesPage() {
   const handleDelete = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir este cliente?')) {
       try {
-        // Implementar delete no localStorage
-        const updatedClients = clients.filter(client => client.id !== id)
-        setClients(updatedClients)
-        // Salvar no localStorage
-        localStorage.setItem('guapa_clients', JSON.stringify(updatedClients))
-        alert('Cliente excluído com sucesso!')
+        const response = await fetch(`/api/clients/${id}`, {
+          method: 'DELETE'
+        })
+        
+        if (response.ok) {
+          setClients(clients.filter(client => client._id !== id))
+          alert('Cliente excluído com sucesso!')
+        } else {
+          throw new Error('Erro ao excluir cliente')
+        }
       } catch (error) {
         console.error('Erro ao excluir cliente:', error)
         alert('Erro ao excluir cliente')
       }
-    }
-  }
-
-  const exportClients = async () => {
-    try {
-      const data = await localDB.exportData()
-      const blob = new Blob([data], { type: 'application/json' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `clientes-guapa-${new Date().toISOString().split('T')[0]}.json`
-      a.click()
-      URL.revokeObjectURL(url)
-      alert('Dados exportados com sucesso!')
-    } catch (error) {
-      console.error('Erro ao exportar dados:', error)
-      alert('Erro ao exportar dados')
-    }
-  }
-
-  const importClients = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-
-    try {
-      const text = await file.text()
-      await localDB.importData(text)
-      const data = await localDB.getClients()
-      setClients(data)
-      alert('Dados importados com sucesso!')
-    } catch (error) {
-      console.error('Erro ao importar dados:', error)
-      alert('Erro ao importar dados')
     }
   }
 
@@ -149,22 +134,10 @@ export default function ClientesPage() {
 
   const clientsWithEmail = clients.filter(client => client.email).length
   const clientsWithAddress = clients.filter(client => client.address).length
+  const clientsPendingOnboarding = clients.filter(client => client.onboardingRequired).length
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR')
-  }
-
-  const syncPendingData = async () => {
-    try {
-      await localDB.syncAllPending()
-      const data = await localDB.getClients()
-      setClients(data)
-      setHasPendingSync(false)
-      alert('Dados sincronizados com sucesso!')
-    } catch (error) {
-      console.error('Erro ao sincronizar dados:', error)
-      alert('Erro ao sincronizar dados')
-    }
   }
 
   if (isLoading) {
@@ -188,23 +161,9 @@ export default function ClientesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <p className="mt-2 text-sm text-gray-700">
             Gerencie todos os clientes do salão ({totalClients} clientes)
-            {hasPendingSync && (
-              <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                ⚠️ Dados pendentes para sincronização
-              </span>
-            )}
           </p>
         </div>
         <div className="mt-4 sm:mt-0 flex space-x-3">
-          {hasPendingSync && (
-            <button
-              onClick={syncPendingData}
-              className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition-colors flex items-center"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Sincronizar
-            </button>
-          )}
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
@@ -212,23 +171,13 @@ export default function ClientesPage() {
             <BarChart3 className="w-4 h-4 mr-2" />
             {showAnalytics ? 'Ocultar' : 'Mostrar'} Análises
           </button>
-          <label className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center cursor-pointer">
-            <Upload className="w-4 h-4 mr-2" />
-            Importar
-            <input
-              type="file"
-              accept=".json"
-              onChange={importClients}
-              className="hidden"
-            />
-          </label>
-          <button
-            onClick={exportClients}
-            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+          <Link
+            href="/admin/clientes/importar-flexivel"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
           >
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </button>
+            <Upload className="w-4 h-4 mr-2" />
+            Importar Clientes
+          </Link>
           <Link
             href="/admin/clientes/novo"
             className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
@@ -247,7 +196,7 @@ export default function ClientesPage() {
               <TrendingUp className="w-5 h-5 mr-2" />
               Análise de Clientes
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="flex items-center">
                   <Users className="w-8 h-8 text-blue-600" />
@@ -281,6 +230,15 @@ export default function ClientesPage() {
                   <div className="ml-3">
                     <p className="text-sm font-medium text-purple-600">Com Endereço</p>
                     <p className="text-2xl font-bold text-purple-900">{clientsWithAddress}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <Users className="w-8 h-8 text-orange-600" />
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-orange-600">Pendente Onboarding</p>
+                    <p className="text-2xl font-bold text-orange-900">{clientsPendingOnboarding}</p>
                   </div>
                 </div>
               </div>
@@ -364,7 +322,7 @@ export default function ClientesPage() {
                 </tr>
               ) : (
                 filteredAndSortedClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-gray-50">
+                  <tr key={client._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center">
@@ -372,7 +330,7 @@ export default function ClientesPage() {
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900">{client.name}</div>
-                          <div className="text-sm text-gray-500">ID: {client.id}</div>
+                          <div className="text-sm text-gray-500">ID: {client._id.slice(-8)}</div>
                         </div>
                       </div>
                     </td>
@@ -395,32 +353,32 @@ export default function ClientesPage() {
                       {formatDate(client.createdAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {client.isPendingSync ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          ⏳ Pendente
+                      {client.onboardingRequired ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                          ⏳ Onboarding Pendente
                         </span>
                       ) : (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          ✅ Sincronizado
+                          ✅ Perfil Completo
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Link
-                          href={`/admin/clientes/${client.id}`}
+                          href={`/admin/clientes/${client._id}`}
                           className="text-pink-600 hover:text-pink-900"
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
                         <Link
-                          href={`/admin/clientes/${client.id}/editar`}
+                          href={`/admin/clientes/${client._id}/editar`}
                           className="text-blue-600 hover:text-blue-900"
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
                         <button
-                          onClick={() => handleDelete(client.id)}
+                          onClick={() => handleDelete(client._id)}
                           className="text-red-600 hover:text-red-900"
                         >
                           <Trash className="w-4 h-4" />
