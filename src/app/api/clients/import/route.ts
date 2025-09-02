@@ -21,7 +21,7 @@ interface ExcelClient {
   ticketMedio?: number
   
   // Mapeamento alternativo para colunas específicas
-  [key: string]: any // Permite qualquer coluna
+  [key: string]: string | number | undefined // Permite qualquer coluna
 }
 
 interface ProcessedClient {
@@ -35,6 +35,8 @@ interface ProcessedClient {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🚀 === INÍCIO IMPORTAÇÃO ===')
+    
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log(`📁 Arquivo recebido: ${file.name} (${file.size} bytes)`)
+
     // Ler arquivo Excel
     const buffer = await file.arrayBuffer()
     const workbook = XLSX.read(buffer, { type: 'buffer' })
@@ -80,28 +84,34 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log(`📊 Total de linhas para processar: ${jsonData.length}`)
+
     const results = {
       total: jsonData.length,
       created: 0,
       updated: 0,
       errors: [] as string[],
-      details: [] as any[]
+      details: [] as Array<{ action: 'created' | 'updated'; email: string; name: string }>
     }
 
-    // Processar cada linha
+    // Conectar ao MongoDB uma vez
+    try {
+      await connectDB()
+      console.log('✅ Conectado ao MongoDB')
+    } catch (dbError) {
+      console.error('❌ Erro de conexão com MongoDB:', dbError)
+      return NextResponse.json(
+        { error: 'Erro de conexão com banco de dados' },
+        { status: 500 }
+      )
+    }
+
+    // Processar cada linha sequencialmente (mais seguro para grandes volumes)
     for (let i = 0; i < jsonData.length; i++) {
       const row = jsonData[i]
       const rowNumber = i + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
 
       try {
-        // Debug: mostrar todas as colunas disponíveis
-        console.log(`\n🔍 === LINHA ${rowNumber} ===`)
-        console.log(`   📋 Colunas disponíveis:`, Object.keys(row))
-        console.log(`   📊 Dados completos:`, row)
-        
-        // Mostrar mapeamento das colunas
-        console.log(`   🔍 Mapeando colunas para linha ${rowNumber}...`)
-        
         // Mapeamento automático baseado no conteúdo das colunas
         let nome = ''
         let email = ''
@@ -124,7 +134,6 @@ export async function POST(request: NextRequest) {
             key === 'cliente'
           )) {
             nome = valueStr
-            console.log(`     ✅ Nome encontrado na coluna "${key}": "${valueStr}"`)
           }
           
           // Mapeamento mais inteligente para email
@@ -135,7 +144,6 @@ export async function POST(request: NextRequest) {
             keyLower === 'email'
           )) {
             email = valueStr
-            console.log(`     ✅ Email encontrado na coluna "${key}": "${valueStr}"`)
           }
           
           // Mapeamento mais inteligente para telefone
@@ -149,7 +157,6 @@ export async function POST(request: NextRequest) {
             key === 'celular'
           )) {
             telefone = valueStr
-            console.log(`     ✅ Telefone encontrado na coluna "${key}": "${valueStr}"`)
           }
           
           // Mapeamento mais inteligente para data
@@ -164,21 +171,11 @@ export async function POST(request: NextRequest) {
           }
         }
         
-        // Debug: mostrar valores encontrados
-        console.log(`   📝 Valores encontrados:`, { nome, email, telefone, dataCadastro })
-        console.log(`   🔍 Mapeamento final: nome="${nome}", email="${email}", telefone="${telefone}"`)
-        
         // Validar campos obrigatórios (apenas nome e telefone são obrigatórios)
-        console.log(`   ✅ Validação: nome="${nome}" (${nome ? 'OK' : 'VAZIO'}), telefone="${telefone}" (${telefone ? 'OK' : 'VAZIO'})`)
-        
         if (!nome || !telefone) {
-          const errorMsg = `Linha ${rowNumber}: Nome e telefone são obrigatórios. Encontrado: nome="${nome}", telefone="${telefone}". Colunas disponíveis: ${Object.keys(row).join(', ')}`
-          console.log(`   ❌ ERRO: ${errorMsg}`)
-          results.errors.push(errorMsg)
+          results.errors.push(`Linha ${rowNumber}: Nome e telefone são obrigatórios. Encontrado: nome="${nome}", telefone="${telefone}". Colunas disponíveis: ${Object.keys(row).join(', ')}`)
           continue
         }
-        
-        console.log(`   ✅ Validação passou!`)
         
         // Se não tiver email, gerar um baseado no nome
         if (!email) {
@@ -187,7 +184,6 @@ export async function POST(request: NextRequest) {
             .replace(/\s+/g, '.') // Substitui espaços por pontos
             .trim()
           email = `${nomeNormalizado}@guapa.com`
-          console.log(`   📧 Email gerado para "${nome}": ${email}`)
         }
 
         // Processar dados do cliente
@@ -208,32 +204,23 @@ export async function POST(request: NextRequest) {
         const servicosRealizados = row.servicosRealizados ? 
           row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
 
-        try {
-          await connectDB()
-        } catch (dbError) {
-          console.error(`Erro de conexão com MongoDB na linha ${rowNumber}:`, dbError)
-          results.errors.push(`Linha ${rowNumber}: Erro de conexão com banco de dados - ${dbError instanceof Error ? dbError.message : 'Erro desconhecido'}`)
-          continue
-        }
-        
         // Verificar se o cliente já existe
         let existingClient
         try {
           existingClient = await Client.findOne({ email: processedClient.email })
         } catch (findError) {
           console.error(`Erro ao buscar cliente na linha ${rowNumber}:`, findError)
-          results.errors.push(`Linha ${rowNumber}: Erro ao buscar cliente existente - ${findError instanceof Error ? findError.message : 'Erro desconhecido'}`)
+          results.errors.push(`Linha ${rowNumber}: Erro ao buscar cliente existente`)
+          // Pular para próxima linha
           continue
         }
 
         if (existingClient) {
           // Atualizar cliente existente
-          // Preparar observações atualizadas
           const updatedNotes = `${processedClient.notes || existingClient.notes || ''}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
 
-          let updatedClient
           try {
-            updatedClient = await Client.findByIdAndUpdate(
+            await Client.findByIdAndUpdate(
               existingClient._id,
               {
                 name: processedClient.name,
@@ -244,18 +231,18 @@ export async function POST(request: NextRequest) {
               },
               { new: true }
             )
+
+            results.updated++
+            results.details.push({
+              action: 'updated',
+              email: processedClient.email,
+              name: processedClient.name
+            })
           } catch (updateError) {
             console.error(`Erro ao atualizar cliente na linha ${rowNumber}:`, updateError)
-            results.errors.push(`Linha ${rowNumber}: Erro ao atualizar cliente - ${updateError instanceof Error ? updateError.message : 'Erro desconhecido'}`)
+            results.errors.push(`Linha ${rowNumber}: Erro ao atualizar cliente`)
             continue
           }
-
-          results.updated++
-          results.details.push({
-            action: 'updated',
-            email: processedClient.email,
-            name: processedClient.name
-          })
         } else {
           // Criar novo cliente
           const hashedPassword = await bcrypt.hash('123456', 12) // Senha padrão
@@ -263,9 +250,8 @@ export async function POST(request: NextRequest) {
           // Preparar observações para novo cliente
           const newClientNotes = `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
 
-          let newClient
           try {
-            newClient = await Client.create({
+            await Client.create({
               name: processedClient.name,
               email: processedClient.email,
               phone: processedClient.phone,
@@ -274,18 +260,23 @@ export async function POST(request: NextRequest) {
               notes: newClientNotes,
               password: hashedPassword
             })
+
+            results.created++
+            results.details.push({
+              action: 'created',
+              email: processedClient.email,
+              name: processedClient.name
+            })
           } catch (createError) {
             console.error(`Erro ao criar cliente na linha ${rowNumber}:`, createError)
-            results.errors.push(`Linha ${rowNumber}: Erro ao criar cliente - ${createError instanceof Error ? createError.message : 'Erro desconhecido'}`)
+            results.errors.push(`Linha ${rowNumber}: Erro ao criar cliente`)
             continue
           }
+        }
 
-          results.created++
-          results.details.push({
-            action: 'created',
-            email: processedClient.email,
-            name: processedClient.name
-          })
+        // Log de progresso a cada 100 linhas
+        if ((i + 1) % 100 === 0) {
+          console.log(`📊 Progresso: ${i + 1}/${jsonData.length} linhas processadas`)
         }
 
       } catch (error) {
@@ -302,13 +293,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    console.log(`✅ Importação concluída: ${results.created} criados, ${results.updated} atualizados, ${results.errors.length} erros`)
+
     return NextResponse.json({
       message: 'Importação concluída',
       results
     })
 
   } catch (error) {
-    console.error('Erro na importação:', error)
+    console.error('❌ Erro na importação:', error)
     
     // Retornar erro em formato JSON válido
     let errorMessage = 'Erro interno do servidor durante importação'
