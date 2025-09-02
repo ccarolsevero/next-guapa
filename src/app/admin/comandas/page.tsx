@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
@@ -15,86 +15,115 @@ import {
   Play
 } from 'lucide-react'
 
-// Mock data para comandas
-const mockComandas = [
-  {
-    id: 1,
-    clientName: "Maria Silva",
-    clientPhone: "(11) 99999-1234",
-    professionalName: "Ana Carolina",
-    startedAt: "2024-01-15 14:00",
-    status: "em_atendimento",
-    services: [
-      { id: 1, name: "Corte Feminino", price: 45.00, quantity: 1 },
-      { id: 2, name: "Hidratação", price: 50.00, quantity: 1 }
-    ],
-    products: [
-      { id: 1, name: "Shampoo Profissional", price: 35.00, quantity: 1 },
-      { id: 2, name: "Máscara Hidratante", price: 28.00, quantity: 1 }
-    ],
-    total: 158.00,
-    duration: 120
-  },
-  {
-    id: 2,
-    clientName: "Joana Costa",
-    clientPhone: "(11) 99999-5678",
-    professionalName: "Mariana Silva",
-    startedAt: "2024-01-15 15:30",
-    status: "em_atendimento",
-    services: [
-      { id: 3, name: "Coloração", price: 80.00, quantity: 1 }
-    ],
-    products: [],
-    total: 80.00,
-    duration: 120
-  },
-  {
-    id: 3,
-    clientName: "Fernanda Santos",
-    clientPhone: "(11) 99999-9012",
-    professionalName: "Juliana Costa",
-    startedAt: "2024-01-15 16:00",
-    status: "aguardando",
-    services: [
-      { id: 6, name: "Maquiagem Social", price: 80.00, quantity: 1 }
-    ],
-    products: [],
-    total: 80.00,
-    duration: 60
+interface Comanda {
+  _id: string
+  clientId: {
+    _id: string
+    name: string
+    phone: string
+    email: string
   }
-]
+  professionalId: {
+    _id: string
+    name: string
+  }
+  status: 'em_atendimento' | 'finalizada' | 'cancelada'
+  dataInicio: string
+  dataFim?: string
+  servicos: Array<{
+    servicoId: string
+    nome: string
+    preco: number
+    quantidade: number
+  }>
+  produtos: Array<{
+    produtoId: string
+    nome: string
+    preco: number
+    quantidade: number
+    vendidoPor: string
+  }>
+  observacoes: string
+  valorTotal: number
+  createdAt: string
+  updatedAt: string
+}
 
 const statusColors = {
-  aguardando: "bg-yellow-100 text-yellow-800",
   em_atendimento: "bg-blue-100 text-blue-800",
-  finalizado: "bg-green-100 text-green-800",
-  cancelado: "bg-red-100 text-red-800"
+  finalizada: "bg-green-100 text-green-800",
+  cancelada: "bg-red-100 text-red-800"
 }
 
 const statusLabels = {
-  aguardando: "Aguardando",
   em_atendimento: "Em Atendimento",
-  finalizado: "Finalizado",
-  cancelado: "Cancelado"
+  finalizada: "Finalizada",
+  cancelada: "Cancelada"
 }
 
 export default function ComandasPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
+  const [comandas, setComandas] = useState<Comanda[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredComandas = mockComandas.filter(comanda => {
-    const matchesSearch = comanda.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comanda.professionalName.toLowerCase().includes(searchTerm.toLowerCase())
+  // Buscar comandas do banco
+  useEffect(() => {
+    const fetchComandas = async () => {
+      try {
+        setLoading(true)
+        console.log('🔄 Buscando comandas do banco...')
+        
+        const response = await fetch('/api/comandas')
+        console.log('📡 Resposta da API de comandas:', response.status)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('📊 Comandas recebidas:', data.comandas?.length || 0)
+          setComandas(data.comandas || [])
+        } else {
+          console.error('❌ Erro na API de comandas:', response.status)
+          const errorText = await response.text()
+          console.error('❌ Detalhes do erro:', errorText)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar comandas:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchComandas()
+  }, [])
+
+  const filteredComandas = comandas.filter(comanda => {
+    const matchesSearch = comanda.clientId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         comanda.professionalId.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'todos' || comanda.status === statusFilter
     
     return matchesSearch && matchesStatus
   })
 
-  const getTotalComandas = () => mockComandas.length
-  const getComandasAtivas = () => mockComandas.filter(c => c.status === 'em_atendimento' || c.status === 'aguardando').length
-  const getTotalFaturado = () => mockComandas.filter(c => c.status === 'finalizado').reduce((sum, c) => sum + c.total, 0)
+  const getTotalComandas = () => comandas.length
+  const getComandasAtivas = () => comandas.filter(c => c.status === 'em_atendimento').length
+  const getTotalFaturado = () => comandas.filter(c => c.status === 'finalizada').reduce((sum, c) => sum + c.valorTotal, 0)
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando comandas...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6">
@@ -189,10 +218,9 @@ export default function ComandasPage() {
               style={{ color: '#000000' }}
             >
               <option value="todos">Todos os Status</option>
-              <option value="aguardando">Aguardando</option>
               <option value="em_atendimento">Em Atendimento</option>
-              <option value="finalizado">Finalizado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="finalizada">Finalizada</option>
+              <option value="cancelada">Cancelada</option>
             </select>
           </div>
         </div>
@@ -229,43 +257,37 @@ export default function ComandasPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {filteredComandas.map((comanda) => (
-                <tr key={comanda.id} className="hover:bg-gray-50">
+                <tr key={comanda._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{comanda.clientName}</div>
-                      <div className="text-sm text-gray-500">{comanda.clientPhone}</div>
+                      <div className="text-sm font-medium text-gray-900">{comanda.clientId.name}</div>
+                      <div className="text-sm text-gray-500">{comanda.clientId.phone}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.professionalName}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.startedAt}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.professionalId.name}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(comanda.dataInicio)}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[comanda.status as keyof typeof statusColors]}`}>
-                      {statusLabels[comanda.status as keyof typeof statusLabels]}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[comanda.status]}`}>
+                      {statusLabels[comanda.status]}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {comanda.services.length + comanda.products.length} itens
+                    {comanda.servicos.length + comanda.produtos.length} itens
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    R$ {comanda.total.toFixed(2)}
+                    R$ {comanda.valorTotal.toFixed(2)}
                   </td>
                   <td className="px-6 py-4 text-sm font-medium">
                     <div className="flex space-x-2">
                       <Link
-                        href={`/admin/comandas/${comanda.id}`}
+                        href={`/admin/comandas/${comanda._id}`}
                         className="text-black hover:text-gray-600 transition-colors"
                       >
                         Visualizar
                       </Link>
-                      <Link
-                        href={`/admin/comandas/${comanda.id}/editar`}
-                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                      >
-                        Editar
-                      </Link>
-                      {comanda.status !== 'finalizado' && (
+                      {comanda.status !== 'finalizada' && (
                         <Link
-                          href={`/admin/comandas/${comanda.id}/finalizar`}
+                          href={`/admin/atendimentos/finalizar/${comanda._id}`}
                           className="text-green-600 hover:text-green-800 transition-colors"
                         >
                           Finalizar
@@ -283,8 +305,15 @@ export default function ComandasPage() {
       {filteredComandas.length === 0 && (
         <div className="text-center py-12">
           <ShoppingBag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma comanda encontrada</h3>
-          <p className="text-gray-600">Não há comandas que correspondam aos filtros aplicados.</p>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            {comandas.length === 0 ? 'Nenhuma comanda encontrada' : 'Nenhuma comanda corresponde aos filtros'}
+          </h3>
+          <p className="text-gray-600">
+            {comandas.length === 0 
+              ? 'Crie sua primeira comanda para começar a gerenciar os atendimentos.' 
+              : 'Tente ajustar os filtros de busca ou status.'
+            }
+          </p>
         </div>
       )}
     </div>

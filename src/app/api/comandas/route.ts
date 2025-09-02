@@ -5,28 +5,103 @@ import Comanda from '@/models/Comanda'
 // GET - Listar comandas
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 === API COMANDAS - GET ===')
+    console.log('📡 Conectando ao banco...')
+    
     await connectDB()
+    console.log('✅ Conectado ao banco')
     
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
     const clientId = searchParams.get('clientId')
     const professionalId = searchParams.get('professionalId')
     
-    let query: any = {}
+    console.log('🔍 Parâmetros de busca:')
+    console.log('  - Status:', status || 'todos')
+    console.log('  - Cliente ID:', clientId || 'todos')
+    console.log('  - Profissional ID:', professionalId || 'todos')
+    
+    const query: Record<string, string> = {}
     
     if (status) query.status = status
     if (clientId) query.clientId = clientId
     if (professionalId) query.professionalId = professionalId
 
-    const comandas = await Comanda.find(query)
-      .populate('clientId', 'name phone email')
-      .populate('professionalId', 'name')
-      .sort({ createdAt: -1 })
+    console.log('🔍 Query final:', JSON.stringify(query, null, 2))
+    
+    // Usar conexão direta do MongoDB (Mongoose não está funcionando)
+    const { MongoClient } = await import('mongodb')
+    const uri = process.env.MONGODB_URI!
+    const client = new MongoClient(uri)
+    await client.connect()
+    
+    const db = client.db(process.env.DB_NAME || 'guapa')
+    const comandasCollection = db.collection('comandas')
+    
+    // Buscar comandas sem populate primeiro para debug
+    const comandasRaw = await comandasCollection.find(query).toArray()
+    console.log('📊 Comandas encontradas (raw MongoDB):', comandasRaw.length)
+    
+    if (comandasRaw.length > 0) {
+      console.log('📋 Primeira comanda (raw MongoDB):', {
+        id: comandasRaw[0]._id,
+        clientId: comandasRaw[0].clientId,
+        professionalId: comandasRaw[0].professionalId,
+        status: comandasRaw[0].status
+      })
+    }
 
+    // Agora buscar com populate usando MongoDB aggregation
+    const comandas = await comandasCollection.aggregate([
+      { $match: query },
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'clientId',
+          foreignField: '_id',
+          as: 'clientData'
+        }
+      },
+      {
+        $lookup: {
+          from: 'professionals',
+          localField: 'professionalId',
+          foreignField: '_id',
+          as: 'professionalData'
+        }
+      },
+      {
+        $addFields: {
+          clientId: { $arrayElemAt: ['$clientData', 0] },
+          professionalId: { $arrayElemAt: ['$professionalData', 0] }
+        }
+      },
+      {
+        $project: {
+          clientData: 0,
+          professionalData: 0
+        }
+      },
+      { $sort: { createdAt: -1 } }
+    ]).toArray()
+
+    console.log('📊 Comandas com lookup (MongoDB):', comandas.length)
+    
+    if (comandas.length > 0) {
+      console.log('📋 Primeira comanda (lookup MongoDB):', {
+        id: comandas[0]._id,
+        clientId: comandas[0].clientId,
+        professionalId: comandas[0].professionalId,
+        status: comandas[0].status
+      })
+    }
+
+    await client.close()
+    console.log('✅ Retornando comandas:', comandas.length)
     return NextResponse.json({ comandas })
 
   } catch (error) {
-    console.error('Erro ao buscar comandas:', error)
+    console.error('❌ Erro ao buscar comandas:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
