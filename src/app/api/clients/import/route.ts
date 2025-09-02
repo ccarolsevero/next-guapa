@@ -86,8 +86,12 @@ export async function POST(request: NextRequest) {
 
       try {
         // Debug: mostrar todas as colunas disponíveis
-        console.log(`Linha ${rowNumber} - Colunas disponíveis:`, Object.keys(row))
-        console.log(`Linha ${rowNumber} - Dados completos:`, row)
+        console.log(`\n🔍 === LINHA ${rowNumber} ===`)
+        console.log(`   📋 Colunas disponíveis:`, Object.keys(row))
+        console.log(`   📊 Dados completos:`, row)
+        
+        // Mostrar mapeamento das colunas
+        console.log(`   🔍 Mapeando colunas para linha ${rowNumber}...`)
         
         // Mapeamento automático baseado no conteúdo das colunas
         let nome = ''
@@ -100,30 +104,81 @@ export async function POST(request: NextRequest) {
           const keyLower = key.toLowerCase()
           const valueStr = String(value || '').trim()
           
-          if (!nome && (keyLower.includes('nome') || keyLower.includes('cliente') || key === '1' || key === 'A')) {
+          // Mapeamento mais inteligente para nome
+          if (!nome && (
+            keyLower.includes('nome') || 
+            keyLower.includes('cliente') || 
+            keyLower === 'cliente' ||
+            key === '1' || 
+            key === 'A' ||
+            key === 'Cliente' ||
+            key === 'cliente'
+          )) {
             nome = valueStr
+            console.log(`     ✅ Nome encontrado na coluna "${key}": "${valueStr}"`)
           }
           
-          if (!email && (keyLower.includes('email') || key === 'F' || valueStr.includes('@'))) {
+          // Mapeamento mais inteligente para email
+          if (!email && (
+            keyLower.includes('email') || 
+            key === 'F' || 
+            valueStr.includes('@') ||
+            keyLower === 'email'
+          )) {
             email = valueStr
+            console.log(`     ✅ Email encontrado na coluna "${key}": "${valueStr}"`)
           }
           
-          if (!telefone && (keyLower.includes('telefone') || keyLower.includes('celular') || key === 'E' || keyLower.includes('phone'))) {
+          // Mapeamento mais inteligente para telefone
+          if (!telefone && (
+            keyLower.includes('telefone') || 
+            keyLower.includes('celular') || 
+            keyLower === 'celular' ||
+            key === 'E' || 
+            keyLower.includes('phone') ||
+            key === 'Celular' ||
+            key === 'celular'
+          )) {
             telefone = valueStr
+            console.log(`     ✅ Telefone encontrado na coluna "${key}": "${valueStr}"`)
           }
           
-          if (!dataCadastro && (keyLower.includes('data') || keyLower.includes('cadastro') || key === 'R')) {
+          // Mapeamento mais inteligente para data
+          if (!dataCadastro && (
+            keyLower.includes('data') || 
+            keyLower.includes('cadastro') || 
+            keyLower === 'cadastrado' ||
+            key === 'R' ||
+            key === 'Cadastrado'
+          )) {
             dataCadastro = valueStr
           }
         }
         
         // Debug: mostrar valores encontrados
-        console.log(`Linha ${rowNumber} - Valores encontrados:`, { nome, email, telefone, dataCadastro })
+        console.log(`   📝 Valores encontrados:`, { nome, email, telefone, dataCadastro })
+        console.log(`   🔍 Mapeamento final: nome="${nome}", email="${email}", telefone="${telefone}"`)
         
-        // Validar campos obrigatórios
-        if (!nome || !email || !telefone) {
-          results.errors.push(`Linha ${rowNumber}: Nome, email e telefone são obrigatórios. Encontrado: nome="${nome}", email="${email}", telefone="${telefone}". Colunas disponíveis: ${Object.keys(row).join(', ')}`)
+        // Validar campos obrigatórios (apenas nome e telefone são obrigatórios)
+        console.log(`   ✅ Validação: nome="${nome}" (${nome ? 'OK' : 'VAZIO'}), telefone="${telefone}" (${telefone ? 'OK' : 'VAZIO'})`)
+        
+        if (!nome || !telefone) {
+          const errorMsg = `Linha ${rowNumber}: Nome e telefone são obrigatórios. Encontrado: nome="${nome}", telefone="${telefone}". Colunas disponíveis: ${Object.keys(row).join(', ')}`
+          console.log(`   ❌ ERRO: ${errorMsg}`)
+          results.errors.push(errorMsg)
           continue
+        }
+        
+        console.log(`   ✅ Validação passou!`)
+        
+        // Se não tiver email, gerar um baseado no nome
+        if (!email) {
+          const nomeNormalizado = nome.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+            .replace(/\s+/g, '.') // Substitui espaços por pontos
+            .trim()
+          email = `${nomeNormalizado}@guapa.com`
+          console.log(`   📧 Email gerado para "${nome}": ${email}`)
         }
 
         // Processar dados do cliente

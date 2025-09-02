@@ -149,17 +149,17 @@ export default function ImportarClientesPage() {
   const downloadTemplate = () => {
     const template = [
       {
-        nome: 'Ana Silva',
-        email: 'ana.silva@email.com',
-        telefone: '(11) 99999-0001',
-        dataNascimento: '1990-05-15',
-        endereco: 'Rua Exemplo, 123 - Centro',
-        observacoes: 'Cliente fiel',
-        totalVisitas: 5,
-        valorTotal: 450.00,
-        ultimaVisita: '2024-01-15',
-        servicosRealizados: 'Corte, Hidratação, Coloração',
-        ticketMedio: 90.00
+        Cliente: 'Ana Silva',
+        Celular: '(11) 99999-0001',
+        Cadastrado: '24/11/2021',
+        Email: 'ana.silva@email.com', // Opcional - será gerado se não informado
+        Endereco: 'Rua Exemplo, 123 - Centro',
+        Observacoes: 'Cliente fiel',
+        TotalVisitas: 5,
+        ValorTotal: 450.00,
+        UltimaVisita: '2024-01-15',
+        ServicosRealizados: 'Corte, Hidratação, Coloração',
+        TicketMedio: 90.00
       }
     ]
 
@@ -205,10 +205,12 @@ export default function ImportarClientesPage() {
           <div>
             <h3 className="font-medium text-blue-800 mb-2">Campos Obrigatórios:</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• <strong>nome</strong> - Nome completo do cliente</li>
-              <li>• <strong>email</strong> - Email único do cliente</li>
-              <li>• <strong>telefone</strong> - Telefone do cliente</li>
+              <li>• <strong>Cliente</strong> - Nome completo do cliente</li>
+              <li>• <strong>Celular</strong> - Telefone do cliente</li>
             </ul>
+            <p className="text-xs text-blue-600 mt-2">
+              <strong>Email:</strong> Se não informado, será gerado automaticamente como "nome.cliente@guapa.com"
+            </p>
           </div>
           <div>
             <h3 className="font-medium text-blue-800 mb-2">Campos Opcionais:</h3>
@@ -303,23 +305,21 @@ export default function ImportarClientesPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visitas</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Gasto</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Celular</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cadastrado</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Visitas</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {previewData.slice(0, 5).map((row, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.nome || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.email || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.telefone || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.totalVisitas || '0'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        R$ {row.valorTotal ? parseFloat(row.valorTotal.toString()).toFixed(2) : '0,00'}
-                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{row.Cliente || row.nome || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{row.Email || row.email || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{row.Celular || row.telefone || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{row.Cadastrado || row.dataCadastro || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{row.TotalVisitas || row.totalVisitas || '0'}</td>
                     </tr>
                   ))}
                 </tbody>
