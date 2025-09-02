@@ -39,6 +39,9 @@ export async function POST(request: NextRequest) {
     
     const formData = await request.formData()
     const file = formData.get('file') as File
+    const startFromBatch = formData.get('startFromBatch') ? parseInt(formData.get('startFromBatch') as string) : 1
+    
+    console.log(`📦 Importação configurada para começar do lote: ${startFromBatch}`)
 
     if (!file) {
       return NextResponse.json(
@@ -91,7 +94,9 @@ export async function POST(request: NextRequest) {
       created: 0,
       updated: 0,
       errors: [] as string[],
-      details: [] as Array<{ action: 'created' | 'updated'; email: string; name: string }>
+      details: [] as Array<{ action: 'created' | 'updated'; email: string; name: string }>,
+      currentPart: startFromBatch,
+      totalParts: 1
     }
 
     // Conectar ao MongoDB uma vez
@@ -106,47 +111,113 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Processar arquivos grandes automaticamente em partes
-    const maxClientsPerBatch = 500
+    // Processar arquivos grandes em partes menores para evitar timeout
+    const maxClientsPerBatch = 300 // Reduzido para 300 para garantir que caiba no timeout
     const totalClients = jsonData.length
     const needsBatching = totalClients > maxClientsPerBatch
     
     if (needsBatching) {
-      console.log(`📦 Arquivo grande detectado: ${totalClients} clientes`)
-      console.log(`🔄 Processando automaticamente em partes de ${maxClientsPerBatch}`)
+      const totalParts = Math.ceil(totalClients / maxClientsPerBatch)
+      const currentPart = startFromBatch
+      
+      results.totalParts = totalParts
+      results.currentPart = currentPart
+      
+      if (currentPart > totalParts) {
+        return NextResponse.json({
+          error: `Parte ${currentPart} não existe. Total de partes: ${totalParts}`,
+          totalParts,
+          currentPart
+        }, { status: 400 })
+      }
+      
+      // Calcular índices para a parte atual
+      const startIndex = (currentPart - 1) * maxClientsPerBatch
+      const endIndex = Math.min(startIndex + maxClientsPerBatch, totalClients)
+      const partData = jsonData.slice(startIndex, endIndex)
+      
+      console.log(`📦 Processando parte ${currentPart}/${totalParts}: clientes ${startIndex + 1} a ${endIndex}`)
+      
+      // Processar apenas esta parte
+      await processClientBatch(partData, startIndex, results)
+      
+    } else {
+      // Para arquivos pequenos, processar normalmente
+      console.log('📦 Arquivo pequeno, processando normalmente')
+      await processClientBatch(jsonData, 0, results)
+    }
+
+    console.log(`✅ Importação concluída: ${results.created} criados, ${results.updated} atualizados, ${results.errors.length} erros`)
+
+    return NextResponse.json({
+      message: 'Importação concluída',
+      results
+    })
+
+  } catch (error) {
+    console.error('❌ Erro na importação:', error)
+    
+    // Retornar erro em formato JSON válido
+    let errorMessage = 'Erro interno do servidor durante importação'
+    let errorDetails = ''
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+      errorDetails = error.stack || ''
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else {
+      errorMessage = 'Erro desconhecido durante importação'
     }
     
-    // Processar em lotes paralelos para melhor performance
-    const batchSize = 50 // Processar 50 clientes por vez
-    const batches = []
+    console.error('Detalhes do erro:', { errorMessage, errorDetails })
     
-    for (let i = 0; i < jsonData.length; i += batchSize) {
-      const batch = jsonData.slice(i, i + batchSize)
-      batches.push({
-        data: batch,
-        startIndex: i,
-        batchNumber: Math.floor(i / batchSize) + 1
-      })
-    }
+    return NextResponse.json(
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      },
+      { status: 500 }
+    )
+  }
+}
+
+// Função auxiliar para processar lote de clientes
+async function processClientBatch(clientData: ExcelClient[], startIndex: number, results: {
+  total: number
+  created: number
+  updated: number
+  errors: string[]
+  details: Array<{ action: 'created' | 'updated'; email: string; name: string }>
+  currentPart: number
+  totalParts: number
+}) {
+  const batchSize = 50 // Processar 50 clientes por vez
+  const batches = []
+  
+  for (let i = 0; i < clientData.length; i += batchSize) {
+    const batch = clientData.slice(i, i + batchSize)
+    batches.push({
+      data: batch,
+      startIndex: startIndex + i,
+      batchNumber: Math.floor(i / batchSize) + 1
+    })
+  }
+  
+  console.log(`📦 Processando ${batches.length} lotes de ${batchSize} clientes cada`)
+  
+  // Processar lotes sequencialmente para evitar timeout
+  for (let i = 0; i < batches.length; i++) {
+    const batch = batches[i]
+    const { data: batchData, startIndex, batchNumber } = batch
     
-    console.log(`📦 Processando ${batches.length} lotes de ${batchSize} clientes cada`)
+    console.log(`🚀 Processando lote ${batchNumber}/${batches.length}`)
     
-    // Processar lotes em paralelo com limite de concorrência (reduzido para arquivos grandes)
-    const concurrencyLimit = needsBatching ? 3 : 5 // Menos concorrência para arquivos grandes
-    let processedBatches = 0
-    
-    for (let i = 0; i < batches.length; i += concurrencyLimit) {
-      const currentBatches = batches.slice(i, i + concurrencyLimit)
-      
-      console.log(`🚀 Processando lotes ${i + 1} a ${Math.min(i + concurrencyLimit, batches.length)}`)
-      
-      const batchPromises = currentBatches.map(async (batch) => {
-        const { data: batchData, startIndex, batchNumber } = batch
-        
-        // Processar cada linha do lote
-        for (let j = 0; j < batchData.length; j++) {
-          const row = batchData[j]
-          const rowNumber = startIndex + j + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
+    // Processar cada linha do lote
+    for (let j = 0; j < batchData.length; j++) {
+      const row = batchData[j]
+      const rowNumber = startIndex + j + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
 
       try {
         // Mapeamento automático baseado no conteúdo das colunas
@@ -257,7 +328,7 @@ export async function POST(request: NextRequest) {
         const ticketMedio = parseFloat(row.ticketMedio?.toString() || '0')
         const ultimaVisita = row.ultimaVisita ? new Date(row.ultimaVisita) : undefined
         const servicosRealizados = row.servicosRealizados ? 
-          row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
+          row.servicosRealizados.split(',').map((s: string) => s.trim()).filter((s: string) => s) : []
 
         // Verificar se o cliente já existe
         let existingClient
@@ -266,7 +337,6 @@ export async function POST(request: NextRequest) {
         } catch (findError) {
           console.error(`Erro ao buscar cliente na linha ${rowNumber}:`, findError)
           results.errors.push(`Linha ${rowNumber}: Erro ao buscar cliente existente`)
-          // Pular para próxima linha
           continue
         }
 
@@ -350,51 +420,5 @@ export async function POST(request: NextRequest) {
     
     // Log de conclusão do lote
     console.log(`✅ Lote ${batchNumber} concluído`)
-    return batchNumber
-  })
-  
-  // Aguardar processamento dos lotes atuais
-  try {
-    await Promise.all(batchPromises)
-    processedBatches += currentBatches.length
-    console.log(`📊 Progresso geral: ${processedBatches}/${batches.length} lotes processados`)
-  } catch (batchError) {
-    console.error(`❌ Erro em lote:`, batchError)
-  }
-}
-
-    console.log(`✅ Importação concluída: ${results.created} criados, ${results.updated} atualizados, ${results.errors.length} erros`)
-
-    return NextResponse.json({
-      message: 'Importação concluída',
-      results
-    })
-
-  } catch (error) {
-    console.error('❌ Erro na importação:', error)
-    
-    // Retornar erro em formato JSON válido
-    let errorMessage = 'Erro interno do servidor durante importação'
-    let errorDetails = ''
-    
-    if (error instanceof Error) {
-      errorMessage = error.message
-      errorDetails = error.stack || ''
-    } else if (typeof error === 'string') {
-      errorMessage = error
-    } else {
-      errorMessage = 'Erro desconhecido durante importação'
-    }
-    
-    console.error('Detalhes do erro:', { errorMessage, errorDetails })
-    
-    return NextResponse.json(
-      { 
-        error: errorMessage,
-        details: errorDetails,
-        timestamp: new Date().toISOString()
-      },
-      { status: 500 }
-    )
   }
 }
