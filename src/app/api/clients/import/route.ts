@@ -52,6 +52,15 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+    
+    // Validar tamanho do arquivo (máximo 50MB)
+    const maxSize = 50 * 1024 * 1024; // 50MB
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `Arquivo muito grande. Tamanho máximo: ${(maxSize / 1024 / 1024).toFixed(0)}MB` },
+        { status: 400 }
+      )
+    }
 
     // Ler arquivo Excel
     const buffer = await file.arrayBuffer()
@@ -199,27 +208,47 @@ export async function POST(request: NextRequest) {
         const servicosRealizados = row.servicosRealizados ? 
           row.servicosRealizados.split(',').map(s => s.trim()).filter(s => s) : []
 
-        await connectDB()
+        try {
+          await connectDB()
+        } catch (dbError) {
+          console.error(`Erro de conexão com MongoDB na linha ${rowNumber}:`, dbError)
+          results.errors.push(`Linha ${rowNumber}: Erro de conexão com banco de dados - ${dbError instanceof Error ? dbError.message : 'Erro desconhecido'}`)
+          continue
+        }
         
         // Verificar se o cliente já existe
-        const existingClient = await Client.findOne({ email: processedClient.email })
+        let existingClient
+        try {
+          existingClient = await Client.findOne({ email: processedClient.email })
+        } catch (findError) {
+          console.error(`Erro ao buscar cliente na linha ${rowNumber}:`, findError)
+          results.errors.push(`Linha ${rowNumber}: Erro ao buscar cliente existente - ${findError instanceof Error ? findError.message : 'Erro desconhecido'}`)
+          continue
+        }
 
         if (existingClient) {
           // Atualizar cliente existente
           // Preparar observações atualizadas
           const updatedNotes = `${processedClient.notes || existingClient.notes || ''}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
 
-          const updatedClient = await Client.findByIdAndUpdate(
-            existingClient._id,
-            {
-              name: processedClient.name,
-              phone: processedClient.phone,
-              birthDate: processedClient.birthDate,
-              address: processedClient.address,
-              notes: updatedNotes,
-            },
-            { new: true }
-          )
+          let updatedClient
+          try {
+            updatedClient = await Client.findByIdAndUpdate(
+              existingClient._id,
+              {
+                name: processedClient.name,
+                phone: processedClient.phone,
+                birthDate: processedClient.birthDate,
+                address: processedClient.address,
+                notes: updatedNotes,
+              },
+              { new: true }
+            )
+          } catch (updateError) {
+            console.error(`Erro ao atualizar cliente na linha ${rowNumber}:`, updateError)
+            results.errors.push(`Linha ${rowNumber}: Erro ao atualizar cliente - ${updateError instanceof Error ? updateError.message : 'Erro desconhecido'}`)
+            continue
+          }
 
           results.updated++
           results.details.push({
@@ -234,15 +263,22 @@ export async function POST(request: NextRequest) {
           // Preparar observações para novo cliente
           const newClientNotes = `${processedClient.notes}\n\nDADOS IMPORTADOS:\nTotal de visitas: ${totalVisitas}\nValor total: R$ ${valorTotal.toFixed(2)}\nTicket médio: R$ ${ticketMedio.toFixed(2)}\nÚltima visita: ${ultimaVisita ? ultimaVisita.toLocaleDateString('pt-BR') : 'Não informado'}\nServiços realizados: ${servicosRealizados.join(', ')}`
 
-          const newClient = await Client.create({
-            name: processedClient.name,
-            email: processedClient.email,
-            phone: processedClient.phone,
-            birthDate: processedClient.birthDate,
-            address: processedClient.address,
-            notes: newClientNotes,
-            password: hashedPassword
-          })
+          let newClient
+          try {
+            newClient = await Client.create({
+              name: processedClient.name,
+              email: processedClient.email,
+              phone: processedClient.phone,
+              birthDate: processedClient.birthDate,
+              address: processedClient.address,
+              notes: newClientNotes,
+              password: hashedPassword
+            })
+          } catch (createError) {
+            console.error(`Erro ao criar cliente na linha ${rowNumber}:`, createError)
+            results.errors.push(`Linha ${rowNumber}: Erro ao criar cliente - ${createError instanceof Error ? createError.message : 'Erro desconhecido'}`)
+            continue
+          }
 
           results.created++
           results.details.push({
@@ -254,7 +290,15 @@ export async function POST(request: NextRequest) {
 
       } catch (error) {
         console.error(`Erro na linha ${rowNumber}:`, error)
-        results.errors.push(`Linha ${rowNumber}: Erro interno - ${error}`)
+        
+        let errorMsg = 'Erro interno desconhecido'
+        if (error instanceof Error) {
+          errorMsg = error.message
+        } else if (typeof error === 'string') {
+          errorMsg = error
+        }
+        
+        results.errors.push(`Linha ${rowNumber}: Erro interno - ${errorMsg}`)
       }
     }
 
@@ -265,8 +309,28 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Erro na importação:', error)
+    
+    // Retornar erro em formato JSON válido
+    let errorMessage = 'Erro interno do servidor durante importação'
+    let errorDetails = ''
+    
+    if (error instanceof Error) {
+      errorMessage = error.message
+      errorDetails = error.stack || ''
+    } else if (typeof error === 'string') {
+      errorMessage = error
+    } else {
+      errorMessage = 'Erro desconhecido durante importação'
+    }
+    
+    console.error('Detalhes do erro:', { errorMessage, errorDetails })
+    
     return NextResponse.json(
-      { error: 'Erro interno do servidor durante importação' },
+      { 
+        error: errorMessage,
+        details: errorDetails,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     )
   }
