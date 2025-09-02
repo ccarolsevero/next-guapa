@@ -106,8 +106,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Processar arquivos grandes automaticamente em partes
+    const maxClientsPerBatch = 500
+    const totalClients = jsonData.length
+    const needsBatching = totalClients > maxClientsPerBatch
+    
+    if (needsBatching) {
+      console.log(`📦 Arquivo grande detectado: ${totalClients} clientes`)
+      console.log(`🔄 Processando automaticamente em partes de ${maxClientsPerBatch}`)
+    }
+    
     // Processar em lotes paralelos para melhor performance
-    const batchSize = 100 // Processar 100 clientes por vez
+    const batchSize = 50 // Processar 50 clientes por vez
     const batches = []
     
     for (let i = 0; i < jsonData.length; i += batchSize) {
@@ -121,8 +131,8 @@ export async function POST(request: NextRequest) {
     
     console.log(`📦 Processando ${batches.length} lotes de ${batchSize} clientes cada`)
     
-    // Processar lotes em paralelo com limite de concorrência
-    const concurrencyLimit = 5 // Máximo 5 lotes simultâneos
+    // Processar lotes em paralelo com limite de concorrência (reduzido para arquivos grandes)
+    const concurrencyLimit = needsBatching ? 3 : 5 // Menos concorrência para arquivos grandes
     let processedBatches = 0
     
     for (let i = 0; i < batches.length; i += concurrencyLimit) {
