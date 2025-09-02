@@ -106,10 +106,37 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Processar cada linha sequencialmente (mais seguro para grandes volumes)
-    for (let i = 0; i < jsonData.length; i++) {
-      const row = jsonData[i]
-      const rowNumber = i + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
+    // Processar em lotes paralelos para melhor performance
+    const batchSize = 100 // Processar 100 clientes por vez
+    const batches = []
+    
+    for (let i = 0; i < jsonData.length; i += batchSize) {
+      const batch = jsonData.slice(i, i + batchSize)
+      batches.push({
+        data: batch,
+        startIndex: i,
+        batchNumber: Math.floor(i / batchSize) + 1
+      })
+    }
+    
+    console.log(`📦 Processando ${batches.length} lotes de ${batchSize} clientes cada`)
+    
+    // Processar lotes em paralelo com limite de concorrência
+    const concurrencyLimit = 5 // Máximo 5 lotes simultâneos
+    let processedBatches = 0
+    
+    for (let i = 0; i < batches.length; i += concurrencyLimit) {
+      const currentBatches = batches.slice(i, i + concurrencyLimit)
+      
+      console.log(`🚀 Processando lotes ${i + 1} a ${Math.min(i + concurrencyLimit, batches.length)}`)
+      
+      const batchPromises = currentBatches.map(async (batch) => {
+        const { data: batchData, startIndex, batchNumber } = batch
+        
+        // Processar cada linha do lote
+        for (let j = 0; j < batchData.length; j++) {
+          const row = batchData[j]
+          const rowNumber = startIndex + j + 2 // +2 porque a primeira linha é cabeçalho e arrays começam em 0
 
       try {
         // Mapeamento automático baseado no conteúdo das colunas
@@ -293,8 +320,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Log de progresso a cada 100 linhas
-        if ((i + 1) % 100 === 0) {
-          console.log(`📊 Progresso: ${i + 1}/${jsonData.length} linhas processadas`)
+        if ((j + 1) % 100 === 0) {
+          console.log(`📊 Progresso lote ${batchNumber}: ${j + 1}/${batchData.length} linhas`)
         }
 
       } catch (error) {
@@ -310,6 +337,21 @@ export async function POST(request: NextRequest) {
         results.errors.push(`Linha ${rowNumber}: Erro interno - ${errorMsg}`)
       }
     }
+    
+    // Log de conclusão do lote
+    console.log(`✅ Lote ${batchNumber} concluído`)
+    return batchNumber
+  })
+  
+  // Aguardar processamento dos lotes atuais
+  try {
+    await Promise.all(batchPromises)
+    processedBatches += currentBatches.length
+    console.log(`📊 Progresso geral: ${processedBatches}/${batches.length} lotes processados`)
+  } catch (batchError) {
+    console.error(`❌ Erro em lote:`, batchError)
+  }
+}
 
     console.log(`✅ Importação concluída: ${results.created} criados, ${results.updated} atualizados, ${results.errors.length} erros`)
 
