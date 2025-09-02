@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
@@ -9,66 +9,135 @@ import {
   User, 
   Calendar,
   Play,
-  Check
+  Check,
+  Plus,
+  Phone,
+  Mail
 } from 'lucide-react'
 
-// Mock data para agendamentos disponíveis
-const mockAppointments = [
-  {
-    id: 1,
-    clientName: "Maria Silva",
-    clientPhone: "(11) 99999-1234",
-    professionalName: "Ana Carolina",
-    serviceName: "Corte Feminino",
-    date: "2024-01-15",
-    time: "14:00",
-    duration: 60,
-    status: "confirmado",
-    price: 45.00
-  },
-  {
-    id: 2,
-    clientName: "Joana Costa",
-    clientPhone: "(11) 99999-5678",
-    professionalName: "Mariana Silva",
-    serviceName: "Coloração",
-    date: "2024-01-15",
-    time: "15:30",
-    duration: 120,
-    status: "confirmado",
-    price: 80.00
-  },
-  {
-    id: 3,
-    clientName: "Fernanda Santos",
-    clientPhone: "(11) 99999-9012",
-    professionalName: "Juliana Costa",
-    serviceName: "Maquiagem Social",
-    date: "2024-01-15",
-    time: "16:00",
-    duration: 60,
-    status: "confirmado",
-    price: 80.00
-  }
-]
+interface Client {
+  _id: string
+  name: string
+  phone: string
+  email: string
+}
+
+interface Professional {
+  _id: string
+  name: string
+}
+
+interface Service {
+  _id: string
+  name: string
+  price: number
+  duration: number
+}
 
 export default function NovaComandaPage() {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null)
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
+  const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+  const [selectedService, setSelectedService] = useState<Service | null>(null)
+  
+  // Estados para dados do banco
+  const [clients, setClients] = useState<Client[]>([])
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [loading, setLoading] = useState(false)
+  
+  // Estados para criação da comanda
+  const [showClientSelector, setShowClientSelector] = useState(false)
+  const [showProfessionalSelector, setShowProfessionalSelector] = useState(false)
+  const [showServiceSelector, setShowServiceSelector] = useState(false)
 
-  const filteredAppointments = mockAppointments.filter(appointment => {
-    const matchesSearch = appointment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         appointment.professionalName.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch && appointment.status === 'confirmado'
-  })
+  // Buscar dados do banco
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        // Buscar clientes
+        const clientsResponse = await fetch('/api/clients')
+        if (clientsResponse.ok) {
+          const clientsData = await clientsResponse.json()
+          setClients(clientsData.clients || [])
+        }
 
-  const startComanda = async (appointment: any) => {
-    // Simular criação da comanda
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // Redirecionar para a comanda criada
-    router.push(`/admin/comandas/${appointment.id}`)
+        // Buscar profissionais
+        const professionalsResponse = await fetch('/api/professionals')
+        if (professionalsResponse.ok) {
+          const professionalsData = await professionalsResponse.json()
+          setProfessionals(professionalsData.professionals || [])
+        }
+
+        // Buscar serviços
+        const servicesResponse = await fetch('/api/services')
+        if (servicesResponse.ok) {
+          const servicesData = await servicesResponse.json()
+          setServices(servicesData.services || [])
+        }
+      } catch (error) {
+        console.error('Erro ao buscar dados:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  // Filtrar clientes baseado na busca
+  const filteredClients = clients.filter(client => 
+    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    client.phone.includes(searchTerm) ||
+    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const createComanda = async () => {
+    if (!selectedClient || !selectedProfessional || !selectedService) {
+      alert('Selecione cliente, profissional e serviço para criar a comanda')
+      return
+    }
+
+    try {
+      setLoading(true)
+      
+      // Criar comanda no banco
+      const comandaData = {
+        clientId: selectedClient._id,
+        professionalId: selectedProfessional._id,
+        status: 'em_atendimento',
+        servicos: [{
+          servicoId: selectedService._id,
+          nome: selectedService.name,
+          preco: selectedService.price,
+          quantidade: 1
+        }],
+        produtos: [],
+        observacoes: '',
+        valorTotal: selectedService.price
+      }
+
+      const response = await fetch('/api/comandas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(comandaData)
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        router.push(`/admin/comandas/${result.comanda._id}`)
+      } else {
+        const error = await response.json()
+        alert('Erro ao criar comanda: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Erro ao criar comanda:', error)
+      alert('Erro ao criar comanda')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -93,76 +162,181 @@ export default function NovaComandaPage() {
 
       <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="bg-white p-8 border border-gray-100">
-          <h2 className="text-xl font-medium text-gray-900 mb-6">Selecionar Agendamento</h2>
+          <h2 className="text-xl font-medium text-gray-900 mb-6">Nova Comanda</h2>
           <p className="text-gray-600 mb-6">
-            Escolha um agendamento confirmado para iniciar uma nova comanda.
+            Selecione cliente, profissional e serviço para criar uma nova comanda.
           </p>
 
-          {/* Busca */}
-          <div className="mb-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Buscar por cliente ou profissional..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                style={{ color: '#000000' }}
-              />
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+              <p className="text-gray-600">Carregando dados...</p>
             </div>
-          </div>
-
-          {/* Lista de Agendamentos */}
-          <div className="space-y-4">
-            {filteredAppointments.map((appointment) => (
-              <div 
-                key={appointment.id} 
-                className="border border-gray-200 p-6 hover:border-black transition-colors cursor-pointer"
-                onClick={() => setSelectedAppointment(appointment)}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-2">
-                      <User className="w-4 h-4 text-gray-400 mr-2" />
-                      <h3 className="font-medium text-gray-900">{appointment.clientName}</h3>
-                      <span className="text-sm text-gray-500 ml-2">({appointment.clientPhone})</span>
+          ) : (
+            <>
+              {/* Seleção de Cliente */}
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Cliente
+                </h3>
+                
+                {!selectedClient ? (
+                  <div>
+                    <div className="relative mb-4">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                      <input
+                        type="text"
+                        placeholder="Buscar cliente por nome, telefone ou email..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                        style={{ color: '#000000' }}
+                      />
                     </div>
                     
-                    <div className="text-sm text-gray-600 space-y-1">
-                      <div className="flex items-center">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {appointment.date} às {appointment.time} ({appointment.duration} min)
-                      </div>
-                      <div>Profissional: {appointment.professionalName}</div>
-                      <div>Serviço: {appointment.serviceName}</div>
-                      <div className="font-medium text-gray-900">R$ {appointment.price.toFixed(2)}</div>
+                    <div className="max-h-60 overflow-y-auto space-y-2">
+                      {filteredClients.map((client) => (
+                        <div 
+                          key={client._id}
+                          className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
+                          onClick={() => setSelectedClient(client)}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium text-gray-900">{client.name}</h4>
+                              <div className="text-sm text-gray-600 space-y-1">
+                                <div className="flex items-center">
+                                  <Phone className="w-4 h-4 mr-2" />
+                                  {client.phone}
+                                </div>
+                                {client.email && (
+                                  <div className="flex items-center">
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    {client.email}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <Plus className="w-5 h-5 text-gray-400" />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      startComanda(appointment)
-                    }}
-                    className="ml-4 bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors font-medium tracking-wide flex items-center"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Iniciar Comanda
-                  </button>
-                </div>
+                ) : (
+                  <div className="border border-gray-200 p-4 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{selectedClient.name}</h4>
+                        <div className="text-sm text-gray-600">
+                          {selectedClient.phone} • {selectedClient.email}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedClient(null)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
 
-          {filteredAppointments.length === 0 && (
-            <div className="text-center py-12">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
-              <p className="text-gray-600">
-                Não há agendamentos confirmados que correspondam à busca.
-              </p>
-            </div>
+              {/* Seleção de Profissional */}
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <User className="w-5 h-5 mr-2" />
+                  Profissional
+                </h3>
+                
+                {!selectedProfessional ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {professionals.map((professional) => (
+                      <div 
+                        key={professional._id}
+                        className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer text-center"
+                        onClick={() => setSelectedProfessional(professional)}
+                      >
+                        <h4 className="font-medium text-gray-900">{professional.name}</h4>
+                        <Plus className="w-5 h-5 text-gray-400 mx-auto mt-2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 p-4 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{selectedProfessional.name}</h4>
+                      </div>
+                      <button
+                        onClick={() => setSelectedProfessional(null)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Seleção de Serviço */}
+              <div className="mb-8">
+                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2" />
+                  Serviço
+                </h3>
+                
+                {!selectedService ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    {services.map((service) => (
+                      <div 
+                        key={service._id}
+                        className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
+                        onClick={() => setSelectedService(service)}
+                      >
+                        <h4 className="font-medium text-gray-900">{service.name}</h4>
+                        <div className="text-sm text-gray-600 mt-2">
+                          <div>R$ {service.price.toFixed(2)}</div>
+                          <div>{service.duration} min</div>
+                        </div>
+                        <Plus className="w-5 h-5 text-gray-400 mx-auto mt-2" />
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-gray-200 p-4 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{selectedService.name}</h4>
+                        <div className="text-sm text-gray-600">
+                          R$ {selectedService.price.toFixed(2)} • {selectedService.duration} min
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setSelectedService(null)}
+                        className="text-gray-500 hover:text-gray-700"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Botão Criar Comanda */}
+              <div className="text-center">
+                <button
+                  onClick={createComanda}
+                  disabled={!selectedClient || !selectedProfessional || !selectedService || loading}
+                  className="bg-black text-white px-8 py-4 hover:bg-gray-800 transition-colors font-medium tracking-wide text-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center mx-auto"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  {loading ? 'Criando Comanda...' : 'Criar Comanda'}
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>

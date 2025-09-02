@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
-import Prontuario from '@/models/Prontuario'
+// import Prontuario from '@/models/Prontuario'
 import { 
   ArrowLeft, 
   Plus, 
@@ -38,9 +38,8 @@ const availableProducts = [
   { id: 5, name: "Protetor Térmico", price: 38.00, category: "Produtos" }
 ]
 
-const [availableProfessionals, setAvailableProfessionals] = useState<Array<{_id: string, name: string}>>([])
-
 export default function ComandaDetalhesPage() {
+  const [availableProfessionals, setAvailableProfessionals] = useState<Array<{_id: string, name: string}>>([])
   const router = useRouter()
   const params = useParams()
   const comandaId = params.id

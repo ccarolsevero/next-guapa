@@ -1,91 +1,165 @@
-const fs = require('fs');
-const path = require('path');
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
-// Dados dos clientes que você forneceu
-const clientsData = [
-  {
-    nome: 'Adelaide Nascimento',
-    telefone: '(55) 19997--4430',
-    dataCadastro: '24/11/2021',
-  },
-  {
-    nome: 'Adele Motta',
-    telefone: '(11) 95465--7438',
-    dataCadastro: '11/08/2022',
-  },
-  {
-    nome: 'Adriana Conti',
-    telefone: '(19) 99619--9870',
-    dataCadastro: '28/07/2021',
-  },
-  {
-    nome: 'Adriana Cristina Ferrari Capodifoglio',
-    telefone: '(19) 99164--2240',
-    dataCadastro: '07/07/2023',
-  },
-  {
-    nome: 'Adriana da Silva',
-    telefone: '(19) 99861--2734',
-    dataCadastro: '14/04/2022',
-  },
-  // Adicione mais clientes conforme necessário
-];
+// Configuração do MongoDB
+const MONGODB_URI =
+  process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa';
+const DB_NAME = process.env.MONGODB_DB || 'guapa';
+const COLLECTION_NAME = 'clients';
 
-// Função para padronizar telefone
-function padronizarTelefone(telefone) {
-  // Remove o código do Brasil (55) se estiver presente
-  let telefoneLimpo = telefone.replace(/^\(55\)\s*/, '');
+async function testImport() {
+  let client;
 
-  // Remove espaços extras e hífens duplos
-  telefoneLimpo = telefoneLimpo.replace(/\s+/g, '').replace(/--/g, '-');
+  try {
+    console.log('🔌 Conectando ao MongoDB...');
+    console.log(`   URI: ${MONGODB_URI}`);
+    console.log(`   Database: ${DB_NAME}`);
 
-  // Garante que tenha o formato correto (DDD) NÚMERO-NÚMERO
-  if (telefoneLimpo.startsWith('(')) {
-    return telefoneLimpo; // Já está no formato correto
-  } else {
-    // Adiciona parênteses se não tiver
-    return `(${telefoneLimpo}`;
+    client = new MongoClient(MONGODB_URI);
+    await client.connect();
+
+    const db = client.db(DB_NAME);
+    const collection = db.collection(COLLECTION_NAME);
+
+    console.log('✅ Conectado ao MongoDB com sucesso!');
+
+    // Verificar se a coleção existe
+    const collections = await db.listCollections().toArray();
+    const clientsCollection = collections.find(
+      (col) => col.name === COLLECTION_NAME,
+    );
+
+    if (!clientsCollection) {
+      console.log('❌ Coleção "clients" não encontrada!');
+      console.log(
+        '   Coleções disponíveis:',
+        collections.map((col) => col.name),
+      );
+      return;
+    }
+
+    console.log('✅ Coleção "clients" encontrada!');
+
+    // Contar total de clientes
+    const totalClients = await collection.countDocuments();
+    console.log(`📊 Total de clientes no banco: ${totalClients}`);
+
+    // Verificar estrutura dos clientes
+    if (totalClients > 0) {
+      const sampleClient = await collection.findOne({});
+      console.log('\n📋 Estrutura de um cliente exemplo:');
+      console.log('   Campos disponíveis:', Object.keys(sampleClient));
+      console.log('   Exemplo de dados:', {
+        _id: sampleClient._id,
+        name: sampleClient.name,
+        email: sampleClient.email,
+        phone: sampleClient.phone,
+        createdAt: sampleClient.createdAt,
+        updatedAt: sampleClient.updatedAt,
+      });
+    }
+
+    // Verificar se há clientes duplicados
+    console.log('\n🔍 Verificando duplicatas...');
+
+    // Por nome
+    const duplicatesByName = await collection
+      .aggregate([
+        {
+          $group: {
+            _id: { $toLower: '$name' },
+            count: { $sum: 1 },
+            clients: { $push: { _id: '$_id', name: '$name', email: '$email' } },
+          },
+        },
+        {
+          $match: { count: { $gt: 1 } },
+        },
+      ])
+      .toArray();
+
+    console.log(`   🔴 Duplicatas por nome: ${duplicatesByName.length} grupos`);
+
+    // Por email
+    const duplicatesByEmail = await collection
+      .aggregate([
+        {
+          $group: {
+            _id: { $toLower: '$email' },
+            count: { $sum: 1 },
+            clients: { $push: { _id: '$_id', name: '$name', email: '$email' } },
+          },
+        },
+        {
+          $match: { count: { $gt: 1 } },
+        },
+      ])
+      .toArray();
+
+    console.log(
+      `   🔴 Duplicatas por email: ${duplicatesByEmail.length} grupos`,
+    );
+
+    // Por telefone
+    const duplicatesByPhone = await collection
+      .aggregate([
+        {
+          $group: {
+            _id: {
+              $replaceAll: { input: '$phone', find: '\\D', replacement: '' },
+            },
+            count: { $sum: 1 },
+            clients: { $push: { _id: '$_id', name: '$name', phone: '$phone' } },
+          },
+        },
+        {
+          $match: { count: { $gt: 1 } },
+        },
+      ])
+      .toArray();
+
+    console.log(
+      `   🔴 Duplicatas por telefone: ${duplicatesByPhone.length} grupos`,
+    );
+
+    // Mostrar exemplos de duplicatas
+    if (duplicatesByName.length > 0) {
+      console.log('\n📋 Exemplos de duplicatas por nome:');
+      duplicatesByName.slice(0, 3).forEach((group) => {
+        console.log(`   "${group._id}": ${group.count} registros`);
+        group.clients.slice(0, 2).forEach((client) => {
+          console.log(`     - ${client.email} | ${client._id}`);
+        });
+      });
+    }
+
+    // Verificar clientes recentes (últimos 10)
+    console.log('\n📅 Últimos clientes adicionados:');
+    const recentClients = await collection
+      .find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .toArray();
+
+    recentClients.forEach((client, index) => {
+      const date = client.createdAt
+        ? new Date(client.createdAt).toLocaleDateString('pt-BR')
+        : 'Data não informada';
+      console.log(
+        `   ${index + 1}. ${client.name} (${client.email}) - ${date}`,
+      );
+    });
+
+    console.log('\n✅ Teste concluído com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro durante o teste:', error);
+  } finally {
+    if (client) {
+      await client.close();
+      console.log('🔌 Conexão com MongoDB fechada.');
+    }
   }
 }
 
-// Criar dados para importação (com email gerado e telefone padronizado)
-const importData = clientsData.map((client, index) => {
-  // Gerar email baseado no nome
-  const email = `${client.nome.toLowerCase().replace(/\s+/g, '.')}@guapa.com`;
-
-  // Padronizar telefone
-  const telefonePadronizado = padronizarTelefone(client.telefone);
-
-  return {
-    nome: client.nome,
-    email: email,
-    telefone: telefonePadronizado,
-    dataNascimento: client.dataCadastro,
-    endereco: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-    observacoes: `Cliente cadastrado em ${client.dataCadastro}`,
-    totalVisitas: 0,
-    valorTotal: 0,
-    ultimaVisita: '',
-    servicosRealizados: '',
-    ticketMedio: 0,
-  };
-});
-
-// Salvar como JSON para verificação
-fs.writeFileSync(
-  'clients-import-data.json',
-  JSON.stringify(importData, null, 2),
-);
-
-console.log('Dados preparados para importação:');
-console.log(`Total de clientes: ${importData.length}`);
-console.log('\nExemplos de telefones padronizados:');
-importData.forEach((client) => {
-  console.log(`- ${client.nome}: ${client.telefone}`);
-});
-
-console.log('\nArquivo clients-import-data.json criado com sucesso!');
-console.log('Agora você pode:');
-console.log('1. Acessar /admin/clientes/importar no sistema');
-console.log('2. Usar o botão "Baixar Template" para ver o formato esperado');
-console.log('3. Criar um arquivo Excel com esses dados e importar');
+// Executar teste
+testImport();

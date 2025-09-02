@@ -1,0 +1,97 @@
+{
+  "timestamp": "2025-09-02T15:57:51.075Z",
+  "total": 22,
+  "sucessos": 22,
+  "pulados": 0,
+  "falhas": 0,
+  "resultados": [
+    {
+      "success": true,
+      "cliente": "Alana Moscardi"
+    },
+    {
+      "success": true,
+      "cliente": "Alana de Brito"
+    },
+    {
+      "success": true,
+      "cliente": "Alan Souza"
+    },
+    {
+      "success": true,
+      "cliente": "Alana Bagatini"
+    },
+    {
+      "success": true,
+      "cliente": "Agneyde Passos"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Moraes Massoli"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Montan"
+    },
+    {
+      "success": true,
+      "cliente": "ADRIANE CRISPIM MESQUITA TAVANIELLI"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Regina Strabelli"
+    },
+    {
+      "success": true,
+      "cliente": "Adriele de Jesus Merces Pereira"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Fu"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Helena Barbosa"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana de Godoy Santos"
+    },
+    {
+      "success": true,
+      "cliente": "ADRIANA HELENA MARTINI DE MORAES"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Eloisa Cancian Pinto"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana da Silva"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Cristina Ferrari Capodifoglio"
+    },
+    {
+      "success": true,
+      "cliente": "Adele Motta"
+    },
+    {
+      "success": true,
+      "cliente": "Adelaide Nascimento"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Conti"
+    },
+    {
+      "success": true,
+      "cliente": "Teste Online Real"
+    },
+    {
+      "success": true,
+      "cliente": "Teste MongoDB"
+    }
+  ]
+}
