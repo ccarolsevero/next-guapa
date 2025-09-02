@@ -49,7 +49,6 @@ export default function NovaComandaPage() {
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   
   // Estados para dados do banco
   const [clients, setClients] = useState<Client[]>([])
@@ -109,18 +108,7 @@ export default function NovaComandaPage() {
           console.error('❌ Erro na API de serviços:', servicesResponse.status)
         }
 
-        // Buscar produtos
-        console.log('🛍️ Buscando produtos...')
-        const productsResponse = await fetch('/api/products')
-        console.log('🛍️ Resposta da API de produtos:', productsResponse.status)
-        
-        if (productsResponse.ok) {
-          const productsData = await productsResponse.json()
-          console.log('🛍️ Dados de produtos recebidos:', productsData)
-          setProducts(productsData.products || productsData)
-        } else {
-          console.error('❌ Erro na API de produtos:', productsResponse.status)
-        }
+
       } catch (error) {
         console.error('❌ Erro ao buscar dados:', error)
       } finally {
@@ -159,15 +147,9 @@ export default function NovaComandaPage() {
           preco: selectedService.price,
           quantidade: 1
         }],
-        produtos: selectedProduct ? [{
-          produtoId: selectedProduct._id,
-          nome: selectedProduct.name,
-          preco: selectedProduct.price,
-          quantidade: 1,
-          vendidoPor: selectedProfessional._id
-        }] : [],
+        produtos: [],
         observacoes: '',
-        valorTotal: selectedService.price + (selectedProduct ? selectedProduct.price : 0)
+        valorTotal: selectedService.price
       }
 
       const response = await fetch('/api/comandas', {
@@ -215,7 +197,7 @@ export default function NovaComandaPage() {
         <div className="bg-white p-8 border border-gray-100">
           <h2 className="text-xl font-bold text-black mb-6">Nova Comanda</h2>
           <p className="text-gray-600 mb-6">
-            Selecione cliente, profissional, serviço e produtos (opcional) para criar uma nova comanda.
+            Selecione cliente, profissional e serviço para criar uma nova comanda.
           </p>
 
           {loading ? (
@@ -391,58 +373,7 @@ export default function NovaComandaPage() {
                 )}
               </div>
 
-              {/* Seleção de Produtos */}
-              <div className="mb-8">
-                <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <ShoppingBag className="w-5 h-5 mr-2" />
-                  Produtos
-                  <span className="ml-2 text-sm text-gray-500">({products.length} produtos disponíveis)</span>
-                </h3>
-                
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {products.map((product) => (
-                    <div 
-                      key={product._id}
-                      className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer text-center"
-                      onClick={() => setSelectedProduct(product)}
-                    >
-                      <h4 className="font-medium text-gray-900">{product.name}</h4>
-                      <div className="text-sm text-gray-600 mt-2">
-                        <div className="font-semibold">R$ {product.price.toFixed(2)}</div>
-                        <div className="text-xs">Estoque: {product.stock}</div>
-                      </div>
-                      <Plus className="w-5 h-5 text-gray-400 mx-auto mt-2" />
-                    </div>
-                  ))}
-                </div>
-                
-                {products.length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                    <p>Nenhum produto encontrado no banco de dados</p>
-                    <p className="text-sm">Verifique se há produtos cadastrados</p>
-                  </div>
-                )}
 
-                {selectedProduct && (
-                  <div className="border border-gray-200 p-4 bg-gray-50 mt-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium text-gray-900">{selectedProduct.name}</h4>
-                        <div className="text-sm text-gray-600">
-                          R$ {selectedProduct.price.toFixed(2)} • Estoque: {selectedProduct.stock}
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedProduct(null)}
-                        className="text-gray-500 hover:text-gray-700"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
 
               {/* Botão Criar Comanda */}
               <div className="text-center">

@@ -849,23 +849,23 @@ export default function ComandaDetalhesPage() {
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Serviços:</span>
-                  <span>R$ {comanda.services.reduce((sum, s) => sum + (s.price * s.quantity), 0).toFixed(2)}</span>
+                  <span className="text-gray-700 font-medium">Serviços:</span>
+                  <span className="text-gray-900 font-semibold">R$ {comanda.services.reduce((sum, s) => sum + (s.price * s.quantity), 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Produtos:</span>
-                  <span>R$ {comanda.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}</span>
+                  <span className="text-gray-700 font-medium">Produtos:</span>
+                  <span className="text-gray-900 font-semibold">R$ {comanda.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-medium">
-                    <span>Total:</span>
-                    <span>R$ {comanda.total.toFixed(2)}</span>
+                    <span className="text-gray-900">Total:</span>
+                    <span className="text-black font-bold">R$ {comanda.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-700 font-medium">
                   <div>Itens: {comanda.services.length + comanda.products.length}</div>
                   <div>Tempo estimado: 75 min</div>
                 </div>
