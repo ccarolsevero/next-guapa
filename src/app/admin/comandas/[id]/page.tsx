@@ -20,11 +20,10 @@ import {
   Star
 } from 'lucide-react'
 
-// Estados para dados do banco
-const [availableServices, setAvailableServices] = useState<Array<{_id: string, name: string, price: number, category: string}>>([])
-const [availableProducts, setAvailableProducts] = useState<Array<{_id: string, name: string, price: number, category: string, stock: number}>>([])
-
 export default function ComandaDetalhesPage() {
+  // Estados para dados do banco
+  const [availableServices, setAvailableServices] = useState<Array<{_id: string, name: string, price: number, category: string}>>([])
+  const [availableProducts, setAvailableProducts] = useState<Array<{_id: string, name: string, price: number, category: string, stock: number}>>([])
   const [availableProfessionals, setAvailableProfessionals] = useState<Array<{_id: string, name: string}>>([])
   const router = useRouter()
   const params = useParams()
