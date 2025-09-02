@@ -207,14 +207,14 @@ export default function FinalizarAtendimentoPage() {
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Informações do Atendimento */}
           <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
+            <h2 className="text-xl font-bold text-black mb-6 flex items-center">
               <User className="w-5 h-5 mr-2" />
               Informações do Atendimento
             </h2>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
+                <label className="block text-sm font-bold text-gray-900 mb-2">Cliente</label>
                 <div className="p-3 bg-gray-50 border border-gray-200">
                   <p className="font-medium">{appointment.clientName}</p>
                   <p className="text-sm text-gray-600">{appointment.clientPhone}</p>
@@ -222,14 +222,14 @@ export default function FinalizarAtendimentoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Profissional</label>
+                <label className="block text-sm font-bold text-gray-900 mb-2">Profissional</label>
                 <div className="p-3 bg-gray-50 border border-gray-200">
                   <p className="font-medium">{appointment.professionalName}</p>
                 </div>
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Serviço</label>
+                <label className="block text-sm font-bold text-gray-900 mb-2">Serviço</label>
                 <div className="p-3 bg-gray-50 border border-gray-200">
                   <p className="font-medium">{appointment.serviceName}</p>
                   <p className="text-sm text-gray-600">
@@ -239,7 +239,7 @@ export default function FinalizarAtendimentoPage() {
                   {/* Detalhes da comanda */}
                   {(appointment as any).services && (appointment as any).services.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Serviços Realizados:</h4>
+                      <h4 className="text-sm font-bold text-gray-900 mb-2">Serviços Realizados:</h4>
                       <div className="space-y-1">
                         {(appointment as any).services.map((service: any, index: number) => (
                           <div key={index} className="flex justify-between text-sm">
@@ -253,7 +253,7 @@ export default function FinalizarAtendimentoPage() {
                   
                   {(appointment as any).products && (appointment as any).products.length > 0 && (
                     <div className="mt-3 pt-3 border-t border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">Produtos Vendidos:</h4>
+                      <h4 className="text-sm font-bold text-gray-900 mb-2">Produtos Vendidos:</h4>
                       <div className="space-y-1">
                         {(appointment as any).products.map((product: any, index: number) => (
                           <div key={index} className="flex justify-between text-sm">
@@ -271,14 +271,14 @@ export default function FinalizarAtendimentoPage() {
 
           {/* Valor e Pagamento */}
           <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
+            <h2 className="text-xl font-bold text-black mb-6 flex items-center">
               <DollarSign className="w-5 h-5 mr-2" />
               Valor e Pagamento
             </h2>
             
             <div className="grid md:grid-cols-3 gap-6 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Original (R$)
                 </label>
                 <div className="p-3 bg-gray-50 border border-gray-200">
@@ -287,7 +287,7 @@ export default function FinalizarAtendimentoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Desconto (R$)
                 </label>
                 <input
@@ -303,7 +303,7 @@ export default function FinalizarAtendimentoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Final (R$)
                 </label>
                 <div className="p-3 bg-black text-white">
@@ -314,7 +314,7 @@ export default function FinalizarAtendimentoPage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Forma de Pagamento *
                 </label>
                 <select
@@ -334,7 +334,7 @@ export default function FinalizarAtendimentoPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Recebido (R$)
                 </label>
                 <input
@@ -364,7 +364,7 @@ export default function FinalizarAtendimentoPage() {
 
           {/* Observações */}
           <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
+            <h2 className="text-xl font-bold text-black mb-6 flex items-center">
               <FileText className="w-5 h-5 mr-2" />
               Observações do Atendimento
             </h2>

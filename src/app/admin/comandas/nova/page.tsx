@@ -77,7 +77,10 @@ export default function NovaComandaPage() {
         if (clientsResponse.ok) {
           const clientsData = await clientsResponse.json()
           console.log('📞 Dados de clientes recebidos:', clientsData)
-          setClients(clientsData.clients || clientsData)
+          // Verificar se é um array direto ou tem propriedade clients
+          const clientsArray = Array.isArray(clientsData) ? clientsData : (clientsData.clients || [])
+          console.log('📞 Array de clientes processado:', clientsArray.length)
+          setClients(clientsArray)
         } else {
           console.error('❌ Erro na API de clientes:', clientsResponse.status)
         }
@@ -90,9 +93,14 @@ export default function NovaComandaPage() {
         if (professionalsResponse.ok) {
           const professionalsData = await professionalsResponse.json()
           console.log('👩‍💼 Dados de profissionais recebidos:', professionalsData)
-          setProfessionals(professionalsData.professionals || [])
+          // Verificar se é um array direto ou tem propriedade professionals
+          const professionalsArray = Array.isArray(professionalsData) ? professionalsData : (professionalsData.professionals || [])
+          console.log('👩‍💼 Array de profissionais processado:', professionalsArray.length)
+          setProfessionals(professionalsArray)
         } else {
           console.error('❌ Erro na API de profissionais:', professionalsResponse.status)
+          const errorText = await professionalsResponse.text()
+          console.error('❌ Detalhes do erro:', errorText)
         }
 
         // Buscar serviços
@@ -103,17 +111,25 @@ export default function NovaComandaPage() {
         if (servicesResponse.ok) {
           const servicesData = await servicesResponse.json()
           console.log('✂️ Dados de serviços recebidos:', servicesData)
-          setServices(servicesData.services || [])
+          // Verificar se é um array direto ou tem propriedade services
+          const servicesArray = Array.isArray(servicesData) ? servicesData : (servicesData.services || [])
+          console.log('✂️ Array de serviços processado:', servicesArray.length)
+          setServices(servicesArray)
         } else {
           console.error('❌ Erro na API de serviços:', servicesResponse.status)
+          const errorText = await servicesResponse.text()
+          console.error('❌ Detalhes do erro:', errorText)
         }
-
 
       } catch (error) {
         console.error('❌ Erro ao buscar dados:', error)
       } finally {
         setLoading(false)
         console.log('✅ Busca de dados concluída')
+        console.log('📊 Resumo dos dados carregados:')
+        console.log(`  👥 Clientes: ${clients.length}`)
+        console.log(`  👩‍💼 Profissionais: ${professionals.length}`)
+        console.log(`  ✂️ Serviços: ${services.length}`)
       }
     }
 
@@ -239,7 +255,7 @@ export default function NovaComandaPage() {
                       ) : filteredClients.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Search className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                          <p>Nenhum cliente encontrado com "{searchTerm}"</p>
+                          <p>Nenhum cliente encontrado com &quot;{searchTerm}&quot;</p>
                           <p className="text-sm">Tente outro termo de busca</p>
                         </div>
                       ) : (
@@ -297,20 +313,34 @@ export default function NovaComandaPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <User className="w-5 h-5 mr-2" />
                   Profissional
+                  <span className="ml-2 text-sm text-gray-500">({professionals.length} profissionais carregados)</span>
                 </h3>
                 
                 {!selectedProfessional ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    {professionals.map((professional) => (
-                      <div 
-                        key={professional._id}
-                        className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer text-center"
-                        onClick={() => setSelectedProfessional(professional)}
-                      >
-                        <h4 className="font-medium text-gray-900">{professional.name}</h4>
-                        <Plus className="w-5 h-5 text-gray-400 mx-auto mt-2" />
+                  <div>
+                    {professionals.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
+                        <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Nenhum profissional encontrado no banco de dados</p>
+                        <p className="text-sm">Verifique se há profissionais cadastrados</p>
                       </div>
-                    ))}
+                    ) : (
+                      <select
+                        onChange={(e) => {
+                          const professional = professionals.find(p => p._id === e.target.value)
+                          setSelectedProfessional(professional || null)
+                        }}
+                        className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                        defaultValue=""
+                      >
+                        <option value="" disabled>Selecione um profissional</option>
+                        {professionals.map((professional) => (
+                          <option key={professional._id} value={professional._id}>
+                            {professional.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 ) : (
                   <div className="border border-gray-200 p-4 bg-gray-50">
@@ -334,24 +364,54 @@ export default function NovaComandaPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <Calendar className="w-5 h-5 mr-2" />
                   Serviço
+                  <span className="ml-2 text-sm text-gray-500">({services.length} serviços carregados)</span>
                 </h3>
                 
                 {!selectedService ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    {services.map((service) => (
-                      <div 
-                        key={service._id}
-                        className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
-                        onClick={() => setSelectedService(service)}
-                      >
-                        <h4 className="font-medium text-gray-900">{service.name}</h4>
-                        <div className="text-sm text-gray-600 mt-2">
-                          <div>R$ {service.price.toFixed(2)}</div>
-                          <div>{service.duration} min</div>
-                        </div>
-                        <Plus className="w-5 h-5 text-gray-400 mx-auto mt-2" />
+                  <div>
+                    {services.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500 border border-gray-200 rounded-lg">
+                        <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Nenhum serviço encontrado no banco de dados</p>
+                        <p className="text-sm">Verifique se há serviços cadastrados</p>
                       </div>
-                    ))}
+                    ) : (
+                      <div>
+                        <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                          <input
+                            type="text"
+                            placeholder="Buscar serviço por nome..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                            style={{ color: '#000000' }}
+                          />
+                        </div>
+                        
+                        <div className="max-h-60 overflow-y-auto space-y-2">
+                          {services.filter(service => 
+                            service.name.toLowerCase().includes(searchTerm.toLowerCase())
+                          ).map((service) => (
+                            <div 
+                              key={service._id}
+                              className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
+                              onClick={() => setSelectedService(service)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <h4 className="font-medium text-gray-900">{service.name}</h4>
+                                  <div className="text-sm text-gray-600">
+                                    R$ {service.price.toFixed(2)} • {service.duration} min
+                                  </div>
+                                </div>
+                                <Plus className="w-5 h-5 text-gray-400" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="border border-gray-200 p-4 bg-gray-50">
