@@ -105,21 +105,25 @@ export default function ClientesPage() {
     })
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este cliente?')) {
+    if (confirm(`Tem certeza que deseja excluir o cliente ${clients.find(c => c._id === id)?.name || 'desconhecido'}?`)) {
       try {
+        console.log('Tentando excluir cliente com ID:', id)
+        
         const response = await fetch(`/api/clients/${id}`, {
           method: 'DELETE'
         })
         
         if (response.ok) {
-          setClients(clients.filter(client => client._id !== id))
+          console.log('Cliente excluído com sucesso, atualizando lista...')
+          setClients(prevClients => prevClients.filter(client => client._id !== id))
           alert('Cliente excluído com sucesso!')
         } else {
-          throw new Error('Erro ao excluir cliente')
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Erro ao excluir cliente')
         }
       } catch (error) {
         console.error('Erro ao excluir cliente:', error)
-        alert('Erro ao excluir cliente')
+        alert(`Erro ao excluir cliente: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
       }
     }
   }

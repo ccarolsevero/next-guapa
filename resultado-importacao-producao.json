@@ -1,0 +1,108 @@
+{
+  "timestamp": "2025-09-02T15:42:16.095Z",
+  "total": 20,
+  "sucessos": 20,
+  "falhas": 0,
+  "resultados": [
+    {
+      "success": true,
+      "cliente": "Adelaide Nascimento",
+      "id": "68b7104ba338a98477de2f90"
+    },
+    {
+      "success": true,
+      "cliente": "Adele Motta",
+      "id": "68b7104be5ecdcb2904eb3a7"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Conti",
+      "id": "68b710497e8d7caa1755d089"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Cristina Ferrari Capodifoglio",
+      "id": "68b7104b5493febc28aeeccc"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana da Silva",
+      "id": "68b7104b320e3b96b84b8351"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana de Godoy Santos",
+      "id": "68b7104f5493febc28aeeccf"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Eloisa Cancian Pinto",
+      "id": "68b7104fa338a98477de2f93"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Fu",
+      "id": "68b7104fe5ecdcb2904eb3ad"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Helena Barbosa",
+      "id": "68b7104fe5ecdcb2904eb3ab"
+    },
+    {
+      "success": true,
+      "cliente": "ADRIANA HELENA MARTINI DE MORAES",
+      "id": "68b7104f320e3b96b84b8354"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Montan",
+      "id": "68b71053e5ecdcb2904eb3b1"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Moraes Massoli",
+      "id": "68b71053e5ecdcb2904eb3b3"
+    },
+    {
+      "success": true,
+      "cliente": "Adriana Regina Strabelli",
+      "id": "68b71053a338a98477de2f96"
+    },
+    {
+      "success": true,
+      "cliente": "ADRIANE CRISPIM MESQUITA TAVANIELLI",
+      "id": "68b710535493febc28aeecd2"
+    },
+    {
+      "success": true,
+      "cliente": "Adriele de Jesus Merces Pereira",
+      "id": "68b71053320e3b96b84b8357"
+    },
+    {
+      "success": true,
+      "cliente": "Agneyde Passos",
+      "id": "68b71057e5ecdcb2904eb3b6"
+    },
+    {
+      "success": true,
+      "cliente": "Alan Souza",
+      "id": "68b71057320e3b96b84b835a"
+    },
+    {
+      "success": true,
+      "cliente": "Alana Bagatini",
+      "id": "68b71057a338a98477de2f99"
+    },
+    {
+      "success": true,
+      "cliente": "Alana de Brito",
+      "id": "68b710575493febc28aeecd5"
+    },
+    {
+      "success": true,
+      "cliente": "Alana Moscardi",
+      "id": "68b710577e8d7caa1755d08c"
+    }
+  ]
+}
