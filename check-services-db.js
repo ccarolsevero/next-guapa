@@ -1,176 +1,67 @@
-import { connectToDatabase } from './src/lib/mongodb.js'
+require('dotenv').config();
+const { MongoClient } = require('mongodb');
 
-async function checkAndFixServices() {
+async function checkServicesDB() {
+  const uri = process.env.MONGODB_URI;
+  const client = new MongoClient(uri);
+
   try {
-    console.log('🔍 Conectando ao banco...')
-    await connectToDatabase()
-    
-    // Importar dinamicamente os modelos
-    const { default: Service } = await import('./src/models/Service.js')
-    
-    console.log('\n=== VERIFICANDO SERVIÇOS ===')
-    const allServices = await Service.find({})
-    console.log('📊 Total de serviços no banco:', allServices.length)
-    
-    if (allServices.length === 0) {
-      console.log('❌ Nenhum serviço encontrado no banco!')
-      console.log('📝 Criando serviços padrão...')
-      
-      const defaultServices = [
-        {
-          name: 'Avaliação Capilar',
-          category: 'Consultoria e Avaliação',
-          description: 'Avaliação completa do couro cabeludo e fios para identificar necessidades específicas.',
-          price: 60.00,
-          isActive: true,
-          order: 1
-        },
-        {
-          name: 'Consultoria/Corte',
-          category: 'Consultoria e Avaliação',
-          description: 'Consultoria de visagismo + corte personalizado para valorizar seu tipo de cabelo.',
-          price: 198.00,
-          isActive: true,
-          order: 2
-        },
-        {
-          name: 'Corte',
-          category: 'Cortes',
-          description: 'Corte de cabelo com manutenção das pontas e acabamento profissional.',
-          price: 132.00,
-          isActive: true,
-          order: 1
-        },
-        {
-          name: 'Back To Natural - P',
-          category: 'Colorimetria',
-          description: 'Repigmentação de cabelos loiros para cabelos mais curtos.',
-          price: 231.00,
-          isActive: true,
-          order: 1
-        },
-        {
-          name: 'Back To Natural - M',
-          category: 'Colorimetria',
-          description: 'Repigmentação de cabelos loiros para cabelos médios.',
-          price: 319.00,
-          isActive: true,
-          order: 2
-        },
-        {
-          name: 'Back To Natural - G',
-          category: 'Colorimetria',
-          description: 'Repigmentação de cabelos loiros para cabelos longos.',
-          price: 319.00,
-          isActive: true,
-          order: 3
-        },
-        {
-          name: 'Iluminado P',
-          category: 'Colorimetria',
-          description: 'Iluminado para cabelos mais curtos com técnica personalizada.',
-          price: 231.00,
-          isActive: true,
-          order: 4
-        },
-        {
-          name: 'Iluminado M',
-          category: 'Colorimetria',
-          description: 'Iluminado para cabelos médios com técnica personalizada.',
-          price: 319.00,
-          isActive: true,
-          order: 5
-        },
-        {
-          name: 'Iluminado G',
-          category: 'Colorimetria',
-          description: 'Iluminado para cabelos longos com técnica personalizada.',
-          price: 319.00,
-          isActive: true,
-          order: 6
-        },
-        {
-          name: 'Mechas Coloridas',
-          category: 'Colorimetria',
-          description: 'Mechas coloridas personalizadas para um visual único.',
-          price: 319.00,
-          isActive: true,
-          order: 7
-        },
-        {
-          name: 'Coloração Keune',
-          category: 'Colorimetria',
-          description: 'Coloração profissional com produtos Keune de alta qualidade.',
-          price: 319.00,
-          isActive: true,
-          order: 8
-        },
-        {
-          name: 'Limpeza de Couro Cabeludo',
-          category: 'Tratamentos',
-          description: 'Limpeza profunda do couro cabeludo para remover impurezas e resíduos.',
-          price: 80.00,
-          isActive: true,
-          order: 1
-        },
-        {
-          name: 'Reconstrução Capilar',
-          category: 'Tratamentos',
-          description: 'Tratamento intensivo para reconstruir a estrutura dos fios danificados.',
-          price: 120.00,
-          isActive: true,
-          order: 2
-        },
-        {
-          name: 'Hidratação Natural',
-          category: 'Tratamentos',
-          description: 'Hidratação profunda com produtos naturais para fios mais saudáveis.',
-          price: 100.00,
-          isActive: true,
-          order: 3
-        },
-        {
-          name: 'Tratamento Anti-Queda',
-          category: 'Tratamentos',
-          description: 'Tratamento especializado para combater a queda capilar.',
-          price: 150.00,
-          isActive: true,
-          order: 4
-        }
-      ]
-      
-      const createdServices = await Service.insertMany(defaultServices)
-      console.log('✅ Serviços criados:', createdServices.length)
-      
-    } else {
-      console.log('📋 Serviços encontrados:')
-      allServices.forEach((service, index) => {
-        console.log(`  ${index + 1}. ${service.name} - Ativo: ${service.isActive}`)
-      })
-      
-      // Verificar se há serviços inativos
-      const inactiveServices = allServices.filter(s => !s.isActive)
-      if (inactiveServices.length > 0) {
-        console.log(`\n⚠️  ${inactiveServices.length} serviços inativos encontrados. Ativando...`)
-        
-        await Service.updateMany(
-          { isActive: false },
-          { isActive: true }
-        )
-        
-        console.log('✅ Todos os serviços foram ativados!')
-      }
+    console.log('🔌 Conectando ao MongoDB...');
+    await client.connect();
+
+    const db = client.db(process.env.DB_NAME || 'guapa');
+    const servicesCollection = db.collection('services');
+
+    console.log('📊 === VERIFICAÇÃO DE SERVIÇOS NO BANCO ===\n');
+
+    // 1. Contar total de serviços
+    const totalServices = await servicesCollection.countDocuments();
+    console.log(`📈 Total de serviços no banco: ${totalServices}`);
+
+    if (totalServices === 0) {
+      console.log('⚠️  Nenhum serviço encontrado no banco!');
+      console.log('💡 Você precisa cadastrar serviços primeiro.');
+      return;
     }
-    
-    // Verificar final
-    const finalServices = await Service.find({ isActive: true })
-    console.log(`\n🎉 Total de serviços ativos: ${finalServices.length}`)
-    
+
+    // 2. Verificar serviços ativos
+    const activeServices = await servicesCollection.countDocuments({
+      isActive: true,
+    });
+    console.log(`✅ Serviços ativos: ${activeServices}`);
+
+    // 3. Verificar serviços inativos
+    const inactiveServices = await servicesCollection.countDocuments({
+      isActive: false,
+    });
+    console.log(`❌ Serviços inativos: ${inactiveServices}`);
+
+    // 4. Listar todos os serviços
+    console.log('\n📋 === LISTA DE TODOS OS SERVIÇOS ===');
+    const allServices = await servicesCollection.find({}).toArray();
+
+    allServices.forEach((service, index) => {
+      console.log(`${index + 1}. ${service.name}`);
+      console.log(`   - Categoria: ${service.category || 'Não definida'}`);
+      console.log(`   - Preço: R$ ${service.price || 'Não definido'}`);
+      console.log(`   - Ativo: ${service.isActive ? '✅ Sim' : '❌ Não'}`);
+      console.log(`   - ID: ${service._id}`);
+      console.log('');
+    });
+
+    // 5. Verificar estrutura dos documentos
+    if (allServices.length > 0) {
+      const firstService = allServices[0];
+      console.log('🔍 === ESTRUTURA DO PRIMEIRO SERVIÇO ===');
+      console.log(JSON.stringify(firstService, null, 2));
+    }
   } catch (error) {
-    console.error('❌ Erro:', error)
+    console.error('❌ Erro ao verificar serviços:', error);
   } finally {
-    process.exit(0)
+    await client.close();
+    console.log('\n🔌 Conexão fechada.');
   }
 }
 
-checkAndFixServices()
+// Executar verificação
+checkServicesDB();

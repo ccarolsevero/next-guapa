@@ -13,54 +13,10 @@ export async function GET() {
     return NextResponse.json(professionals)
   } catch (error) {
     console.error('Erro ao buscar profissionais:', error)
-    
-    // Fallback para dados de teste
-    const testProfessionals = [
-      {
-        _id: '1',
-        name: 'Bruna',
-        title: 'Cabeleireira',
-        email: 'bruna@guapa.com',
-        phone: '(19) 99999-9999',
-        shortDescription: 'Especialista em coloração e tratamentos capilares',
-        fullDescription: 'Bruna é uma profissional experiente e dedicada aos cuidados capilares. Especialista em coloração, tratamentos e cortes modernos. Com anos de experiência, ela oferece serviços personalizados para cada cliente.',
-        services: ['Coloração', 'Tratamentos', 'Cortes', 'Hidratação', 'Escova'],
-        featuredServices: ['Coloração', 'Tratamentos'],
-        profileImage: '/assents/fotobruna.jpeg',
-        gallery: [
-          '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16.jpeg',
-          '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (1).jpeg',
-          '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (2).jpeg'
-        ],
-        isActive: true,
-        isFeatured: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        _id: '2',
-        name: 'Cicera',
-        title: 'Cabeleireira',
-        email: 'cicera@guapa.com',
-        phone: '(19) 88888-8888',
-        shortDescription: 'Especialista em penteados e maquiagem',
-        fullDescription: 'Cicera é especialista em penteados, maquiagem e tratamentos capilares. Com técnica apurada e criatividade, ela transforma o visual de suas clientes com penteados únicos e maquiagens deslumbrantes.',
-        services: ['Penteados', 'Maquiagem', 'Tratamentos', 'Escova', 'Finalização'],
-        featuredServices: ['Penteados', 'Maquiagem'],
-        profileImage: '/assents/fotobruna.jpeg',
-        gallery: [
-          '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (3).jpeg',
-          '/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (4).jpeg'
-        ],
-        isActive: true,
-        isFeatured: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ]
-    
-    console.log('Usando dados de teste como fallback')
-    return NextResponse.json(testProfessionals)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
   }
 }
 

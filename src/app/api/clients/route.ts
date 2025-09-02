@@ -19,32 +19,10 @@ export async function GET() {
     console.error('Tipo do erro:', typeof error)
     console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
 
-    // Fallback para dados de teste se o banco falhar
-    console.log('Usando dados de teste como fallback')
-    const testClients = [
-      {
-        _id: 'test-1',
-        name: 'João Silva',
-        email: 'joao@teste.com',
-        phone: '(19) 99999-9999',
-        address: 'Rua Teste, 123',
-        notes: 'Cliente teste',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        _id: 'test-2',
-        name: 'Maria Teste',
-        email: 'maria@teste.com',
-        phone: '(19) 88888-8888',
-        address: 'Rua Teste Online, 456',
-        notes: 'Cliente teste online',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      }
-    ]
-
-    return NextResponse.json(testClients)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
   }
 }
 

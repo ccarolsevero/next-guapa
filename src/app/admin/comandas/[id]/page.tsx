@@ -85,19 +85,33 @@ export default function ComandaDetalhesPage() {
         // Buscar profissionais
         console.log('👩‍💼 Buscando profissionais...')
         const professionalsResponse = await fetch('/api/professionals')
+        console.log('👩‍💼 Resposta da API de profissionais:', professionalsResponse.status)
+        
         if (professionalsResponse.ok) {
           const data = await professionalsResponse.json()
-          setAvailableProfessionals(data.professionals || [])
-          console.log('👩‍💼 Profissionais carregados:', data.professionals?.length || 0)
+          console.log('👩‍💼 Dados brutos da API de profissionais:', data)
+          setAvailableProfessionals(data.professionals || data)
+          console.log('👩‍💼 Profissionais carregados:', data.professionals?.length || data.length || 0)
+        } else {
+          console.error('❌ Erro na API de profissionais:', professionalsResponse.status)
+          const errorText = await professionalsResponse.text()
+          console.error('❌ Detalhes do erro:', errorText)
         }
 
         // Buscar serviços
         console.log('✂️ Buscando serviços...')
         const servicesResponse = await fetch('/api/services')
+        console.log('✂️ Resposta da API de serviços:', servicesResponse.status)
+        
         if (servicesResponse.ok) {
           const data = await servicesResponse.json()
-          setAvailableServices(data.services || [])
-          console.log('✂️ Serviços carregados:', data.services?.length || 0)
+          console.log('✂️ Dados brutos da API de serviços:', data)
+          setAvailableServices(data.services || data)
+          console.log('✂️ Serviços carregados:', data.services?.length || data.length || 0)
+        } else {
+          console.error('❌ Erro na API de serviços:', servicesResponse.status)
+          const errorText = await servicesResponse.text()
+          console.error('❌ Detalhes do erro:', errorText)
         }
 
         // Buscar produtos
@@ -472,7 +486,7 @@ export default function ComandaDetalhesPage() {
 
               {showAddService && (
                 <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-3">Selecionar Serviço</h3>
+                  <h3 className="font-bold text-black mb-3">Selecionar Serviço</h3>
                   <div className="grid md:grid-cols-2 gap-2">
                     {availableServices.length === 0 ? (
                       <div className="col-span-2 text-center py-8 text-gray-500">
@@ -544,7 +558,7 @@ export default function ComandaDetalhesPage() {
 
               {showAddProduct && (
                 <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                  <h3 className="font-medium mb-3">Selecionar Produto</h3>
+                  <h3 className="font-bold text-black mb-3">Selecionar Produto</h3>
                   
                   {/* Seleção de Produto */}
                   <div className="grid md:grid-cols-2 gap-2 mb-4">
@@ -579,7 +593,7 @@ export default function ComandaDetalhesPage() {
                       <div className="grid md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Profissional que vendeu:
+                            Profissional que vendeu: <span className="text-xs text-gray-500">({availableProfessionals.length} profissionais)</span>
                           </label>
                           <select 
                             value={selectedProfessionalId}
@@ -587,11 +601,15 @@ export default function ComandaDetalhesPage() {
                             className="w-full p-2 border border-gray-300 rounded-md bg-white text-gray-900"
                           >
                             <option value="">Selecione um profissional</option>
-                            {availableProfessionals.map(professional => (
-                              <option key={professional._id} value={professional._id}>
-                                {professional.name}
-                              </option>
-                            ))}
+                            {availableProfessionals.length === 0 ? (
+                              <option value="" disabled>Nenhum profissional encontrado</option>
+                            ) : (
+                              availableProfessionals.map(professional => (
+                                <option key={professional._id} value={professional._id}>
+                                  {professional.name}
+                                </option>
+                              ))
+                            )}
                           </select>
                         </div>
                         
