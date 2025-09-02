@@ -57,30 +57,51 @@ export default function NovaComandaPage() {
     const fetchData = async () => {
       setLoading(true)
       try {
+        console.log('🔄 Iniciando busca de dados...')
+        
         // Buscar clientes
+        console.log('📞 Buscando clientes...')
         const clientsResponse = await fetch('/api/clients')
+        console.log('📞 Resposta da API de clientes:', clientsResponse.status)
+        
         if (clientsResponse.ok) {
           const clientsData = await clientsResponse.json()
-          setClients(clientsData.clients || [])
+          console.log('📞 Dados de clientes recebidos:', clientsData)
+          setClients(clientsData.clients || clientsData)
+        } else {
+          console.error('❌ Erro na API de clientes:', clientsResponse.status)
         }
 
         // Buscar profissionais
+        console.log('👩‍💼 Buscando profissionais...')
         const professionalsResponse = await fetch('/api/professionals')
+        console.log('👩‍💼 Resposta da API de profissionais:', professionalsResponse.status)
+        
         if (professionalsResponse.ok) {
           const professionalsData = await professionalsResponse.json()
+          console.log('👩‍💼 Dados de profissionais recebidos:', professionalsData)
           setProfessionals(professionalsData.professionals || [])
+        } else {
+          console.error('❌ Erro na API de profissionais:', professionalsResponse.status)
         }
 
         // Buscar serviços
+        console.log('✂️ Buscando serviços...')
         const servicesResponse = await fetch('/api/services')
+        console.log('✂️ Resposta da API de serviços:', servicesResponse.status)
+        
         if (servicesResponse.ok) {
           const servicesData = await servicesResponse.json()
+          console.log('✂️ Dados de serviços recebidos:', servicesData)
           setServices(servicesData.services || [])
+        } else {
+          console.error('❌ Erro na API de serviços:', servicesResponse.status)
         }
       } catch (error) {
-        console.error('Erro ao buscar dados:', error)
+        console.error('❌ Erro ao buscar dados:', error)
       } finally {
         setLoading(false)
+        console.log('✅ Busca de dados concluída')
       }
     }
 
@@ -179,6 +200,7 @@ export default function NovaComandaPage() {
                 <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                   <User className="w-5 h-5 mr-2" />
                   Cliente
+                  <span className="ml-2 text-sm text-gray-500">({clients.length} clientes carregados)</span>
                 </h3>
                 
                 {!selectedClient ? (
@@ -196,32 +218,46 @@ export default function NovaComandaPage() {
                     </div>
                     
                     <div className="max-h-60 overflow-y-auto space-y-2">
-                      {filteredClients.map((client) => (
-                        <div 
-                          key={client._id}
-                          className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
-                          onClick={() => setSelectedClient(client)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className="font-medium text-gray-900">{client.name}</h4>
-                              <div className="text-sm text-gray-600 space-y-1">
-                                <div className="flex items-center">
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  {client.phone}
-                                </div>
-                                {client.email && (
-                                  <div className="flex items-center">
-                                    <Mail className="w-4 h-4 mr-2" />
-                                    {client.email}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <Plus className="w-5 h-5 text-gray-400" />
-                          </div>
+                      {clients.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <User className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                          <p>Nenhum cliente encontrado no banco de dados</p>
+                          <p className="text-sm">Verifique se há clientes cadastrados</p>
                         </div>
-                      ))}
+                      ) : filteredClients.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">
+                          <Search className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                          <p>Nenhum cliente encontrado com "{searchTerm}"</p>
+                          <p className="text-sm">Tente outro termo de busca</p>
+                        </div>
+                      ) : (
+                        filteredClients.map((client) => (
+                          <div 
+                            key={client._id}
+                            className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
+                            onClick={() => setSelectedClient(client)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className="font-medium text-gray-900">{client.name}</h4>
+                                <div className="text-sm text-gray-600 space-y-1">
+                                  <div className="flex items-center">
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    {client.phone}
+                                  </div>
+                                  {client.email && (
+                                    <div className="flex items-center">
+                                      <Mail className="w-4 h-4 mr-2" />
+                                      {client.email}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              <Plus className="w-5 h-5 text-gray-400" />
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 ) : (

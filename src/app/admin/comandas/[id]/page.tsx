@@ -77,6 +77,7 @@ export default function ComandaDetalhesPage() {
   })
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>('')
+  const [editingProductVendor, setEditingProductVendor] = useState<number | null>(null)
 
   const updateTotal = () => {
     const servicesTotal = comanda.services.reduce((sum, service) => sum + (service.price * service.quantity), 0)
@@ -275,6 +276,26 @@ export default function ComandaDetalhesPage() {
     setEditingObservations(false)
   }
 
+  const updateProductVendor = async (productId: number, newVendorId: string) => {
+    try {
+      const professional = availableProfessionals.find(p => p._id === newVendorId)
+      if (professional) {
+        setComanda(prev => ({
+          ...prev,
+          products: prev.products.map(p => 
+            p.id === productId 
+              ? { ...p, soldBy: professional.name, soldById: professional._id }
+              : p
+          )
+        }))
+        setEditingProductVendor(null)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar vendedora:', error)
+      alert('Erro ao atualizar vendedora')
+    }
+  }
+
   const saveProntuario = async () => {
     try {
       // Preparar dados para salvar
@@ -462,16 +483,16 @@ export default function ComandaDetalhesPage() {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => updateQuantity('service', service.id, service.quantity - 1)}
-                        className="w-8 h-8 border border-gray-300 hover:border-black transition-colors flex items-center justify-center"
+                        className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Minus className="w-4 h-4 text-gray-700" />
                       </button>
                       <span className="w-8 text-center font-semibold text-gray-900">{service.quantity}</span>
                       <button
                         onClick={() => updateQuantity('service', service.id, service.quantity + 1)}
-                        className="w-8 h-8 border border-gray-300 hover:border-black transition-colors flex items-center justify-center"
+                        className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
                         <div className="font-semibold text-gray-900">R$ {(service.price * service.quantity).toFixed(2)}</div>
@@ -571,22 +592,28 @@ export default function ComandaDetalhesPage() {
                       <div className="font-semibold text-gray-900">{product.name}</div>
                       <div className="text-sm text-gray-700 font-medium">R$ {product.price.toFixed(2)}</div>
                       <div className="text-xs text-gray-600 mt-1">
-                        Vendido por: <span className="font-medium text-gray-800">{product.soldBy || 'Não definido'}</span>
+                        Vendido por: 
+                        <button
+                          onClick={() => setEditingProductVendor(product.id)}
+                          className="ml-1 font-medium text-blue-600 hover:text-blue-800 underline"
+                        >
+                          {product.soldBy || 'Não definido'}
+                        </button>
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => updateQuantity('product', product.id, product.quantity - 1)}
-                        className="w-8 h-8 border border-gray-300 hover:border-black transition-colors flex items-center justify-center"
+                        className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
-                        <Minus className="w-4 h-4" />
+                        <Minus className="w-4 h-4 text-gray-700" />
                       </button>
                       <span className="w-8 text-center font-semibold text-gray-900">{product.quantity}</span>
                       <button
                         onClick={() => updateQuantity('product', product.id, product.quantity + 1)}
-                        className="w-8 h-8 border border-gray-300 hover:border-black transition-colors flex items-center justify-center"
+                        className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
-                        <Plus className="w-4 h-4" />
+                        <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
                         <div className="font-semibold text-gray-900">R$ {(product.price * product.quantity).toFixed(2)}</div>
@@ -649,7 +676,7 @@ export default function ComandaDetalhesPage() {
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg font-medium text-gray-900 flex items-center">
                   <User className="w-5 h-5 mr-2" />
-                  Prontuário Médico/Estético
+                  Prontuário
                 </h2>
                 <div className="flex space-x-2">
                   <Link
