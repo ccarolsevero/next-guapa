@@ -39,9 +39,9 @@ export async function POST(request: NextRequest) {
     
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const startFromBatch = formData.get('startFromBatch') ? parseInt(formData.get('startFromBatch') as string) : 1
+    const startFromBatch = formData.get('startFromBatch') ? parseInt(formData.get('startFromBatch') as string) : 0
     
-    console.log(`📦 Importação configurada para começar do lote: ${startFromBatch}`)
+    console.log(`📦 Importação configurada para começar do lote: ${startFromBatch || 'automático'}`)
 
     if (!file) {
       return NextResponse.json(
@@ -118,7 +118,26 @@ export async function POST(request: NextRequest) {
     
     if (needsBatching) {
       const totalParts = Math.ceil(totalClients / maxClientsPerBatch)
-      const currentPart = startFromBatch
+      
+      // Se não especificou lote inicial, detectar automaticamente onde parou
+      let currentPart = startFromBatch
+      if (currentPart === 0) {
+        try {
+          const existingClientsCount = await Client.countDocuments()
+          currentPart = Math.floor(existingClientsCount / maxClientsPerBatch) + 1
+          
+          // Se já processou tudo, começar do início
+          if (currentPart > totalParts) {
+            currentPart = 1
+            console.log('🔄 Todos os clientes já foram importados. Começando do início...')
+          } else {
+            console.log(`🔄 Detectado automaticamente: continuar da parte ${currentPart}/${totalParts}`)
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao detectar progresso, começando da parte 1')
+          currentPart = 1
+        }
+      }
       
       results.totalParts = totalParts
       results.currentPart = currentPart
