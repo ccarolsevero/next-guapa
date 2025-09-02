@@ -600,6 +600,36 @@ export default function ComandaDetalhesPage() {
                           {product.soldBy || 'Não definido'}
                         </button>
                       </div>
+                      
+                      {/* Modal de seleção de vendedora */}
+                      {editingProductVendor === product.id && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                          <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4">
+                              Selecionar Vendedora para "{product.name}"
+                            </h3>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {availableProfessionals.map(professional => (
+                                <button
+                                  key={professional.id}
+                                  onClick={() => updateProductVendor(product.id, professional.id, professional.name)}
+                                  className="w-full text-left p-3 border border-gray-200 hover:border-black transition-colors rounded"
+                                >
+                                  <div className="font-medium text-gray-900">{professional.name}</div>
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex justify-end mt-4">
+                              <button
+                                onClick={() => setEditingProductVendor(null)}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors rounded"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
