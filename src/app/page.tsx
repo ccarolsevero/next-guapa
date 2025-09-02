@@ -139,14 +139,26 @@ export default function HomePage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        // Usar fotos estáticas diretamente
-        const staticPhotos = [
-          { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
-          { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
-          { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
-          { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
-        ]
-        setHomePhotos(staticPhotos)
+        // Carregar fotos da home do banco de dados
+        const homeGalleryResponse = await fetch('/api/home-gallery')
+        if (homeGalleryResponse.ok) {
+          const homeGalleryData = await homeGalleryResponse.json()
+          // Filtrar apenas fotos ativas e ordenar por ordem
+          const activePhotos = homeGalleryData
+            .filter((photo: any) => photo.isActive)
+            .sort((a: any, b: any) => a.order - b.order)
+          setHomePhotos(activePhotos)
+        } else {
+          console.error('Erro ao carregar galeria da home')
+          // Fallback para fotos estáticas se a API falhar
+          const fallbackPhotos = [
+            { id: '1', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05.jpeg', order: 1 },
+            { id: '2', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (1).jpeg', order: 2 },
+            { id: '3', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (2).jpeg', order: 3 },
+            { id: '4', imageUrl: '/assents/fotoslidehome/WhatsApp Image 2025-08-26 at 20.47.05 (3).jpeg', order: 4 },
+          ]
+          setHomePhotos(fallbackPhotos)
+        }
 
         // Carregar profissionais do banco
         const response = await fetch('/api/professionals')
@@ -277,20 +289,20 @@ export default function HomePage() {
         {/* Header */}
         <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center py-1 md:py-0">
+            <div className="flex justify-between items-center py-2 sm:py-3 lg:py-4">
               <div className="flex items-center">
                 <Link href="/" className="flex items-center">
                   <img 
                     src="/assents/logonavbarg.svg" 
                     alt="Espaço Guapa" 
-                    className="h-16 md:h-[120px] w-auto"
+                    className="h-12 sm:h-16 md:h-20 lg:h-24 xl:h-[120px] w-auto transition-all duration-300"
                     style={{ 
                       filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
                     }}
                   />
                 </Link>
               </div>
-              <nav className="hidden md:flex space-x-12">
+              <nav className="hidden lg:flex space-x-6 xl:space-x-8 2xl:space-x-12">
                 <button 
                   onClick={() => smoothScrollTo('inicio')}
                   className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium cursor-pointer"
@@ -337,7 +349,7 @@ export default function HomePage() {
                 </Link>
                 <button 
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="md:hidden text-[#d34d4c] p-2"
+                  className="lg:hidden text-[#d34d4c] p-2"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -349,7 +361,7 @@ export default function HomePage() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <nav className="md:hidden bg-white/95 border-t border-[#e6d1b8] absolute top-full left-0 right-0 z-50">
+            <nav className="lg:hidden bg-white/95 border-t border-[#e6d1b8] absolute top-full left-0 right-0 z-50">
               <div className="px-4 py-4 space-y-2">
                 <button 
                   onClick={() => {
@@ -412,11 +424,11 @@ export default function HomePage() {
         </header>
 
         {/* Spacer para compensar navbar fixa */}
-        <div className="-h-8 md:h-20"></div>
+        <div className="h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32"></div>
 
-        {/* Menu Mobile Dropdown */}
+
         {isMobileMenuOpen && (
-          <div className="md:hidden fixed top-16 left-0 right-0 z-50 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
+                      <div className="lg:hidden fixed top-16 left-0 right-0 z-50 bg-[#f2dcbc] border-b border-[#e6d1b8] shadow-lg">
             <nav className="flex flex-col space-y-4 p-6">
               <button 
                 onClick={() => {

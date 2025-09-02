@@ -11,84 +11,203 @@ import {
   DollarSign, 
   User,
   Tag,
-  FileText
+  FileText,
+  CheckCircle,
+  Percent,
+  Users
 } from 'lucide-react'
 
-// Mock data para categorias e profissionais
-const categories = ["Consultoria", "Cortes", "Coloração", "Combo", "Finalização"]
-const professionals = [
-  { id: "bruna", name: "Bruna" },
-  { id: "cicera", name: "Cicera Canovas" }
-]
+// Mock data para categorias
+const categories = ["Consultoria", "Cortes", "Coloração", "Combo", "Finalização", "Tratamentos", "Hidratação", "Reconstrução"]
+
+// Interface para profissionais do banco
+interface Professional {
+  _id: string
+  name: string
+  title: string
+  isActive: boolean
+}
+
+interface Commission {
+  professionalId: string
+  professionalName: string
+  commission: number
+  assistantCommission: number
+}
+
+interface Service {
+  id: string
+  name: string
+  category: string
+  duration: number
+  breakTime: number
+  allowOnlineBooking: boolean
+  description: string
+  valueType: 'fixed' | 'variable'
+  price: number
+  cost: number
+  returnDays: number
+  isActive: boolean
+  commissions: Commission[]
+}
+
+interface ServicePackage {
+  id: string
+  name: string
+  validity: number
+  services: PackageService[]
+  description: string
+  originalValue: number
+  discountedValue: number
+  discount: number
+  isActive: boolean
+}
+
+interface PackageService {
+  serviceId: string
+  serviceName: string
+  value: number
+  quantity: number
+}
 
 export default function EditarServicoPage() {
   const router = useRouter()
   const params = useParams()
   const serviceId = params.id
 
-  const [service, setService] = useState({
+  const [activeTab, setActiveTab] = useState('servico')
+  const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [availableServices, setAvailableServices] = useState<Service[]>([])
+  const [service, setService] = useState<Service>({
     id: '',
     name: '',
-    description: '',
-    price: 0,
-    duration: 0,
     category: '',
-    professionalId: '',
+    duration: 30,
+    breakTime: 0,
+    allowOnlineBooking: true,
+    description: '',
+    valueType: 'fixed',
+    price: 0,
+    cost: 0,
+    returnDays: 0,
     isActive: true,
-    isFeatured: false,
-    instructions: '',
-    requirements: '',
-    maxGroupSize: 1,
-    preparationTime: 0
+    commissions: []
+  })
+
+  const [servicePackage, setServicePackage] = useState<ServicePackage>({
+    id: '',
+    name: '',
+    validity: 90,
+    services: [],
+    description: '',
+    originalValue: 0,
+    discountedValue: 0,
+    discount: 0,
+    isActive: true
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
 
+  // Carregar profissionais do banco de dados
+  const loadProfessionals = async () => {
+    try {
+      const response = await fetch('/api/professionals')
+      if (response.ok) {
+        const data = await response.json()
+        setProfessionals(data)
+      } else {
+        console.error('Erro ao carregar profissionais')
+        // Fallback para profissionais de teste
+        setProfessionals([
+          { _id: '1', name: 'Bruna Canovas', title: 'Cabeleireira', isActive: true },
+          { _id: '2', name: 'Cicera Aparecida Canovas', title: 'Cabeleireira', isActive: true }
+        ])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar profissionais:', error)
+      // Fallback para profissionais de teste
+      setProfessionals([
+        { _id: '1', name: 'Bruna Canovas', title: 'Cabeleireira', isActive: true },
+        { _id: '2', name: 'Cicera Aparecida Canovas', title: 'Cabeleireira', isActive: true }
+      ])
+    }
+  }
+
   useEffect(() => {
-    // Simular carregamento do serviço
+    // Carregar profissionais primeiro
+    loadProfessionals()
+  }, [])
+
+  useEffect(() => {
+    // Só executar quando profissionais estiverem carregados
+    if (professionals.length === 0) return
+
     if (serviceId === 'novo') {
-      // Novo serviço
-      setService({
-        id: '',
-        name: '',
-        description: '',
-        price: 0,
-        duration: 60,
-        category: '',
-        professionalId: '',
-        isActive: true,
-        isFeatured: false,
-        instructions: '',
-        requirements: '',
-        maxGroupSize: 1,
-        preparationTime: 0
-      })
+      // Novo serviço - inicializar comissões vazias
+      const initialCommissions = professionals.map(prof => ({
+        professionalId: prof._id,
+        professionalName: prof.name,
+        commission: 0,
+        assistantCommission: 0
+      }))
+      
+      setService(prev => ({
+        ...prev,
+        commissions: initialCommissions
+      }))
     } else {
       // Serviço existente - simular dados
+      const existingCommissions = professionals.map(prof => ({
+        professionalId: prof._id,
+        professionalName: prof.name,
+        commission: Math.floor(Math.random() * 20) + 10, // 10-30%
+        assistantCommission: Math.floor(Math.random() * 15) + 5 // 5-20%
+      }))
+      
       setService({
         id: serviceId as string,
         name: 'Corte Feminino',
-        description: 'Corte personalizado para mulheres com lavagem incluída',
-        price: 45.00,
-        duration: 60,
         category: 'Cortes',
-        professionalId: 'ana',
+        duration: 60,
+        breakTime: 15,
+        allowOnlineBooking: true,
+        description: 'Corte personalizado para mulheres com lavagem incluída',
+        valueType: 'fixed',
+        price: 45.00,
+        cost: 15.00,
+        returnDays: 30,
         isActive: true,
-        isFeatured: false,
-        instructions: 'Chegar com o cabelo seco. Trazer foto de referência se desejar.',
-        requirements: 'Não há restrições',
-        maxGroupSize: 1,
-        preparationTime: 5
+        commissions: existingCommissions
       })
     }
-  }, [serviceId])
+  }, [serviceId, professionals])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
     setService(prev => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
+    }))
+  }
+
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target
+    setService(prev => ({
+      ...prev,
+      [name]: checked
+    }))
+  }
+
+  const handleCommissionChange = (professionalId: string, field: 'commission' | 'assistantCommission', value: string) => {
+    const numValue = parseFloat(value) || 0
+    setService(prev => ({
+      ...prev,
+      commissions: prev.commissions.map(comm => 
+        comm.professionalId === professionalId 
+          ? { ...comm, [field]: numValue }
+          : comm
+      )
     }))
   }
 
@@ -144,274 +263,351 @@ export default function EditarServicoPage() {
         </div>
       </div>
 
-      {/* Form */}
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Informações Básicas */}
-          <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
-              <Tag className="w-5 h-5 mr-2" />
-              Informações Básicas
-            </h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nome do Serviço *
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={service.name}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="Nome do serviço"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Categoria *
-                </label>
-                <select
-                  name="category"
-                  value={service.category}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                >
-                  <option value="">Selecione uma categoria</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descrição *
-                </label>
-                <textarea
-                  name="description"
-                  value={service.description}
-                  onChange={handleInputChange}
-                  required
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="Descrição detalhada do serviço"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Preços e Duração */}
-          <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
-              <DollarSign className="w-5 h-5 mr-2" />
-              Preços e Duração
-            </h2>
-            
-            <div className="grid md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preço (R$) *
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={service.price}
-                  onChange={handleInputChange}
-                  required
-                  min="0"
-                  step="0.01"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="0.00"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Duração (minutos) *
-                </label>
-                <input
-                  type="number"
-                  name="duration"
-                  value={service.duration}
-                  onChange={handleInputChange}
-                  required
-                  min="15"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="60"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tempo de Preparação (min)
-                </label>
-                <input
-                  type="number"
-                  name="preparationTime"
-                  value={service.preparationTime}
-                  onChange={handleInputChange}
-                  min="0"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="5"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Profissional e Configurações */}
-          <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
-              <User className="w-5 h-5 mr-2" />
-              Profissional e Configurações
-            </h2>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Profissional Responsável
-                </label>
-                <select
-                  name="professionalId"
-                  value={service.professionalId}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                >
-                  <option value="">Selecione um profissional</option>
-                  {professionals.map(prof => (
-                    <option key={prof.id} value={prof.id}>{prof.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tamanho Máximo do Grupo
-                </label>
-                <input
-                  type="number"
-                  name="maxGroupSize"
-                  value={service.maxGroupSize}
-                  onChange={handleInputChange}
-                  min="1"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="1"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="flex items-center mb-4">
-                  <input
-                    type="checkbox"
-                    id="isActive"
-                    name="isActive"
-                    checked={service.isActive}
-                    onChange={(e) => setService(prev => ({ ...prev, isActive: e.target.checked }))}
-                    className="h-4 w-4 text-[#D15556] focus:ring-[#D15556] border-gray-300 rounded"
-                  />
-                  <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
-                    Serviço ativo (disponível para agendamento)
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="isFeatured"
-                    name="isFeatured"
-                    checked={service.isFeatured}
-                    onChange={(e) => setService(prev => ({ ...prev, isFeatured: e.target.checked }))}
-                    className="h-4 w-4 text-[#D15556] focus:ring-[#D15556] border-gray-300 rounded"
-                  />
-                  <label htmlFor="isFeatured" className="ml-2 text-sm text-gray-700">
-                    Serviço em destaque (aparece na home)
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Instruções e Requisitos */}
-          <div className="bg-white p-8 border border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
-              <FileText className="w-5 h-5 mr-2" />
-              Instruções e Requisitos
-            </h2>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Instruções para o Cliente
-                </label>
-                <textarea
-                  name="instructions"
-                  value={service.instructions}
-                  onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="Instruções que o cliente deve seguir antes do serviço..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Requisitos ou Restrições
-                </label>
-                <textarea
-                  name="requirements"
-                  value={service.requirements}
-                  onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
-                  style={{ color: '#000000' }}
-                  placeholder="Requisitos, restrições ou contra-indicações..."
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Mensagem de feedback */}
-          {message && (
-            <div className={`p-4 rounded-lg ${
-              message.includes('sucesso') 
-                ? 'bg-green-50 border border-green-200 text-green-600' 
-                : 'bg-red-50 border border-red-200 text-red-600'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          {/* Botões */}
-          <div className="flex justify-end space-x-4">
+      {/* Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
             <button
-              type="button"
-              onClick={() => router.push('/admin/servicos')}
-              className="px-6 py-3 border border-gray-400 text-gray-700 hover:bg-gray-50 transition-colors rounded-lg"
+              onClick={() => setActiveTab('servico')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'servico'
+                  ? 'border-[#D15556] text-[#D15556]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
-              Cancelar
+              Cadastre o Serviço
             </button>
             <button
-              type="submit"
-              disabled={isLoading}
-              className="px-8 py-3 bg-[#D15556] text-white font-medium hover:bg-[#c04546] transition-colors disabled:bg-gray-400 tracking-wide rounded-lg"
+              onClick={() => setActiveTab('comissoes')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'comissoes'
+                  ? 'border-[#D15556] text-[#D15556]'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
             >
-              {isLoading ? 'Salvando...' : 'Salvar Serviço'}
+              Comissões
             </button>
+
+          </nav>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {activeTab === 'servico' ? (
+          /* Tab: Cadastre o Serviço */
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="bg-white p-8 border border-gray-100 rounded-lg">
+              <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
+                <Tag className="w-5 h-5 mr-2" />
+                Informações do Serviço
+              </h2>
+              
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* Nome do Serviço */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nome do serviço *
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={service.name}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                    placeholder="Nome do serviço"
+                  />
+                </div>
+
+                {/* Categoria */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Categoria (Obrigatório) *
+                  </label>
+                  <select
+                    name="category"
+                    value={service.category}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Duração */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duração *
+                  </label>
+                  <div className="flex">
+                    <input
+                      type="number"
+                      name="duration"
+                      value={service.duration}
+                      onChange={handleInputChange}
+                      required
+                      min="0"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                      placeholder="30"
+                    />
+                    <div className="px-4 py-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-700 font-medium">
+                      min
+                    </div>
+                  </div>
+                </div>
+
+                {/* Folga */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Folga necessária
+                    <span className="ml-1 text-gray-400 cursor-help" title="Tempo de folga entre agendamentos">?</span>
+                  </label>
+                  <div className="flex">
+                    <input
+                      type="number"
+                      name="breakTime"
+                      value={service.breakTime}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                      placeholder="0"
+                    />
+                    <div className="px-4 py-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-700 font-medium">
+                      min
+                    </div>
+                  </div>
+                </div>
+
+                {/* Agendamento Online */}
+                <div className="md:col-span-2">
+                  <label className="flex items-center space-x-3">
+                    <input
+                      type="checkbox"
+                      name="allowOnlineBooking"
+                      checked={service.allowOnlineBooking}
+                      onChange={handleCheckboxChange}
+                      className="w-4 h-4 text-[#D15556] border-gray-300 rounded focus:ring-[#D15556] focus:ring-2"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      Permitir Agendamento Online
+                    </span>
+                  </label>
+                </div>
+
+                {/* Descrição */}
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descrição
+                  </label>
+                  <textarea
+                    name="description"
+                    value={service.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                    placeholder="Descrição detalhada do serviço..."
+                  />
+                </div>
+
+                {/* Tipo de Valor */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo valor
+                  </label>
+                  <select
+                    name="valueType"
+                    value={service.valueType}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                  >
+                    <option value="fixed">Fixo</option>
+                    <option value="variable">Variável</option>
+                  </select>
+                </div>
+
+                {/* Valor Cobrado */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Valor cobrado
+                  </label>
+                  <div className="flex">
+                    <div className="px-4 py-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-700 font-medium">
+                      R$
+                    </div>
+                    <input
+                      type="number"
+                      name="price"
+                      value={service.price}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+
+                {/* Custo do Serviço */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Custo do serviço
+                  </label>
+                  <div className="flex">
+                    <div className="px-4 py-3 bg-gray-100 border border-r-0 border-gray-300 rounded-l-lg text-gray-700 font-medium">
+                      R$
+                    </div>
+                    <input
+                      type="number"
+                      name="cost"
+                      value={service.cost}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                      placeholder="0,00"
+                    />
+                  </div>
+                </div>
+
+                {/* Sugerir Retorno */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sugerir retorno em
+                  </label>
+                  <div className="flex">
+                    <input
+                      type="number"
+                      name="returnDays"
+                      value={service.returnDays}
+                      onChange={handleInputChange}
+                      min="0"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black transition-colors"
+                      placeholder="0"
+                    />
+                    <div className="px-4 py-3 bg-gray-100 border border-l-0 border-gray-300 rounded-r-lg text-gray-700 font-medium">
+                      dias
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Botão Salvar */}
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="bg-[#D15556] text-white px-8 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {isLoading ? 'Salvando...' : 'Salvar Serviço'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* Tab: Comissões */
+          <div className="space-y-8">
+            <div className="bg-white p-8 border border-gray-100 rounded-lg">
+              <h2 className="text-xl font-medium text-gray-900 mb-6 flex items-center">
+                <Percent className="w-5 h-5 mr-2" />
+                Comissões por Profissional
+              </h2>
+              
+              <p className="text-gray-600 mb-6">
+                Informe a comissão dos profissionais que realizam o serviço
+              </p>
+
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        <input type="checkbox" className="w-4 h-4 text-[#D15556] border-gray-300 rounded focus:ring-[#D15556] focus:ring-2" />
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Nome</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Comissão (%)</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Comissão Assistente (%)</th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">Tempo (min)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {service.commissions.map((commission, index) => (
+                      <tr key={commission.professionalId} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4">
+                          <input 
+                            type="checkbox" 
+                            className="w-4 h-4 text-[#D15556] border-gray-300 rounded focus:ring-[#D15556] focus:ring-2" 
+                          />
+                        </td>
+                        <td className="py-3 px-4 font-medium text-gray-900">
+                          {commission.professionalName}
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="number"
+                            value={commission.commission}
+                            onChange={(e) => handleCommissionChange(commission.professionalId, 'commission', e.target.value)}
+                            min="0"
+                            max="100"
+                            className="w-20 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black text-center"
+                          />
+                          <span className="ml-1 text-gray-500">%</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="number"
+                            value={commission.assistantCommission}
+                            onChange={(e) => handleCommissionChange(commission.professionalId, 'assistantCommission', e.target.value)}
+                            min="0"
+                            max="100"
+                            className="w-20 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black text-center"
+                          />
+                          <span className="ml-1 text-gray-500">%</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <input
+                            type="number"
+                            value={service.duration}
+                            onChange={(e) => setService(prev => ({ ...prev, duration: parseFloat(e.target.value) || 0 }))}
+                            min="0"
+                            className="w-20 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556] bg-white text-black text-center"
+                          />
+                          <span className="ml-1 text-gray-500">min</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Botão Salvar */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="bg-[#D15556] text-white px-8 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                <Save className="w-5 h-5 mr-2" />
+                {isLoading ? 'Salvando...' : 'Salvar Comissões'}
+              </button>
+            </div>
           </div>
-        </form>
+        )}
+
+        {/* Mensagem de sucesso/erro */}
+        {message && (
+          <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+            message.includes('sucesso') ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+          }`}>
+            {message}
+          </div>
+        )}
       </div>
     </div>
   )

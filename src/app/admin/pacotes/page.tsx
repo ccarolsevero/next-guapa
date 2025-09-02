@@ -2,90 +2,91 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp, Package } from 'lucide-react'
+import { Plus, Edit, Trash, Search, DollarSign, Clock, TrendingUp, Package } from 'lucide-react'
 
 interface Service {
   _id: string
   id: string
   name: string
-  description: string
   price: number
-  category: string
-  duration: number
-  isActive: boolean
-  order: number
-  createdAt: string
-  updatedAt: string
-  professionalId: string
 }
 
+interface PackageItem {
+  _id: string
+  id: string
+  name: string
+  description: string
+  validityDays: number
+  services: Array<{
+    serviceId: string
+    name: string
+    price: number
+  }>
+  originalPrice: number
+  discountedPrice: number
+  discount: number
+  commission: string
+  availableOnline: boolean
+  availableInSystem: boolean
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 
-
-
-const categories = ["Todos", "Consultoria e Avaliação", "Cortes", "Colorimetria", "Tratamentos"]
-const professionals = [
-  { id: "bruna", name: "Bruna" },
-  { id: "cicera", name: "Cicera Canovas" }
-]
-
-export default function ServicosPage() {
-  const [services, setServices] = useState<Service[]>([])
+export default function PacotesPage() {
+  const [packages, setPackages] = useState<PackageItem[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('Todos')
-  const [selectedProfessional, setSelectedProfessional] = useState('Todos')
   const [showInactive, setShowInactive] = useState(false)
 
-  // Carregar serviços da API
-  const loadServices = async () => {
+  // Carregar pacotes da API
+  const loadPackages = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/services')
+      const response = await fetch('/api/packages')
       if (!response.ok) {
-        throw new Error('Erro ao carregar serviços')
+        throw new Error('Erro ao carregar pacotes')
       }
       const data = await response.json()
-      setServices(data)
+      setPackages(data)
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error)
-      alert('Erro ao carregar serviços')
+      console.error('Erro ao carregar pacotes:', error)
+      alert('Erro ao carregar pacotes')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadServices()
+    loadPackages()
   }, [])
 
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         service.description.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = selectedCategory === 'Todos' || service.category === selectedCategory
-    const matchesProfessional = selectedProfessional === 'Todos' || service.professionalId === selectedProfessional
-    const matchesStatus = showInactive ? true : service.isActive
+  const filteredPackages = packages.filter(packageItem => {
+    const matchesSearch = packageItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         packageItem.description.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = showInactive ? true : packageItem.isActive
 
-    return matchesSearch && matchesCategory && matchesProfessional && matchesStatus
+    return matchesSearch && matchesStatus
   })
 
   const handleDelete = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir este serviço?')) {
+    if (confirm('Tem certeza que deseja excluir este pacote?')) {
       try {
-        const response = await fetch(`/api/services/${id}`, {
+        const response = await fetch(`/api/packages/${id}`, {
           method: 'DELETE',
         })
         
         if (response.ok) {
-          // Recarregar a lista de serviços
-          await loadServices()
-          alert('Serviço excluído com sucesso!')
+          // Recarregar a lista de pacotes
+          await loadPackages()
+          alert('Pacote excluído com sucesso!')
         } else {
           const error = await response.json()
-          alert(`Erro ao excluir serviço: ${error.error}`)
+          alert(`Erro ao excluir pacote: ${error.error}`)
         }
       } catch (error) {
-        console.error('Erro ao excluir serviço:', error)
-        alert('Erro ao excluir serviço')
+        console.error('Erro ao excluir pacote:', error)
+        alert('Erro ao excluir pacote')
       }
     }
   }
@@ -97,80 +98,59 @@ export default function ServicosPage() {
     }).format(value)
   }
 
-  const getProfessionalName = (professionalId: string) => {
-    const professional = professionals.find(p => p.id === professionalId);
-    return professional ? professional.name : 'Não definido';
-  };
+  const getCommissionLabel = (commission: string) => {
+    switch (commission) {
+      case 'comissao-valor-integral':
+        return 'Comissão Valor Integral'
+      case 'comissao-valor-desconto':
+        return 'Comissão Valor Desconto'
+      case 'sem-comissao':
+        return 'Sem Comissão'
+      default:
+        return 'Não definido'
+    }
+  }
+
+  const getAvailabilityLabel = (packageItem: PackageItem) => {
+    const labels = []
+    if (packageItem.availableOnline) labels.push('Online')
+    if (packageItem.availableInSystem) labels.push('Sistema')
+    return labels.join(' / ') || 'Nenhum'
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Serviços</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Pacotes de Serviços</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Gerencie todos os serviços oferecidos pelo salão
+            Gerencie os pacotes de serviços oferecidos pelo salão
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <div className="flex space-x-3">
-            <Link
-              href="/admin/pacotes"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Gerenciar Pacotes
-            </Link>
-            <Link
-              href="/admin/servicos/editar/novo"
-              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Novo Serviço
-            </Link>
-          </div>
+          <Link
+            href="/admin/pacotes/novo"
+            className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Pacote
+          </Link>
         </div>
       </div>
 
       {/* Filtros e Busca */}
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="grid md:grid-cols-4 gap-4">
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
             <input
               type="text"
-              placeholder="Buscar serviços..."
+              placeholder="Buscar pacotes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
               style={{ color: '#000000' }}
             />
-          </div>
-          
-          <div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
-              style={{ color: '#000000' }}
-            >
-              {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div>
-            <select
-              value={selectedProfessional}
-              onChange={(e) => setSelectedProfessional(e.target.value)}
-              className="px-4 py-3 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
-              style={{ color: '#000000' }}
-            >
-              <option value="Todos">Todos os Profissionais</option>
-              {professionals.map(prof => (
-                <option key={prof.id} value={prof.id}>{prof.name}</option>
-              ))}
-            </select>
           </div>
           
           <div className="flex items-center">
@@ -192,11 +172,11 @@ export default function ServicosPage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center">
             <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-              <TrendingUp className="w-6 h-6" />
+              <Package className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total de Serviços</p>
-                              <p className="text-2xl font-semibold text-gray-900">{services.length}</p>
+              <p className="text-sm font-medium text-gray-600">Total de Pacotes</p>
+              <p className="text-2xl font-semibold text-gray-900">{packages.length}</p>
             </div>
           </div>
         </div>
@@ -207,9 +187,9 @@ export default function ServicosPage() {
               <TrendingUp className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Serviços Ativos</p>
+              <p className="text-sm font-medium text-gray-600">Pacotes Ativos</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {services.filter(s => s.isActive).length}
+                {packages.filter(p => p.isActive).length}
               </p>
             </div>
           </div>
@@ -223,7 +203,7 @@ export default function ServicosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Preço Médio</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(services.reduce((sum, s) => sum + s.price, 0) / services.length)}
+                {packages.length > 0 ? formatCurrency(packages.reduce((sum, p) => sum + p.discountedPrice, 0) / packages.length) : 'R$ 0,00'}
               </p>
             </div>
           </div>
@@ -235,20 +215,20 @@ export default function ServicosPage() {
               <Clock className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Duração Média</p>
+              <p className="text-sm font-medium text-gray-600">Validade Média</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {Math.round(services.reduce((sum, s) => sum + (s.duration || 0), 0) / services.length)} min
+                {packages.length > 0 ? Math.round(packages.reduce((sum, p) => sum + p.validityDays, 0) / packages.length) : 0} dias
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Lista de Serviços */}
+      {/* Lista de Pacotes */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-semibold text-gray-900">
-            Serviços ({filteredServices.length})
+            Pacotes ({filteredPackages.length})
           </h3>
         </div>
         
@@ -257,22 +237,25 @@ export default function ServicosPage() {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Serviço
+                  Pacote
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Categoria
+                  Validade
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Preço
+                  Serviços
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Duração
+                  Preços
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Comissão
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Disponibilidade
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Profissional
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Ações
@@ -280,49 +263,71 @@ export default function ServicosPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredServices.map((service) => (
-                <tr key={service.id} className="hover:bg-gray-50">
+              {filteredPackages.map((packageItem) => (
+                <tr key={packageItem.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{service.name}</div>
+                      <div className="text-sm font-medium text-gray-900">{packageItem.name}</div>
+                      <div className="text-sm text-gray-500">{packageItem.description}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                      {service.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {formatCurrency(service.price)}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {packageItem.validityDays} dias
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {service.duration} min
+                    <div className="max-w-xs">
+                      {packageItem.services.map((service, index) => (
+                        <div key={index} className="text-xs text-gray-600">
+                          • {service.name}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <div>
+                      <div className="text-sm text-gray-500 line-through">
+                        {formatCurrency(packageItem.originalPrice)}
+                      </div>
+                      <div className="text-lg font-bold text-[#D15556]">
+                        {formatCurrency(packageItem.discountedPrice)}
+                      </div>
+                      {packageItem.discount > 0 && (
+                        <div className="text-xs text-green-600">
+                          -{packageItem.discount}%
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                      {getCommissionLabel(packageItem.commission)}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {getAvailabilityLabel(packageItem)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      service.isActive 
+                      packageItem.isActive 
                         ? 'bg-green-100 text-green-800' 
                         : 'bg-red-100 text-red-800'
                     }`}>
-                      {service.isActive ? 'Ativo' : 'Inativo'}
+                      {packageItem.isActive ? 'Ativo' : 'Inativo'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {getProfessionalName(service.professionalId)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
                       <Link
-                        href={`/admin/servicos/editar/${service.id}`}
+                        href={`/admin/pacotes/editar/${packageItem.id}`}
                         className="text-blue-600 hover:text-blue-900"
-                        title="Editar serviço"
+                        title="Editar pacote"
                       >
                         <Edit className="w-4 h-4" />
                       </Link>
                       <button
-                        onClick={() => handleDelete(service.id)}
+                        onClick={() => handleDelete(packageItem.id)}
                         className="text-red-600 hover:text-red-900"
-                        title="Excluir serviço"
+                        title="Excluir pacote"
                       >
                         <Trash className="w-4 h-4" />
                       </button>

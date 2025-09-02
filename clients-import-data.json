@@ -1,0 +1,67 @@
+[
+  {
+    "nome": "Adelaide Nascimento",
+    "email": "adelaide.nascimento@guapa.com",
+    "telefone": "(19997-4430",
+    "dataNascimento": "24/11/2021",
+    "endereco": "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
+    "observacoes": "Cliente cadastrado em 24/11/2021",
+    "totalVisitas": 0,
+    "valorTotal": 0,
+    "ultimaVisita": "",
+    "servicosRealizados": "",
+    "ticketMedio": 0
+  },
+  {
+    "nome": "Adele Motta",
+    "email": "adele.motta@guapa.com",
+    "telefone": "(11)95465-7438",
+    "dataNascimento": "11/08/2022",
+    "endereco": "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
+    "observacoes": "Cliente cadastrado em 11/08/2022",
+    "totalVisitas": 0,
+    "valorTotal": 0,
+    "ultimaVisita": "",
+    "servicosRealizados": "",
+    "ticketMedio": 0
+  },
+  {
+    "nome": "Adriana Conti",
+    "email": "adriana.conti@guapa.com",
+    "telefone": "(19)99619-9870",
+    "dataNascimento": "28/07/2021",
+    "endereco": "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
+    "observacoes": "Cliente cadastrado em 28/07/2021",
+    "totalVisitas": 0,
+    "valorTotal": 0,
+    "ultimaVisita": "",
+    "servicosRealizados": "",
+    "ticketMedio": 0
+  },
+  {
+    "nome": "Adriana Cristina Ferrari Capodifoglio",
+    "email": "adriana.cristina.ferrari.capodifoglio@guapa.com",
+    "telefone": "(19)99164-2240",
+    "dataNascimento": "07/07/2023",
+    "endereco": "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
+    "observacoes": "Cliente cadastrado em 07/07/2023",
+    "totalVisitas": 0,
+    "valorTotal": 0,
+    "ultimaVisita": "",
+    "servicosRealizados": "",
+    "ticketMedio": 0
+  },
+  {
+    "nome": "Adriana da Silva",
+    "email": "adriana.da.silva@guapa.com",
+    "telefone": "(19)99861-2734",
+    "dataNascimento": "14/04/2022",
+    "endereco": "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
+    "observacoes": "Cliente cadastrado em 14/04/2022",
+    "totalVisitas": 0,
+    "valorTotal": 0,
+    "ultimaVisita": "",
+    "servicosRealizados": "",
+    "ticketMedio": 0
+  }
+]

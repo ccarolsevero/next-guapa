@@ -69,6 +69,7 @@ interface SiteSettings {
 export default function EditarSite() {
   const [homeGallery, setHomeGallery] = useState<HomePhoto[]>([])
   const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [newImageUrl, setNewImageUrl] = useState<string>('')
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     siteName: 'Guapa',
     description: 'Salão de beleza',
@@ -143,7 +144,11 @@ export default function EditarSite() {
       }
       const photos: HomePhoto[] = await response.json()
       console.log('Fotos carregadas:', photos.length)
-      setHomeGallery(photos.filter((photo: HomePhoto) => photo.isActive).sort((a: HomePhoto, b: HomePhoto) => a.order - b.order))
+      console.log('Detalhes das fotos:', photos.map(p => ({ id: p._id, url: p.imageUrl, order: p.order, active: p.isActive })))
+      
+      const filteredPhotos = photos.filter((photo: HomePhoto) => photo.isActive).sort((a: HomePhoto, b: HomePhoto) => a.order - b.order)
+      console.log('Fotos filtradas e ordenadas:', filteredPhotos.length)
+      setHomeGallery(filteredPhotos)
     } catch (error) {
       console.error('Erro ao carregar galeria da home:', error)
       setHomeGallery([])
@@ -198,92 +203,9 @@ export default function EditarSite() {
     }
   }
 
-  const handleImageUpload = async (file: File, type: 'home-gallery' | 'professional-gallery') => {
-    try {
-      console.log('=== INÍCIO DO UPLOAD ===')
-      console.log('Arquivo:', file.name, 'tamanho:', file.size, 'tipo:', file.type)
-      console.log('Tipo de upload:', type)
-      
-      if (!file.type.startsWith('image/')) {
-        throw new Error('O arquivo deve ser uma imagem')
-      }
-      
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('O arquivo deve ter no máximo 5MB')
-      }
+  // Função de upload removida - não precisamos mais de base64
 
-      console.log('Validações passaram, convertendo para base64...')
-      
-      // Converter para base64
-      const imageUrl = await convertToBase64(file)
-      console.log('Imagem convertida para base64 com sucesso')
-      console.log('Tamanho do base64:', imageUrl.length, 'caracteres')
-
-      // Verificar se o base64 não é muito grande (limite de 1MB para base64)
-      if (imageUrl.length > 1000000) {
-        throw new Error('A imagem é muito grande. Use uma imagem menor.')
-      }
-
-      if (type === 'home-gallery') {
-        console.log('Salvando foto no banco de dados...')
-        
-        // Salvar no banco de dados via API
-        const response = await fetch('/api/home-gallery', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ imageUrl })
-        })
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Resposta da API:', response.status, errorText)
-          throw new Error(`Erro ao salvar foto no banco de dados: ${response.status} - ${errorText}`)
-        }
-        
-        const newPhoto = await response.json()
-        console.log('Foto adicionada com sucesso:', newPhoto)
-        await loadHomeGallery()
-        alert('Foto adicionada com sucesso no banco de dados!')
-      } else if (type === 'professional-gallery') {
-        // Implementar para galeria de profissionais
-        alert('Funcionalidade de galeria de profissionais em desenvolvimento')
-      }
-      
-      console.log('=== FIM DO UPLOAD ===')
-    } catch (error) {
-      console.error('=== ERRO NO UPLOAD ===')
-      console.error('Erro detalhado:', error)
-      console.error('Stack trace:', error instanceof Error ? error.stack : 'N/A')
-      const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido'
-      alert(`Erro ao fazer upload da imagem: ${errorMessage}`)
-    }
-  }
-
-  const convertToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const base64 = reader.result as string
-        console.log('Base64 gerado:', base64.substring(0, 100) + '...')
-        console.log('Tamanho do base64:', base64.length)
-        console.log('Formato do base64:', base64.startsWith('data:image/') ? 'Válido' : 'Inválido')
-        
-        // Validar se o base64 está correto
-        if (!base64.startsWith('data:image/')) {
-          reject(new Error('Formato de imagem inválido'))
-          return
-        }
-        
-        resolve(base64)
-      }
-      reader.onerror = () => {
-        reject(new Error('Erro ao ler arquivo'))
-      }
-      reader.readAsDataURL(file)
-    })
-  }
+  // Função convertToBase64 removida - não precisamos mais
 
   const deleteHomePhoto = async (id: string) => {
     if (confirm('Tem certeza que deseja excluir esta foto?')) {
@@ -304,6 +226,63 @@ export default function EditarSite() {
       } catch (error) {
         console.error('Erro ao deletar foto:', error)
         alert('Erro ao deletar foto')
+      }
+    }
+  }
+
+  const handleAddImageByUrl = async () => {
+    if (!newImageUrl.trim()) {
+      alert('Por favor, insira uma URL válida')
+      return
+    }
+
+    try {
+      console.log('Adicionando foto por URL:', newImageUrl)
+      
+      const response = await fetch('/api/home-gallery', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          imageUrl: newImageUrl.trim(),
+          isActive: true,
+          order: homeGallery.length + 1
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao adicionar foto')
+      }
+
+      const result = await response.json()
+      console.log('Resposta da API:', result)
+      console.log('Foto adicionada com sucesso, ID:', result._id)
+      console.log('URL salva:', result.imageUrl)
+      
+      setNewImageUrl('') // Limpa o campo
+      await loadHomeGallery() // Recarrega a galeria
+      alert('Foto adicionada com sucesso!')
+    } catch (error) {
+      console.error('Erro ao adicionar foto:', error)
+      alert('Erro ao adicionar foto: ' + error.message)
+    }
+  }
+
+  const clearAllHomePhotos = async () => {
+    if (confirm('Tem certeza que deseja excluir TODAS as fotos da galeria da home? Esta ação não pode ser desfeita.')) {
+      try {
+        console.log('Limpando toda a galeria da home...')
+        
+        // Excluir todas as fotos uma por uma
+        for (const photo of homeGallery) {
+          await deleteHomePhoto(photo._id || photo.id)
+        }
+        
+        alert('Galeria da home limpa com sucesso!')
+      } catch (error) {
+        console.error('Erro ao limpar galeria:', error)
+        alert('Erro ao limpar galeria')
       }
     }
   }
@@ -759,91 +738,139 @@ export default function EditarSite() {
 
         {/* Galeria da Home */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Galeria da Home</h2>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: '#d34d4c' }}>Galeria da Home</h2>
           
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Adicionar Nova Foto
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleImageUpload(file, 'home-gallery')
-              }}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700">
+                Adicionar Nova Foto por URL
+              </label>
+            </div>
             
-            {/* Botão de teste */}
-            <button
-              onClick={() => {
-                console.log('=== TESTE MANUAL ===')
-                console.log('localStorage disponível:', typeof localStorage !== 'undefined')
-                console.log('localDB disponível:', typeof localDB !== 'undefined')
-                
-                // Teste com uma imagem base64 simples
-                const testImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0icmVkIi8+PHRleHQgeD0iNTAiIHk9IjUwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSIgZmlsbD0id2hpdGUiPkdBVU5BPC90ZXh0Pjwvc3ZnPg=='
-                
-                localDB.addHomePhoto(testImage)
-                  .then(photo => {
-                    console.log('Teste bem-sucedido:', photo)
-                    alert('Teste de upload bem-sucedido!')
-                    loadHomeGallery()
-                  })
-                  .catch(error => {
-                    console.error('Teste falhou:', error)
-                    alert('Teste de upload falhou: ' + error.message)
-                  })
-              }}
-              className="mt-2 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-            >
-              🧪 Testar Upload
-            </button>
+            <p className="text-sm text-gray-600 mb-3">
+              💡 <strong>Dica:</strong> Arraste e solte as fotos para reordená-las. A ordem será salva automaticamente.
+            </p>
+            
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="https://exemplo.com/imagem.jpg"
+                value={newImageUrl}
+                onChange={(e) => setNewImageUrl(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+              />
+              <button
+                onClick={() => handleAddImageByUrl()}
+                disabled={!newImageUrl}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                Adicionar
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {homeGallery.map((photo, index) => (
               <div
-                key={photo.id}
-                className="relative group border rounded-lg overflow-hidden"
+                key={photo._id || photo.id}
+                className="relative group border border-gray-200 rounded-lg overflow-hidden cursor-move shadow-sm hover:shadow-md transition-all duration-200"
                 draggable
                 onDragStart={(e) => {
                   e.dataTransfer.setData('text/plain', index.toString())
+                  e.currentTarget.classList.add('opacity-50', 'scale-95')
                 }}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
+                onDragEnd={(e) => {
+                  e.currentTarget.classList.remove('opacity-50', 'scale-95')
+                }}
+                onDragOver={(e) => {
                   e.preventDefault()
+                }}
+                onDragLeave={(e) => {
+                  // Sem bordas durante drag
+                }}
+                onDrop={async (e) => {
+                  e.preventDefault()
+                  
                   const sourceIndex = parseInt(e.dataTransfer.getData('text/plain'))
                   const destIndex = index
+                  
                   if (sourceIndex !== destIndex) {
-                    const items = Array.from(homeGallery)
-                    const [reorderedItem] = items.splice(sourceIndex, 1)
-                    items.splice(destIndex, 0, reorderedItem)
-                    setHomeGallery(items)
+                    try {
+                      const items = Array.from(homeGallery)
+                      const [reorderedItem] = items.splice(sourceIndex, 1)
+                      items.splice(destIndex, 0, reorderedItem)
+                      
+                      // Atualizar estado local
+                      setHomeGallery(items)
+                      
+                      // Atualizar ordem no banco de dados
+                      const response = await fetch('/api/home-gallery', {
+                        method: 'PUT',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(items.map((item, idx) => ({
+                          id: item._id || item.id,
+                          order: idx + 1
+                        })))
+                      })
+                      
+                      if (!response.ok) {
+                        throw new Error('Erro ao atualizar ordem')
+                      }
+                      
+                      console.log('Ordem das fotos atualizada com sucesso!')
+                    } catch (error) {
+                      console.error('Erro ao atualizar ordem:', error)
+                      alert('Erro ao atualizar ordem das fotos')
+                      // Reverter mudanças em caso de erro
+                      await loadHomeGallery()
+                    }
                   }
                 }}
               >
                 <img
-                  src={photo.imageUrl}
+                  src={photo.imageUrl || '/assents/fotobruna.jpeg'}
                   alt={`Foto ${index + 1}`}
-                  className="w-full h-48 object-cover"
-                  onLoad={() => console.log('Imagem carregada com sucesso:', photo.id)}
+                  style={{ 
+                    width: '100%',
+                    height: '192px',
+                    objectFit: 'cover'
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Imagem carregada com sucesso:', photo.imageUrl)
+                  }}
                   onError={(e) => {
-                    console.error('Erro ao carregar imagem:', photo.id, e)
-                    console.error('URL da imagem:', photo.imageUrl.substring(0, 100) + '...')
+                    console.error('❌ Erro ao carregar imagem:', photo.imageUrl)
+                    const target = e.target as HTMLImageElement
+                    target.src = '/assents/fotobruna.jpeg'
                   }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                {/* Overlay de exclusão - temporariamente removido para debug */}
+                {/* <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                   <button
                     onClick={() => deleteHomePhoto(photo.id)}
                     className="bg-red-600 text-white px-3 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                   >
                     Excluir
                   </button>
-                </div>
+                </div> */}
                 <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-sm">
                   {photo.order}
+                </div>
+                <div className="absolute top-2 right-2 bg-blue-600 bg-opacity-80 text-white px-2 py-1 rounded text-xs">
+                  🖱️ Arrastar
+                </div>
+                
+                {/* Botão Excluir */}
+                <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    onClick={() => deleteHomePhoto(photo._id || photo.id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
+                    title="Excluir foto"
+                  >
+                    🗑️ Excluir
+                  </button>
                 </div>
               </div>
             ))}
@@ -855,7 +882,7 @@ export default function EditarSite() {
         {/* Profissionais */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Profissionais</h2>
+            <h2 className="text-xl font-semibold" style={{ color: '#d34d4c' }}>Profissionais</h2>
             <button
               onClick={() => setShowAddProfessionalModal(true)}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center"

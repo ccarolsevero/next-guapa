@@ -11,9 +11,10 @@ import {
   X,
   Download,
   Users,
-  Eye
+  Eye,
+  Clipboard,
+  FileSpreadsheet
 } from 'lucide-react'
-import * as XLSX from 'xlsx'
 
 interface ImportResult {
   total: number
@@ -27,18 +28,14 @@ interface ImportResult {
   }>
 }
 
-export default function ImportarClientesPage() {
+export default function ImportarClientesFlexivelPage() {
   const [file, setFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [result, setResult] = useState<ImportResult | null>(null)
-  const [previewData, setPreviewData] = useState<Array<{
-    nome?: string
-    email?: string
-    telefone?: string
-    totalVisitas?: number
-    valorTotal?: number
-  }>>([])
+  const [previewData, setPreviewData] = useState<any[]>([])
   const [dragActive, setDragActive] = useState(false)
+  const [textInput, setTextInput] = useState('')
+  const [importMethod, setImportMethod] = useState<'file' | 'text'>('file')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleDrag = (e: React.DragEvent) => {
@@ -68,23 +65,13 @@ export default function ImportarClientesPage() {
   }
 
   const handleFile = (selectedFile: File) => {
-    // Validar apenas extensão do arquivo
-    const validExtensions = ['.xlsx', '.xls']
-    const hasValidExtension = validExtensions.some(ext => 
-      selectedFile.name.toLowerCase().endsWith(ext)
-    )
-    
-    if (!hasValidExtension) {
-      alert('Formato de arquivo inválido. Use .xlsx ou .xls')
-      return
-    }
-
     console.log('Arquivo selecionado:', selectedFile.name, selectedFile.type, selectedFile.size)
     setFile(selectedFile)
-    generatePreview(selectedFile)
+    setImportMethod('file')
+    generatePreviewFromFile(selectedFile)
   }
 
-  const generatePreview = async (selectedFile: File) => {
+  const generatePreviewFromFile = async (selectedFile: File) => {
     try {
       const formData = new FormData()
       formData.append('file', selectedFile)
@@ -107,20 +94,73 @@ export default function ImportarClientesPage() {
     }
   }
 
+  const generatePreviewFromText = () => {
+    if (!textInput.trim()) {
+      alert('Digite ou cole os dados primeiro')
+      return
+    }
+
+    try {
+      // Processar texto colado
+      const lines = textInput.trim().split('\n')
+      const headers = lines[0].split('\t') // Assumir que é separado por tab
+      
+      const data = lines.slice(1).map((line, index) => {
+        const values = line.split('\t')
+        const row: any = {}
+        
+        headers.forEach((header, i) => {
+          row[header.trim()] = values[i] ? values[i].trim() : ''
+        })
+        
+        return row
+      }).filter(row => Object.values(row).some(val => val !== ''))
+
+      setPreviewData(data.slice(0, 10)) // Mostrar apenas os primeiros 10
+      setImportMethod('text')
+      console.log('Preview gerado de texto:', data.length, 'linhas')
+    } catch (error) {
+      console.error('Erro ao processar texto:', error)
+      alert('Erro ao processar o texto. Verifique o formato.')
+    }
+  }
+
   const handleUpload = async () => {
-    if (!file) return
+    if (importMethod === 'file' && !file) {
+      alert('Selecione um arquivo primeiro')
+      return
+    }
+
+    if (importMethod === 'text' && !textInput.trim()) {
+      alert('Digite ou cole os dados primeiro')
+      return
+    }
 
     setIsUploading(true)
     setResult(null)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      let response
 
-      const response = await fetch('/api/clients/import', {
-        method: 'POST',
-        body: formData
-      })
+      if (importMethod === 'file') {
+        // Upload de arquivo
+        const formData = new FormData()
+        formData.append('file', file!)
+
+        response = await fetch('/api/clients/import', {
+          method: 'POST',
+          body: formData
+        })
+      } else {
+        // Upload de texto
+        response = await fetch('/api/clients/import-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ data: textInput })
+        })
+      }
 
       if (response.ok) {
         const data = await response.json()
@@ -146,31 +186,28 @@ export default function ImportarClientesPage() {
     }
   }
 
-  const downloadTemplate = () => {
-    const template = [
-      {
-        nome: 'Ana Silva',
-        email: 'ana.silva@email.com',
-        telefone: '(11) 99999-0001',
-        dataNascimento: '1990-05-15',
-        endereco: 'Rua Exemplo, 123 - Centro',
-        observacoes: 'Cliente fiel',
-        totalVisitas: 5,
-        valorTotal: 450.00,
-        ultimaVisita: '2024-01-15',
-        servicosRealizados: 'Corte, Hidratação, Coloração',
-        ticketMedio: 90.00
-      }
-    ]
+  const clearText = () => {
+    setTextInput('')
+    setPreviewData([])
+    setResult(null)
+  }
 
-    const ws = XLSX.utils.json_to_sheet(template)
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Clientes')
-    XLSX.writeFile(wb, 'template_clientes.xlsx')
+  const downloadTemplate = () => {
+    const template = `Nome	Email	Telefone	Data de Nascimento	Endereço	Observações
+Adelaide Nascimento	adelaide.nascimento@guapa.com	(19) 99997-4430	1990-01-01	Rua Exemplo, 123 - Centro	Cliente fiel
+Adele Motta	adele.motta@guapa.com	(11) 95465-7438	1985-05-15	Av. Principal, 456 - Bairro	Primeira visita`
+
+    const blob = new Blob([template], { type: 'text/plain' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'template-clientes.txt'
+    a.click()
+    window.URL.revokeObjectURL(url)
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -182,9 +219,9 @@ export default function ImportarClientesPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Importar Clientes</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Importar Clientes - Método Flexível</h1>
               <p className="mt-2 text-sm text-gray-700">
-                Importe dados históricos dos clientes via planilha Excel
+                Importe dados via arquivo ou cole diretamente a tabela
               </p>
             </div>
           </div>
@@ -203,86 +240,145 @@ export default function ImportarClientesPage() {
         <h2 className="text-lg font-medium text-blue-900 mb-4">Instruções de Importação</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <h3 className="font-medium text-blue-800 mb-2">Campos Obrigatórios:</h3>
+            <h3 className="font-medium text-blue-800 mb-2">Método 1: Upload de Arquivo</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• <strong>nome</strong> - Nome completo do cliente</li>
-              <li>• <strong>email</strong> - Email único do cliente</li>
-              <li>• <strong>telefone</strong> - Telefone do cliente</li>
+              <li>• Aceita qualquer tipo de arquivo (.xlsx, .xls, .csv, .txt)</li>
+              <li>• Arraste e solte ou clique para selecionar</li>
+              <li>• O sistema detectará automaticamente o formato</li>
             </ul>
           </div>
           <div>
-            <h3 className="font-medium text-blue-800 mb-2">Campos Opcionais:</h3>
+            <h3 className="font-medium text-blue-800 mb-2">Método 2: Colar Tabela</h3>
             <ul className="text-sm text-blue-700 space-y-1">
-              <li>• <strong>dataNascimento</strong> - Data de nascimento</li>
-              <li>• <strong>endereco</strong> - Endereço completo</li>
-              <li>• <strong>observacoes</strong> - Observações sobre o cliente</li>
-              <li>• <strong>totalVisitas</strong> - Número total de visitas</li>
-              <li>• <strong>valorTotal</strong> - Valor total gasto</li>
-              <li>• <strong>ultimaVisita</strong> - Data da última visita</li>
-              <li>• <strong>servicosRealizados</strong> - Serviços já realizados (separados por vírgula)</li>
-              <li>• <strong>ticketMedio</strong> - Valor médio por visita</li>
+              <li>• Cole diretamente a tabela do Excel/Google Sheets</li>
+              <li>• Use o template como referência</li>
+              <li>• Ideal para dados copiados de outras fontes</li>
             </ul>
           </div>
         </div>
       </div>
 
-      {/* Upload Area */}
-      {!file && (
-        <div className="mb-8">
-          <div
-            className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
-              dragActive 
-                ? 'border-blue-400 bg-blue-50' 
-                : 'border-gray-300'
+      {/* Seleção de Método */}
+      <div className="mb-8">
+        <div className="flex space-x-4">
+          <button
+            onClick={() => setImportMethod('file')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              importMethod === 'file'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
           >
-            <Upload className={`w-12 h-12 mx-auto mb-4 ${dragActive ? 'text-blue-400' : 'text-gray-400'}`} />
-            <p className="text-lg font-medium text-gray-900 mb-2">
-              {dragActive ? 'Solte o arquivo aqui' : 'Arraste e solte sua planilha Excel ou clique no botão abaixo'}
-            </p>
-            <p className="text-sm text-gray-600 mb-4">
-              Formatos aceitos: .xlsx, .xls (máximo 10MB)
-            </p>
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
-            >
-              Selecionar Arquivo Excel
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".xlsx,.xls"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
+            <FileSpreadsheet className="w-4 h-4 inline mr-2" />
+            Upload de Arquivo
+          </button>
+          <button
+            onClick={() => setImportMethod('text')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              importMethod === 'text'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Clipboard className="w-4 h-4 inline mr-2" />
+            Colar Tabela
+          </button>
         </div>
-      )}
+      </div>
 
-      {/* File Selected */}
-      {file && (
-        <div className="mb-8">
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <FileText className="w-8 h-8 text-blue-600 mr-4" />
-                <div>
-                  <h3 className="font-medium text-gray-900">{file.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+      {/* Método 1: Upload de Arquivo */}
+      {importMethod === 'file' && (
+        <>
+          {!file && (
+            <div className="mb-8">
+              <div
+                className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+                  dragActive 
+                    ? 'border-blue-400 bg-blue-50' 
+                    : 'border-gray-300'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <Upload className={`w-12 h-12 mx-auto mb-4 ${dragActive ? 'text-blue-400' : 'text-gray-400'}`} />
+                <p className="text-lg font-medium text-gray-900 mb-2">
+                  {dragActive ? 'Solte o arquivo aqui' : 'Arraste e solte qualquer arquivo ou clique no botão abaixo'}
+                </p>
+                <p className="text-sm text-gray-600 mb-4">
+                  Formatos aceitos: .xlsx, .xls, .csv, .txt, ou qualquer outro formato
+                </p>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                >
+                  Selecionar Arquivo
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+            </div>
+          )}
+
+          {file && (
+            <div className="mb-8">
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <FileText className="w-8 h-8 text-blue-600 mr-4" />
+                    <div>
+                      <h3 className="font-medium text-gray-900">{file.name}</h3>
+                      <p className="text-sm text-gray-600">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={removeFile}
+                    className="text-red-600 hover:text-red-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Método 2: Colar Tabela */}
+      {importMethod === 'text' && (
+        <div className="mb-8">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              <Clipboard className="w-5 h-5 inline mr-2" />
+              Cole sua tabela aqui
+            </h3>
+            <textarea
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              placeholder="Cole aqui a tabela do Excel/Google Sheets...&#10;Exemplo:&#10;Nome	Email	Telefone	Data de Nascimento	Endereço&#10;Adelaide Nascimento	adelaide@guapa.com	(19) 99997-4430	1990-01-01	Rua Exemplo, 123"
+              className="w-full h-64 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+            />
+            <div className="mt-4 flex space-x-3">
               <button
-                onClick={removeFile}
-                className="text-red-600 hover:text-red-800 transition-colors"
+                onClick={generatePreviewFromText}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <Eye className="w-4 h-4 inline mr-2" />
+                Gerar Preview
+              </button>
+              <button
+                onClick={clearText}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                <X className="w-4 h-4 inline mr-2" />
+                Limpar
               </button>
             </div>
           </div>
@@ -303,39 +399,32 @@ export default function ImportarClientesPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nome</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Telefone</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visitas</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Gasto</th>
+                    {Object.keys(previewData[0] || {}).map((header) => (
+                      <th key={header} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        {header}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {previewData.slice(0, 5).map((row, index) => (
+                  {previewData.map((row, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.nome || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.email || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.telefone || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.totalVisitas || '0'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        R$ {row.valorTotal ? parseFloat(row.valorTotal.toString()).toFixed(2) : '0,00'}
-                      </td>
+                      {Object.values(row).map((value, i) => (
+                        <td key={i} className="px-6 py-4 text-sm text-gray-900">
+                          {String(value || '-')}
+                        </td>
+                      ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {previewData.length > 5 && (
-                <div className="p-4 text-center text-sm text-gray-600">
-                  Mostrando 5 de {previewData.length} registros
-                </div>
-              )}
             </div>
           </div>
         </div>
       )}
 
       {/* Upload Button */}
-      {file && (
+      {((importMethod === 'file' && file) || (importMethod === 'text' && textInput.trim())) && (
         <div className="mb-8">
           <button
             onClick={handleUpload}
@@ -426,5 +515,3 @@ export default function ImportarClientesPage() {
     </div>
   )
 }
-
-

@@ -33,6 +33,22 @@ const clientSchema = new mongoose.Schema({
   notes: {
     type: String,
     default: null
+  },
+  profileComplete: {
+    type: Boolean,
+    default: false
+  },
+  onboardingRequired: {
+    type: Boolean,
+    default: true
+  },
+  firstAccess: {
+    type: Boolean,
+    default: true
+  },
+  profileCompletionDate: {
+    type: Date,
+    default: null
   }
 }, {
   timestamps: true

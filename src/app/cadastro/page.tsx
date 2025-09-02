@@ -38,33 +38,27 @@ export default function CadastroPage() {
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {}
 
+    // Campos obrigatórios
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório'
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email é obrigatório'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email inválido'
     }
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Telefone é obrigatório'
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address = 'Endereço é obrigatório'
+    // Campos opcionais - apenas validar formato se preenchidos
+    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Email inválido'
     }
 
-    if (!formData.password.trim()) {
-      newErrors.password = 'Senha é obrigatória'
-    } else if (formData.password.length < 6) {
+    if (formData.password.trim() && formData.password.length < 6) {
       newErrors.password = 'Senha deve ter pelo menos 6 caracteres'
     }
 
-    if (!formData.confirmPassword.trim()) {
+    if (formData.password.trim() && !formData.confirmPassword.trim()) {
       newErrors.confirmPassword = 'Confirme sua senha'
-    } else if (formData.password !== formData.confirmPassword) {
+    } else if (formData.password.trim() && formData.confirmPassword.trim() && formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Senhas não coincidem'
     }
 
@@ -149,6 +143,9 @@ export default function CadastroPage() {
             <p className="text-[#f2dcbc] mb-8">
               Junte-se ao Espaço Guapa e acompanhe seus agendamentos
             </p>
+            <p className="text-[#f2dcbc] text-sm mb-4">
+              <span className="text-[#D15556] font-medium">*</span> Campos obrigatórios: Nome e Telefone
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="bg-white/10 backdrop-blur-sm rounded-lg shadow-xl p-8 border border-white/20">
@@ -186,7 +183,7 @@ export default function CadastroPage() {
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-[#f2dcbc] mb-2">
                   <Mail className="w-4 h-4 inline mr-2" />
-                  Email
+                  Email (opcional)
                 </label>
                 <input
                   type="email"
@@ -232,7 +229,7 @@ export default function CadastroPage() {
               <div>
                 <label htmlFor="address" className="block text-sm font-medium text-[#f2dcbc] mb-2">
                   <MapPin className="w-4 h-4 inline mr-2" />
-                  Endereço
+                  Endereço (opcional)
                 </label>
                 <input
                   type="text"
@@ -255,7 +252,7 @@ export default function CadastroPage() {
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-[#f2dcbc] mb-2">
                   <Lock className="w-4 h-4 inline mr-2" />
-                  Senha
+                  Senha (opcional)
                 </label>
                 <div className="relative">
                   <input
@@ -287,7 +284,7 @@ export default function CadastroPage() {
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-[#f2dcbc] mb-2">
                   <Lock className="w-4 h-4 inline mr-2" />
-                  Confirmar Senha
+                  Confirmar Senha (opcional)
                 </label>
                 <div className="relative">
                   <input

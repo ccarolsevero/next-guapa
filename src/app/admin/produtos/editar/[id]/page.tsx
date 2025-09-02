@@ -24,6 +24,16 @@ interface Product {
   updatedAt: string
 }
 
+interface Category {
+  _id: string
+  name: string
+  description?: string
+  isActive: boolean
+  isDefault: boolean
+  order: number
+  productCount: number
+}
+
 export default function EditarProdutoPage() {
   const router = useRouter()
   const params = useParams()
@@ -32,6 +42,7 @@ export default function EditarProdutoPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [product, setProduct] = useState<Product | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -86,6 +97,29 @@ export default function EditarProdutoPage() {
       loadProduct()
     }
   }, [productId, router])
+
+  // Carregar categorias
+  const loadCategories = async () => {
+    try {
+      console.log('🔄 Carregando categorias para edição...')
+      const response = await fetch('/api/categories?isActive=true')
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 Categorias carregadas para edição:', data)
+        setCategories(data)
+      } else {
+        console.error('❌ Erro ao carregar categorias:', response.status)
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar categorias:', error)
+    }
+  }
+
+  // Carregar categorias na montagem do componente
+  useEffect(() => {
+    loadCategories()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -209,13 +243,15 @@ export default function EditarProdutoPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
                   style={{ color: '#000000' }}
                 >
-                  <option value="Geral">Geral</option>
-                  <option value="Shampoos">Shampoos</option>
-                  <option value="Condicionadores">Condicionadores</option>
-                  <option value="Máscaras">Máscaras</option>
-                  <option value="Cremes de Tratamento">Cremes de Tratamento</option>
-                  <option value="Maquiagem">Maquiagem</option>
-                  <option value="Acessórios">Acessórios</option>
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <option key={category._id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="Geral">Carregando categorias...</option>
+                  )}
                 </select>
               </div>
 

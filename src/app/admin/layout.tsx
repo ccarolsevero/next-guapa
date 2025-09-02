@@ -37,6 +37,7 @@ export default function AdminLayout({
     { name: 'Agendamentos', href: '/admin/agendamentos', icon: Calendar },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Serviços', href: '/admin/servicos', icon: Scissors },
+    { name: 'Pacotes', href: '/admin/pacotes', icon: Package },
     { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag },
     { name: 'Pedidos', href: '/admin/pedidos', icon: Package },
     { name: 'Comandas', href: '/admin/comandas', icon: Package },
@@ -55,11 +56,11 @@ export default function AdminLayout({
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <h1 className="text-xl font-light text-gray-900">Espaço Guapa</h1>
+        <div className="fixed inset-y-0 left-0 w-64 shadow-lg" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#e6d1b8' }}>
+            <h1 className="text-xl font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
             <button onClick={() => setSidebarOpen(false)}>
-              <X className="w-6 h-6 text-gray-400" />
+              <X className="w-6 h-6" style={{ color: '#d34d4c' }} />
             </button>
           </div>
           <nav className="p-6 space-y-2">
@@ -88,9 +89,9 @@ export default function AdminLayout({
 
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
-        <div className="flex flex-col flex-grow bg-white shadow-lg">
-          <div className="flex items-center h-16 px-6 border-b border-gray-100">
-            <h1 className="text-xl font-light text-gray-900">Espaço Guapa</h1>
+        <div className="flex flex-col flex-grow shadow-lg" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="flex items-center h-16 px-6 border-b" style={{ borderColor: '#e6d1b8' }}>
+            <h1 className="text-xl font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
           </div>
           <div className="flex-1 flex flex-col overflow-y-auto">
             <nav className="flex-1 px-6 py-6 space-y-2">
@@ -120,16 +121,17 @@ export default function AdminLayout({
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top header */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-100">
+        <div className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)', borderColor: '#e6d1b8' }}>
           <div className="flex items-center justify-between px-6 py-4">
             <div className="flex items-center">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                style={{ color: '#d34d4c' }}
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <h2 className="ml-4 lg:ml-0 text-lg font-medium text-gray-900">
+              <h2 className="ml-4 lg:ml-0 text-lg font-medium" style={{ color: '#d34d4c' }}>
                 {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
               </h2>
             </div>
@@ -141,7 +143,8 @@ export default function AdminLayout({
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center text-sm text-gray-700 hover:text-[#D15556] transition-colors"
+                className="flex items-center text-sm transition-colors"
+                style={{ color: '#d34d4c' }}
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Sair

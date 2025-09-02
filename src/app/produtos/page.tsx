@@ -86,8 +86,8 @@ export default function ProdutosPage() {
                 </h2>
               </div>
               <p className="text-base md:text-lg text-center font-body" style={{ color: '#f2dcbc' }}>
-                <strong>Reserve online</strong> os produtos que deseja e <strong>retire no salão</strong> quando for para sua consulta. 
-                Desta forma, garantimos que os produtos estarão disponíveis para você e você aproveita o tempo da consulta para levar tudo!
+                            <strong>Reserve online</strong> os produtos que deseja e <strong>retire no salão</strong> quando for para seu atendimento.
+            Desta forma, garantimos que os produtos estarão disponíveis para você e você aproveita o tempo do atendimento para levar tudo!
               </p>
             </div>
           </div>

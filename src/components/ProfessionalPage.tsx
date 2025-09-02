@@ -46,15 +46,7 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
 
   useEffect(() => {
     if (professional) {
-      console.log('🔄 useEffect: professional mudou, chamando loadProfessionalServices')
-      console.log('📊 Professional data:', {
-        name: professional.name,
-        services: professional.services,
-        servicesLength: professional.services?.length
-      })
       loadProfessionalServices()
-    } else {
-      console.log('🔄 useEffect: professional é null/undefined')
     }
   }, [professional])
 
@@ -72,13 +64,11 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
   const loadProfessional = async () => {
     try {
       setLoading(true)
-      console.log('Carregando profissional:', professionalName)
       const response = await fetch(`/api/professionals/${professionalName}`)
       if (!response.ok) {
         throw new Error('Profissional não encontrado')
       }
       const data = await response.json()
-      console.log('Dados carregados:', data)
       setProfessional(data)
     } catch (error) {
       console.error('Erro ao carregar profissional:', error)
@@ -93,54 +83,27 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
     console.log('📊 Professional atual:', professional)
     
     if (!professional?.services) {
-      console.log('❌ Profissional não tem serviços ou services é undefined')
-      console.log('Professional completo:', professional)
       return
     }
     
-    console.log('🔍 Carregando serviços para:', professional.name)
-    console.log('📋 Serviços da profissional:', professional.services)
-    console.log('📋 Tipo de services:', typeof professional.services)
-    console.log('📋 Array?', Array.isArray(professional.services))
-    console.log('📋 Length:', professional.services.length)
+
     
     try {
-      console.log('📡 Fazendo fetch para /api/services...')
       const response = await fetch('/api/services')
-      console.log('📡 Resposta da API de serviços:', response.status, response.ok)
       
       if (response.ok) {
         const allServices = await response.json()
-        console.log('📊 Todos os serviços disponíveis:', allServices.length)
-        console.log('📊 Primeiros 3 serviços:', allServices.slice(0, 3).map((s: Service) => s.name))
-        
-        // LÓGICA SIMPLIFICADA: Comparação direta sem normalização
-        console.log('🔍 COMPARAÇÃO:')
-        console.log('📋 Serviços da profissional (exatos):', professional.services)
-        console.log('📋 Primeiros 5 serviços do banco:', allServices.slice(0, 5).map((s: Service) => s.name))
         
         const filteredServices = allServices.filter((service: Service) => {
-          const isIncluded = professional.services.includes(service.name)
-          console.log(`🔍 Serviço "${service.name}" está incluído? ${isIncluded}`)
-          if (isIncluded) {
-            console.log(`✅ MATCH ENCONTRADO: "${service.name}"`)
-          }
-          return isIncluded
+          return professional.services.includes(service.name)
         })
         
-        console.log('✅ Serviços filtrados encontrados:', filteredServices.length)
-        console.log('✅ Serviços filtrados:', filteredServices.map((s: Service) => s.name))
-        
-        console.log('🔄 Chamando setProfessionalServices com:', filteredServices.length, 'serviços')
         setProfessionalServices(filteredServices)
-        console.log('✅ setProfessionalServices executado')
       } else {
-        console.error('❌ Erro na resposta da API de serviços:', response.status)
-        const errorText = await response.text()
-        console.error('❌ Texto do erro:', errorText)
+        console.error('Erro ao carregar serviços:', response.status)
       }
     } catch (error) {
-      console.error('❌ Erro ao carregar serviços:', error)
+      console.error('Erro ao carregar serviços:', error)
     }
   }
 
@@ -225,58 +188,8 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
       <section className="py-12 md:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Tratamentos Especializados</h2>
-            <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os tratamentos oferecidos pela {professional.name}</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {professionalServices.length > 0 ? (
-              professionalServices.map((service, index) => (
-                <div key={service._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-[#d34d4c] rounded-full flex items-center justify-center">
-                      <Sparkles className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xl font-light text-[#d34d4c]">R$ {service.price.toFixed(2)}</span>
-                  </div>
-                  <h3 className="text-xl font-bold font-heading mb-3" style={{ color: '#f2dcbc' }}>{service.name}</h3>
-                  <p className="text-base md:text-lg font-body leading-relaxed mb-4" style={{ color: '#f2dcbc' }}>
-                    {service.description}
-                  </p>
-                  <Link 
-                    href="/login-cliente"
-                    className="bg-[#d34d4c] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 text-sm font-medium inline-block w-full text-center"
-                  >
-                    Agendar
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center">
-                <p className="text-[#f2dcbc] text-lg">Carregando serviços...</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Serviços */}
-      <section className="py-12 md:py-24 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
             <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>Serviços Especializados</h2>
             <p className="text-lg md:text-xl font-body max-w-2xl mx-auto" style={{ color: '#f2dcbc' }}>Conheça os serviços oferecidos pela {professional.name}</p>
-          </div>
-          
-          {/* DEBUG INFO */}
-          <div className="mb-8 p-4 bg-red-500/20 border border-red-500/50 rounded-lg">
-            <h3 className="text-red-400 font-bold mb-2">🔍 DEBUG INFO:</h3>
-            <p className="text-red-300 text-sm">professionalServices: {JSON.stringify(professionalServices)}</p>
-            <p className="text-red-300 text-sm">Length: {professionalServices?.length || 0}</p>
-            <p className="text-red-300 text-sm">Professional services: {JSON.stringify(professional?.services)}</p>
-            <p className="text-red-300 text-sm">Professional ID: {professional?._id}</p>
-            <p className="text-red-300 text-sm">Professional Name: {professional?.name}</p>
-            <p className="text-red-300 text-sm">URL Parameter: {professionalName}</p>
           </div>
           
           {professionalServices && professionalServices.length > 0 ? (
@@ -317,7 +230,7 @@ export default function ProfessionalPage({ professionalName }: ProfessionalPageP
                 <img 
                   src={professional.gallery[currentImageIndex]} 
                   alt={`Trabalho ${currentImageIndex + 1}`}
-                  className="w-full h-full object-contain bg-[#006D5B]"
+                  className="w-full h-full object-contain bg-white/5"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     target.src = '/assents/fotobruna.jpeg'

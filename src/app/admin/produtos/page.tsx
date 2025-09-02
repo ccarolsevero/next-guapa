@@ -22,7 +22,9 @@ import {
   DollarSign,
   Percent,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Save,
+  X
 } from 'lucide-react'
 
 interface Product {
@@ -45,6 +47,16 @@ interface Product {
   updatedAt: string
 }
 
+interface Category {
+  _id: string
+  name: string
+  description?: string
+  isActive: boolean
+  isDefault: boolean
+  order: number
+  productCount: number
+}
+
 interface Pagination {
   page: number
   limit: number
@@ -54,6 +66,7 @@ interface Pagination {
 
 export default function ProdutosPage() {
   const [products, setProducts] = useState<Product[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 10,
@@ -68,6 +81,14 @@ export default function ProdutosPage() {
   const [showBulkActions, setShowBulkActions] = useState(false)
   const [bulkDiscount, setBulkDiscount] = useState('')
   const [bulkPrice, setBulkPrice] = useState('')
+
+  // Estado para gerenciamento de categorias
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: ''
+  })
 
   // Carregar produtos
   const loadProducts = async () => {
@@ -98,10 +119,71 @@ export default function ProdutosPage() {
     }
   }
 
-  // Carregar produtos na montagem do componente
+  // Carregar categorias
+  const loadCategories = async () => {
+    try {
+      console.log('🔄 Carregando categorias...')
+      
+      // Tentar diferentes URLs para garantir que funcionem tanto local quanto em produção
+      let response
+      let baseUrl = ''
+      
+      if (typeof window !== 'undefined') {
+        baseUrl = window.location.origin
+        console.log('🌐 Base URL:', baseUrl)
+      }
+      
+      // Tentar URL absoluta primeiro
+      try {
+        const url = `${baseUrl}/api/categories?isActive=true`
+        console.log('🔗 Tentando URL:', url)
+        response = await fetch(url)
+        console.log('✅ Categorias carregadas com URL absoluta')
+      } catch (error) {
+        console.log('❌ Erro com URL absoluta, tentando relativa...')
+        response = await fetch('/api/categories?isActive=true')
+        console.log('✅ Categorias carregadas com URL relativa')
+      }
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📊 Categorias carregadas:', data)
+        console.log('📝 Total de categorias:', data.length)
+        console.log('🏷️ Nomes das categorias:', data.map((cat: Category) => cat.name))
+        setCategories(data)
+      } else {
+        console.error('❌ Erro ao carregar categorias:', response.status, response.statusText)
+        const errorText = await response.text()
+        console.error('❌ Erro detalhado:', errorText)
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar categorias:', error)
+    }
+  }
+
+  // Carregar dados na montagem do componente
   useEffect(() => {
+    console.log('🚀 Componente montado, carregando dados...')
     loadProducts()
+    loadCategories()
   }, [pagination.page, searchTerm, selectedCategory, statusFilter])
+
+  // Recarregar categorias quando o modal for aberto
+  const handleAddCategory = async () => {
+    setEditingCategory(null)
+    setCategoryForm({ name: '', description: '' })
+    // Usar a função unificada para abrir o modal
+    await openCategoryModal()
+  }
+
+  // Função para abrir o modal e garantir que as categorias sejam carregadas
+  const openCategoryModal = async () => {
+    console.log('🔓 Abrindo modal de categorias...')
+    setShowCategoryModal(true)
+    // Forçar recarregamento das categorias
+    console.log('🔄 Recarregando categorias para o modal...')
+    await loadCategories()
+  }
 
   // Ações em lote
   const handleBulkAction = async (action: string) => {
@@ -187,66 +269,90 @@ export default function ProdutosPage() {
   }
 
   // Funções para gerenciar categorias
-  const handleAddCategory = () => {
-    setEditingCategory(null)
-    setCategoryForm({ name: '', description: '' })
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category)
+    setCategoryForm({ 
+      name: category.name, 
+      description: category.description || '' 
+    })
     setShowCategoryModal(true)
   }
 
-  const handleEditCategory = (categoryName: string) => {
-    setEditingCategory(categoryName)
-    setCategoryForm({ name: categoryName, description: '' })
-    setShowCategoryModal(true)
-  }
-
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (!categoryForm.name.trim()) {
       alert('Nome da categoria é obrigatório')
       return
     }
 
-    if (editingCategory) {
-      // Editar categoria existente - atualizar produtos
-      const updatedProducts = products.map(product => 
-        product.category === editingCategory 
-          ? { ...product, category: categoryForm.name }
-          : product
-      )
-      setProducts(updatedProducts)
-    } else {
-      // Nova categoria - apenas adicionar à lista
-      if (!categories.includes(categoryForm.name)) {
-        // Não precisamos fazer nada aqui pois as categorias são extraídas dos produtos
+    try {
+      if (editingCategory) {
+        // Editar categoria existente
+        const response = await fetch(`/api/categories/${editingCategory._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: categoryForm.name,
+            description: categoryForm.description
+          })
+        })
+
+        if (response.ok) {
+          alert('Categoria atualizada com sucesso!')
+          await loadCategories() // Recarregar categorias
+          loadProducts() // Recarregar produtos para atualizar categorias
+        } else {
+          const data = await response.json()
+          alert(`Erro: ${data.error}`)
+        }
+      } else {
+        // Nova categoria
+        const response = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: categoryForm.name,
+            description: categoryForm.description
+          })
+        })
+
+        if (response.ok) {
+          alert('Categoria criada com sucesso!')
+          await loadCategories() // Recarregar categorias
+        } else {
+          const data = await response.json()
+          alert(`Erro: ${data.error}`)
+        }
       }
+
+      setShowCategoryModal(false)
+      setCategoryForm({ name: '', description: '' })
+      setEditingCategory(null)
+    } catch (error) {
+      console.error('Erro ao salvar categoria:', error)
+      alert('Erro ao salvar categoria')
     }
-
-    setShowCategoryModal(false)
-    setCategoryForm({ name: '', description: '' })
-    setEditingCategory(null)
   }
 
-  const handleDeleteCategory = (categoryName: string) => {
-    if (!confirm(`Tem certeza que deseja excluir a categoria "${categoryName}"?`)) return
+  const handleDeleteCategory = async (category: Category) => {
+    if (!confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) return
 
-    // Remover categoria dos produtos (definir como "Sem categoria")
-    const updatedProducts = products.map(product => 
-      product.category === categoryName 
-        ? { ...product, category: 'Sem categoria' }
-        : product
-    )
-    setProducts(updatedProducts)
-  }
+    try {
+      const response = await fetch(`/api/categories/${category._id}`, {
+        method: 'DELETE'
+      })
 
-  const addDefaultCategories = () => {
-    // Adicionar categorias padrão apenas aos produtos que não têm categoria
-    const updatedProducts = products.map(product => {
-      if (!product.category || product.category === 'Sem categoria' || product.category.trim() === '') {
-        const randomCategory = defaultProductCategories[Math.floor(Math.random() * defaultProductCategories.length)]
-        return { ...product, category: randomCategory }
+      if (response.ok) {
+        alert('Categoria excluída com sucesso!')
+        await loadCategories() // Recarregar categorias
+        loadProducts() // Recarregar produtos
+      } else {
+        const data = await response.json()
+        alert(`Erro: ${data.error}`)
       }
-      return product
-    })
-    setProducts(updatedProducts)
+    } catch (error) {
+      console.error('Erro ao excluir categoria:', error)
+      alert('Erro ao excluir categoria')
+    }
   }
 
   // Toggle ativo/inativo
@@ -300,22 +406,8 @@ export default function ProdutosPage() {
   const outOfStockProducts = products.filter(p => p.stock === 0).length
   const featuredProducts = products.filter(p => p.isFeatured).length
 
-  // Categorias únicas
-  const categories = Array.from(new Set(products.map(p => p.category)))
-  
-  // Estado para gerenciamento de categorias
-  const [showCategoryModal, setShowCategoryModal] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<string | null>(null)
-  const [categoryForm, setCategoryForm] = useState({
-    name: '',
-    description: ''
-  })
-  
-  // Categorias padrão para produtos
-  const defaultProductCategories = [
-    "Shampoo", "Condicionador", "Máscara", "Óleo", "Protetor Térmico",
-    "Tratamentos", "Finalizadores", "Acessórios", "Coloração", "Hidratação"
-  ]
+  // Categorias únicas dos produtos (para compatibilidade)
+  const productCategories = Array.from(new Set(products.map(p => p.category)))
 
   return (
     <div className="p-6">
@@ -324,14 +416,7 @@ export default function ProdutosPage() {
           <h1 className="text-2xl font-bold text-gray-900">Gerenciar Produtos</h1>
           <div className="flex space-x-3">
             <button
-              onClick={addDefaultCategories}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
-            >
-              <Tag className="w-4 h-4 mr-2" />
-              Adicionar Categorias Padrão
-            </button>
-            <button
-              onClick={handleAddCategory}
+              onClick={openCategoryModal}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
             >
               <Tag className="w-4 h-4 mr-2" />
@@ -430,28 +515,19 @@ export default function ProdutosPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-              <div className="flex space-x-2">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="flex-1 px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  style={{ color: '#000000' }}
-                >
-                  <option value="all">Todas as categorias</option>
-                  {categories.map(category => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  onClick={handleAddCategory}
-                  className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  title="Adicionar nova categoria"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                style={{ color: '#000000' }}
+              >
+                <option value="all">Todas as categorias</option>
+                {productCategories.map(category => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
@@ -558,11 +634,11 @@ export default function ProdutosPage() {
             </div>
           ) : (
             <>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <div className="overflow-x-auto">
+                <table className="w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
                         <input
                           type="checkbox"
                           checked={selectedProducts.length === products.length && products.length > 0}
@@ -570,30 +646,30 @@ export default function ProdutosPage() {
                           className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
                         />
                       </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Produto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Categoria
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Preço
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estoque
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Produto
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Categoria
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Preço
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Estoque
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Ações
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
                     {products.map((product) => (
                       <tr key={product._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 w-12">
                           <input
                             type="checkbox"
                             checked={selectedProducts.includes(product._id)}
@@ -601,47 +677,46 @@ export default function ProdutosPage() {
                             className="rounded border-gray-300 text-pink-600 focus:ring-pink-500"
                           />
                         </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 bg-gradient-to-br from-pink-100 to-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                               {product.imageUrl ? (
                                 <img src={product.imageUrl} alt={product.name} className="h-8 w-8 rounded object-cover" />
                               ) : (
-                          <Package className="w-5 h-5 text-pink-600" />
+                                <Package className="w-5 h-5 text-pink-600" />
                               )}
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{product.name}</div>
-                          <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
+                            </div>
+                            <div className="ml-4 min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 truncate">{product.name}</div>
                               {product.isFeatured && (
                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mt-1">
                                   <Star className="w-3 h-3 mr-1" />
                                   Destaque
                                 </span>
                               )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {product.category}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 w-24">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                            {product.category}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 w-24">
+                          <div className="text-sm text-gray-900">
                             {product.discount > 0 ? (
-                          <div>
+                              <div>
                                 <span className="line-through text-gray-500">R$ {product.price.toFixed(2)}</span>
                                 <br />
                                 <span className="text-green-600 font-medium">R$ {product.finalPrice.toFixed(2)}</span>
                                 <span className="text-red-600 text-xs ml-1">-{product.discount}%</span>
+                              </div>
+                            ) : (
+                              <span>R$ {product.price.toFixed(2)}</span>
+                            )}
                           </div>
-                        ) : (
-                          <span>R$ {product.price.toFixed(2)}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                        </td>
+                        <td className="px-6 py-4 w-24">
                           <div className="text-sm text-gray-900">
                             {product.stock > 0 ? (
                               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -654,21 +729,21 @@ export default function ProdutosPage() {
                             ) : (
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
                                 Sem estoque
-                        </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        product.isActive
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {product.isActive ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 w-24">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            product.isActive
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}>
+                            {product.isActive ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 w-32">
+                          <div className="flex flex-wrap gap-2">
                             {/* Toggle Ativo/Inativo */}
                             <button
                               onClick={() => handleToggleActive(product._id, !product.isActive)}
@@ -695,26 +770,26 @@ export default function ProdutosPage() {
                               <Star className={`w-3 h-3 ${product.isFeatured ? 'fill-current' : ''}`} />
                             </button>
                             
-                        <Link
+                            <Link
                               href={`/admin/produtos/editar/${product._id}`}
                               className="text-blue-600 hover:text-blue-900"
                               title="Editar produto"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-                        <button
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                            <button
                               onClick={() => handleDeleteProduct(product._id)}
-                          className="text-red-600 hover:text-red-900"
+                              className="text-red-600 hover:text-red-900"
                               title="Excluir produto"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
 
               {/* Paginação */}
@@ -779,10 +854,10 @@ export default function ProdutosPage() {
                           <ChevronRight className="h-5 w-5" />
                         </button>
                       </nav>
-          </div>
-        </div>
-          </div>
-        )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -823,7 +898,7 @@ export default function ProdutosPage() {
                       type="text"
                       value={categoryForm.name}
                       onChange={(e) => setCategoryForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                       placeholder="Nome da categoria"
                       required
                     />
@@ -836,7 +911,7 @@ export default function ProdutosPage() {
                       type="text"
                       value={categoryForm.description}
                       onChange={(e) => setCategoryForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900 placeholder-gray-500"
                       placeholder="Descrição da categoria"
                     />
                   </div>
@@ -872,15 +947,15 @@ export default function ProdutosPage() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {categories.map((category) => (
-                        <tr key={category} className="hover:bg-gray-50">
+                        <tr key={category._id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
-                              {category}
+                              {category.name}
                             </div>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap">
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                              {products.filter(p => p.category === category).length} produtos
+                              {category.productCount} produtos
                             </span>
                           </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
