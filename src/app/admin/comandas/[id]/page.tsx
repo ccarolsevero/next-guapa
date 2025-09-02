@@ -29,24 +29,8 @@ export default function ComandaDetalhesPage() {
   const params = useParams()
   const comandaId = params.id
 
-  const [comanda, setComanda] = useState({
-    id: 1,
-    clientName: "Maria Silva",
-    clientPhone: "(11) 99999-1234",
-    professionalName: "Ana Carolina",
-    startedAt: "2024-01-15 14:00",
-    status: "em_atendimento",
-    services: [
-      { id: 1, name: "Corte Feminino", price: 45.00, quantity: 1 },
-      { id: 2, name: "Hidratação", price: 50.00, quantity: 1 }
-    ],
-    products: [
-      { id: 1, name: "Shampoo Profissional", price: 35.00, quantity: 1, soldBy: "Ana Carolina" },
-      { id: 2, name: "Máscara Hidratante", price: 28.00, quantity: 1, soldBy: "Bruna" }
-    ],
-    observations: "",
-    total: 158.00
-  })
+  const [comanda, setComanda] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   const [showAddService, setShowAddService] = useState(false)
   const [showAddProduct, setShowAddProduct] = useState(false)
@@ -65,16 +49,49 @@ export default function ComandaDetalhesPage() {
   const [editingProductVendor, setEditingProductVendor] = useState<number | null>(null)
 
   const updateTotal = () => {
-    const servicesTotal = comanda.services.reduce((sum, service) => sum + (service.price * service.quantity), 0)
-    const productsTotal = comanda.products.reduce((sum, product) => sum + (product.price * product.quantity), 0)
+    if (!comanda) return
+    
+    const servicesTotal = comanda.servicos.reduce((sum: number, service: any) => sum + (service.preco * service.quantidade), 0)
+    const productsTotal = comanda.produtos.reduce((sum: number, product: any) => sum + (product.preco * product.quantidade), 0)
     const newTotal = servicesTotal + productsTotal
     
-    setComanda(prev => ({ ...prev, total: newTotal }))
+    setComanda(prev => ({ ...prev, valorTotal: newTotal }))
   }
 
   useEffect(() => {
     updateTotal()
-  }, [comanda.services, comanda.products])
+  }, [comanda?.servicos, comanda?.produtos])
+
+  // Buscar dados da comanda específica
+  useEffect(() => {
+    const fetchComanda = async () => {
+      if (!comandaId) return
+      
+      try {
+        setLoading(true)
+        console.log('🔄 Buscando comanda:', comandaId)
+        
+        const response = await fetch(`/api/comandas/${comandaId}`)
+        console.log('📡 Resposta da API de comanda:', response.status)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('📊 Dados da comanda recebidos:', data)
+          setComanda(data.comanda)
+        } else {
+          console.error('❌ Erro na API de comanda:', response.status)
+          const errorText = await response.text()
+          console.error('❌ Detalhes do erro:', errorText)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar comanda:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchComanda()
+  }, [comandaId])
 
   // Buscar dados do banco
   useEffect(() => {
@@ -131,25 +148,25 @@ export default function ComandaDetalhesPage() {
   }, [])
 
   const addService = (service: any) => {
-    const existingService = comanda.services.find(s => s.id === service._id)
+    const existingService = comanda?.servicos.find(s => s.id === service._id)
     
     if (existingService) {
       setComanda(prev => ({
         ...prev,
-        services: prev.services.map(s => 
+        servicos: prev.servicos.map(s => 
           s.id === service._id 
-            ? { ...s, quantity: s.quantity + 1 }
+            ? { ...s, quantidade: s.quantidade + 1 }
             : s
         )
       }))
     } else {
       setComanda(prev => ({
         ...prev,
-        services: [...prev.services, { 
+        servicos: [...prev.servicos, { 
           id: service._id,
-          name: service.name, 
-          price: service.price, 
-          quantity: 1 
+          nome: service.name, 
+          preco: service.price, 
+          quantidade: 1 
         }]
       }))
     }
@@ -175,27 +192,27 @@ export default function ComandaDetalhesPage() {
         }
       }
 
-      const existingProduct = comanda.products.find(p => p.id === product._id)
+      const existingProduct = comanda?.produtos.find(p => p.id === product._id)
       
       if (existingProduct) {
         setComanda(prev => ({
           ...prev,
-          products: prev.products.map(p => 
+          produtos: prev.produtos.map(p => 
             p.id === product._id 
-              ? { ...p, quantity: p.quantity + 1 }
+              ? { ...p, quantidade: p.quantidade + 1 }
               : p
           )
         }))
       } else {
         setComanda(prev => ({
           ...prev,
-          products: [...prev.products, { 
+          produtos: [...prev.produtos, { 
             id: product._id,
-            name: product.name, 
-            price: product.price, 
-            quantity: 1, 
-            soldBy: soldByProfessionalName || comanda.professionalName,
-            soldById: soldByProfessionalId || comanda.professionalId
+            nome: product.name, 
+            preco: product.price, 
+            quantidade: 1, 
+            vendidoPor: soldByProfessionalName || comanda?.profissionalVendedora,
+            vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
           }]
         }))
       }
@@ -211,11 +228,11 @@ export default function ComandaDetalhesPage() {
       if (type === 'service') {
         setComanda(prev => ({
           ...prev,
-          services: prev.services.filter(s => s.id !== id)
+          servicos: prev.servicos.filter(s => s.id !== id)
         }))
       } else {
         // Remover produto da comanda
-        const productToRemove = comanda.products.find(p => p.id === id)
+        const productToRemove = comanda?.produtos.find(p => p.id === id)
         if (productToRemove) {
           // Restaurar estoque do produto removido
           try {
@@ -225,8 +242,8 @@ export default function ComandaDetalhesPage() {
               body: JSON.stringify({
                 products: [{
                   productId: productToRemove.id,
-                  quantity: -productToRemove.quantity, // Quantidade negativa para restaurar
-                  productName: productToRemove.name
+                  quantity: -productToRemove.quantidade, // Quantidade negativa para restaurar
+                  productName: productToRemove.nome
                 }]
               })
             })
@@ -237,22 +254,22 @@ export default function ComandaDetalhesPage() {
         
         setComanda(prev => ({
           ...prev,
-          products: prev.products.filter(p => p.id !== id)
+          produtos: prev.produtos.filter(p => p.id !== id)
         }))
       }
     } else {
       if (type === 'service') {
         setComanda(prev => ({
           ...prev,
-          services: prev.services.map(s => 
-            s.id === id ? { ...s, quantity: newQuantity } : s
+          servicos: prev.servicos.map(s => 
+            s.id === id ? { ...s, quantidade: newQuantity } : s
           )
         }))
       } else {
         // Atualizar quantidade de produto
-        const productToUpdate = comanda.products.find(p => p.id === id)
+        const productToUpdate = comanda?.produtos.find(p => p.id === id)
         if (productToUpdate) {
-          const quantityDifference = newQuantity - productToUpdate.quantity
+          const quantityDifference = newQuantity - productToUpdate.quantidade
           
           if (quantityDifference !== 0) {
             try {
@@ -264,7 +281,7 @@ export default function ComandaDetalhesPage() {
                   const productStock = stockData.products[0]
                   
                   if (productStock.stock < quantityDifference) {
-                    alert(`Produto ${productToUpdate.name} não tem estoque suficiente! Disponível: ${productStock.stock}`)
+                    alert(`Produto ${productToUpdate.nome} não tem estoque suficiente! Disponível: ${productStock.stock}`)
                     return
                   }
                 }
@@ -278,7 +295,7 @@ export default function ComandaDetalhesPage() {
                   products: [{
                     productId: productToUpdate.id,
                     quantity: quantityDifference,
-                    productName: productToUpdate.name
+                    productName: productToUpdate.nome
                   }]
                 })
               })
@@ -292,8 +309,8 @@ export default function ComandaDetalhesPage() {
         
         setComanda(prev => ({
           ...prev,
-          products: prev.products.map(p => 
-            p.id === id ? { ...p, quantity: newQuantity } : p
+          produtos: prev.produtos.map(p => 
+            p.id === id ? { ...p, quantidade: newQuantity } : p
           )
         }))
       }
@@ -301,7 +318,7 @@ export default function ComandaDetalhesPage() {
   }
 
   const saveObservations = () => {
-    setComanda(prev => ({ ...prev, observations: newObservation }))
+    setComanda(prev => ({ ...prev, observacoes: newObservation }))
     setEditingObservations(false)
   }
 
@@ -311,9 +328,9 @@ export default function ComandaDetalhesPage() {
       if (professional) {
         setComanda(prev => ({
           ...prev,
-          products: prev.products.map(p => 
+          produtos: prev.produtos.map(p => 
             p.id === productId 
-              ? { ...p, soldBy: professional.name, soldById: professional._id }
+              ? { ...p, vendidoPor: professional.name, vendidoPorId: professional._id }
               : p
           )
         }))
@@ -329,28 +346,28 @@ export default function ComandaDetalhesPage() {
     try {
       // Preparar dados para salvar
       const prontuarioData = {
-        clientId: comanda.clientId, // Assumindo que temos o ID do cliente
+        clientId: comanda?.clienteId, // Assumindo que temos o ID do cliente
         comandaId: comandaId,
-        professionalId: comanda.professionalId, // Assumindo que temos o ID do profissional
+        professionalId: comanda?.profissionalId, // Assumindo que temos o ID do profissional
         historicoProcedimentos: prontuario.historicoProcedimentos,
         reacoesEfeitos: prontuario.reacoesEfeitos,
         recomendacoes: prontuario.recomendacoes,
         proximaSessao: prontuario.proximaSessao,
         observacoesAdicionais: prontuario.observacoesAdicionais,
-        servicosRealizados: comanda.services.map(service => ({
+        servicosRealizados: comanda?.servicos.map((service: any) => ({
           servicoId: service.id,
-          nome: service.name,
-          preco: service.price,
-          quantidade: service.quantity
+          nome: service.nome,
+          preco: service.preco,
+          quantidade: service.quantidade
         })),
-        produtosVendidos: comanda.products.map(product => ({
+        produtosVendidos: comanda?.produtos.map((product: any) => ({
           produtoId: product.id,
-          nome: product.name,
-          preco: product.price,
-          quantidade: product.quantity,
-          vendidoPor: product.soldById // Assumindo que temos o ID do profissional que vendeu
+          nome: product.nome,
+          preco: product.preco,
+          quantidade: product.quantidade,
+          vendidoPor: product.vendidoPorId // Assumindo que temos o ID do profissional que vendeu
         })),
-        valorTotal: comanda.total
+        valorTotal: comanda?.valorTotal
       }
 
       // Salvar no banco via API
@@ -368,16 +385,16 @@ export default function ComandaDetalhesPage() {
         setEditingProntuario(false)
         
         // Baixar estoque final dos produtos vendidos
-        if (comanda.products.length > 0) {
+        if (comanda?.produtos.length > 0) {
           try {
             const stockResponse = await fetch('/api/products/update-stock', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                products: comanda.products.map(product => ({
+                products: comanda?.produtos.map((product: any) => ({
                   productId: product.id,
-                  quantity: product.quantity,
-                  productName: product.name
+                  quantity: product.quantidade,
+                  productName: product.nome
                 }))
               })
             })
@@ -407,6 +424,39 @@ export default function ComandaDetalhesPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando comanda...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!comanda) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Comanda não encontrada</h2>
+            <p className="text-gray-600 mb-6">A comanda que você está procurando não existe ou foi removida.</p>
+            <Link
+              href="/admin/comandas"
+              className="bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+            >
+              Voltar para Comandas
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
@@ -422,13 +472,13 @@ export default function ComandaDetalhesPage() {
                 Voltar
               </Link>
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Comanda #{comanda.id}</h1>
-                <p className="text-sm text-gray-600">{comanda.clientName}</p>
+                <h1 className="text-2xl font-light text-gray-900">Comanda #{comanda?.id}</h1>
+                <p className="text-sm text-gray-600">{comanda?.clienteNome}</p>
               </div>
             </div>
             <div className="flex space-x-3">
               <Link
-                href={`/admin/comandas/${comanda.id}/finalizar`}
+                href={`/admin/comandas/${comanda?.id}/finalizar`}
                 className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
               >
                 Finalizar
@@ -451,19 +501,19 @@ export default function ComandaDetalhesPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-700 font-medium">Nome</p>
-                  <p className="font-semibold text-gray-900">{comanda.clientName}</p>
+                  <p className="font-semibold text-gray-900">{comanda?.clienteNome}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-700 font-medium">Telefone</p>
-                  <p className="font-semibold text-gray-900">{comanda.clientPhone}</p>
+                  <p className="font-semibold text-gray-900">{comanda?.clienteTelefone}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-700 font-medium">Profissional</p>
-                  <p className="font-semibold text-gray-900">{comanda.professionalName}</p>
+                  <p className="font-semibold text-gray-900">{comanda?.profissionalNome}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-700 font-medium">Início</p>
-                  <p className="font-semibold text-gray-900">{comanda.startedAt}</p>
+                  <p className="font-semibold text-gray-900">{comanda?.inicioAt}</p>
                 </div>
               </div>
             </div>
@@ -511,28 +561,28 @@ export default function ComandaDetalhesPage() {
               )}
 
               <div className="space-y-3">
-                {comanda.services.map(service => (
+                {comanda?.servicos.map((service: any) => (
                   <div key={service.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900">{service.name}</div>
-                      <div className="text-sm text-gray-700 font-medium">R$ {service.price.toFixed(2)}</div>
+                      <div className="font-semibold text-gray-900">{service.nome}</div>
+                      <div className="text-sm text-gray-700 font-medium">R$ {service.preco.toFixed(2)}</div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateQuantity('service', service.id, service.quantity - 1)}
+                        onClick={() => updateQuantity('service', service.id, service.quantidade - 1)}
                         className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
                         <Minus className="w-4 h-4 text-gray-700" />
                       </button>
-                      <span className="w-8 text-center font-semibold text-gray-900">{service.quantity}</span>
+                      <span className="w-8 text-center font-semibold text-gray-900">{service.quantidade}</span>
                       <button
-                        onClick={() => updateQuantity('service', service.id, service.quantity + 1)}
+                        onClick={() => updateQuantity('service', service.id, service.quantidade + 1)}
                         className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
                         <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
-                        <div className="font-semibold text-gray-900">R$ {(service.price * service.quantity).toFixed(2)}</div>
+                        <div className="font-semibold text-gray-900">R$ {(service.preco * service.quantidade).toFixed(2)}</div>
                       </div>
                     </div>
                   </div>
@@ -636,18 +686,18 @@ export default function ComandaDetalhesPage() {
               )}
 
               <div className="space-y-3">
-                {comanda.products.map(product => (
+                {comanda?.produtos.map((product: any) => (
                   <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
-                      <div className="font-semibold text-gray-900">{product.name}</div>
-                      <div className="text-sm text-gray-700 font-medium">R$ {product.price.toFixed(2)}</div>
+                      <div className="font-semibold text-gray-900">{product.nome}</div>
+                      <div className="text-sm text-gray-700 font-medium">R$ {product.preco.toFixed(2)}</div>
                       <div className="text-xs text-gray-600 mt-1">
                         Vendido por: 
                         <button
                           onClick={() => setEditingProductVendor(product.id)}
                           className="ml-1 font-medium text-blue-600 hover:text-blue-800 underline"
                         >
-                          {product.soldBy || 'Não definido'}
+                          {product.vendidoPor || 'Não definido'}
                         </button>
                       </div>
                       
@@ -656,7 +706,7 @@ export default function ComandaDetalhesPage() {
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
-                              Selecionar Vendedora para "{product.name}"
+                              Selecionar Vendedora para "{product.nome}"
                             </h3>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
                               {availableProfessionals.map(professional => (
@@ -683,20 +733,20 @@ export default function ComandaDetalhesPage() {
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
-                        onClick={() => updateQuantity('product', product.id, product.quantity - 1)}
+                        onClick={() => updateQuantity('product', product.id, product.quantidade - 1)}
                         className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
                         <Minus className="w-4 h-4 text-gray-700" />
                       </button>
-                      <span className="w-8 text-center font-semibold text-gray-900">{product.quantity}</span>
+                      <span className="w-8 text-center font-semibold text-gray-900">{product.quantidade}</span>
                       <button
-                        onClick={() => updateQuantity('product', product.id, product.quantity + 1)}
+                        onClick={() => updateQuantity('product', product.id, product.quantidade + 1)}
                         className="w-8 h-8 border border-gray-400 bg-gray-100 hover:bg-gray-200 hover:border-gray-600 transition-colors flex items-center justify-center"
                       >
                         <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
-                        <div className="font-semibold text-gray-900">R$ {(product.price * product.quantity).toFixed(2)}</div>
+                        <div className="font-semibold text-gray-900">R$ {(product.preco * product.quantidade).toFixed(2)}</div>
                       </div>
                     </div>
                   </div>
@@ -746,7 +796,7 @@ export default function ComandaDetalhesPage() {
                 </div>
               ) : (
                 <p className="text-gray-700">
-                  {comanda.observations || "Nenhuma observação adicionada."}
+                  {comanda?.observacoes || "Nenhuma observação adicionada."}
                 </p>
               )}
             </div>
@@ -760,7 +810,7 @@ export default function ComandaDetalhesPage() {
                 </h2>
                 <div className="flex space-x-2">
                   <Link
-                    href={`/admin/clientes/${comanda.clientName}/historico`}
+                    href={`/admin/clientes/${comanda?.clienteNome}/historico`}
                     className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
                   >
                     Ver Histórico Completo
@@ -900,36 +950,36 @@ export default function ComandaDetalhesPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-700 font-medium">Serviços:</span>
-                  <span className="text-gray-900 font-semibold">R$ {comanda.services.reduce((sum, s) => sum + (s.price * s.quantity), 0).toFixed(2)}</span>
+                  <span className="text-gray-900 font-semibold">R$ {comanda?.servicos.reduce((sum: number, s: any) => sum + (s.preco * s.quantidade), 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700 font-medium">Produtos:</span>
-                  <span className="text-gray-900 font-semibold">R$ {comanda.products.reduce((sum, p) => sum + (p.price * p.quantity), 0).toFixed(2)}</span>
+                  <span className="text-gray-900 font-semibold">R$ {comanda?.produtos.reduce((sum: number, p: any) => sum + (p.preco * p.quantidade), 0).toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-medium">
                     <span className="text-gray-900">Total:</span>
-                    <span className="text-black font-bold">R$ {comanda.total.toFixed(2)}</span>
+                    <span className="text-black font-bold">R$ {comanda?.valorTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               <div className="space-y-3">
                 <div className="text-sm text-gray-700 font-medium">
-                  <div>Itens: {comanda.services.length + comanda.products.length}</div>
+                  <div>Itens: {comanda?.servicos.length + comanda?.produtos.length}</div>
                   <div>Tempo estimado: 75 min</div>
                 </div>
               </div>
 
               <div className="mt-6 space-y-2">
                 <Link
-                  href={`/admin/atendimentos/finalizar/${comanda.id}`}
+                  href={`/admin/atendimentos/finalizar/${comanda?.id}`}
                   className="w-full bg-black text-white py-3 px-4 hover:bg-gray-800 transition-colors font-medium tracking-wide text-center block"
                 >
                   Finalizar Atendimento
                 </Link>
                 <Link
-                  href={`/admin/comandas/${comanda.id}/editar`}
+                  href={`/admin/comandas/${comanda?.id}/editar`}
                   className="w-full border border-gray-300 text-gray-700 py-3 px-4 hover:bg-gray-50 transition-colors font-medium text-center block"
                 >
                   Editar Comanda
