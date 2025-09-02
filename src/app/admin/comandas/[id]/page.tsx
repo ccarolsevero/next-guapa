@@ -20,23 +20,9 @@ import {
   Star
 } from 'lucide-react'
 
-// Mock data
-const availableServices = [
-  { id: 1, name: "Corte Feminino", price: 45.00, category: "Cortes" },
-  { id: 2, name: "Hidratação", price: 50.00, category: "Tratamentos" },
-  { id: 3, name: "Coloração", price: 80.00, category: "Coloração" },
-  { id: 4, name: "Mechas/Luzes", price: 120.00, category: "Coloração" },
-  { id: 5, name: "Maquiagem Social", price: 80.00, category: "Maquiagem" },
-  { id: 6, name: "Botox Capilar", price: 120.00, category: "Tratamentos" }
-]
-
-const availableProducts = [
-  { id: 1, name: "Shampoo Profissional", price: 35.00, category: "Produtos" },
-  { id: 2, name: "Máscara Hidratante", price: 28.00, category: "Produtos" },
-  { id: 3, name: "Óleo Capilar", price: 45.00, category: "Produtos" },
-  { id: 4, name: "Condicionador", price: 32.00, category: "Produtos" },
-  { id: 5, name: "Protetor Térmico", price: 38.00, category: "Produtos" }
-]
+// Estados para dados do banco
+const [availableServices, setAvailableServices] = useState<Array<{_id: string, name: string, price: number, category: string}>>([])
+const [availableProducts, setAvailableProducts] = useState<Array<{_id: string, name: string, price: number, category: string, stock: number}>>([])
 
 export default function ComandaDetalhesPage() {
   const [availableProfessionals, setAvailableProfessionals] = useState<Array<{_id: string, name: string}>>([])
@@ -91,31 +77,54 @@ export default function ComandaDetalhesPage() {
     updateTotal()
   }, [comanda.services, comanda.products])
 
-  // Buscar profissionais do banco
+  // Buscar dados do banco
   useEffect(() => {
-    const fetchProfessionals = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/professionals')
-        if (response.ok) {
-          const data = await response.json()
+        console.log('🔄 Iniciando busca de dados...')
+        
+        // Buscar profissionais
+        console.log('👩‍💼 Buscando profissionais...')
+        const professionalsResponse = await fetch('/api/professionals')
+        if (professionalsResponse.ok) {
+          const data = await professionalsResponse.json()
           setAvailableProfessionals(data.professionals || [])
+          console.log('👩‍💼 Profissionais carregados:', data.professionals?.length || 0)
+        }
+
+        // Buscar serviços
+        console.log('✂️ Buscando serviços...')
+        const servicesResponse = await fetch('/api/services')
+        if (servicesResponse.ok) {
+          const data = await servicesResponse.json()
+          setAvailableServices(data.services || [])
+          console.log('✂️ Serviços carregados:', data.services?.length || 0)
+        }
+
+        // Buscar produtos
+        console.log('🛍️ Buscando produtos...')
+        const productsResponse = await fetch('/api/products')
+        if (productsResponse.ok) {
+          const data = await productsResponse.json()
+          setAvailableProducts(data.products || [])
+          console.log('🛍️ Produtos carregados:', data.products?.length || 0)
         }
       } catch (error) {
-        console.error('Erro ao buscar profissionais:', error)
+        console.error('❌ Erro ao buscar dados:', error)
       }
     }
 
-    fetchProfessionals()
+    fetchData()
   }, [])
 
   const addService = (service: any) => {
-    const existingService = comanda.services.find(s => s.id === service.id)
+    const existingService = comanda.services.find(s => s.id === service._id)
     
     if (existingService) {
       setComanda(prev => ({
         ...prev,
         services: prev.services.map(s => 
-          s.id === service.id 
+          s.id === service._id 
             ? { ...s, quantity: s.quantity + 1 }
             : s
         )
@@ -123,7 +132,12 @@ export default function ComandaDetalhesPage() {
     } else {
       setComanda(prev => ({
         ...prev,
-        services: [...prev.services, { ...service, quantity: 1 }]
+        services: [...prev.services, { 
+          id: service._id,
+          name: service.name, 
+          price: service.price, 
+          quantity: 1 
+        }]
       }))
     }
     setShowAddService(false)
@@ -132,7 +146,7 @@ export default function ComandaDetalhesPage() {
   const addProduct = async (product: any, soldByProfessionalId?: string, soldByProfessionalName?: string) => {
     try {
       // Verificar estoque antes de adicionar
-      const response = await fetch(`/api/products/update-stock?productIds=${product.id}`)
+      const response = await fetch(`/api/products/update-stock?productIds=${product._id}`)
       if (response.ok) {
         const stockData = await response.json()
         const productStock = stockData.products[0]
@@ -148,13 +162,13 @@ export default function ComandaDetalhesPage() {
         }
       }
 
-      const existingProduct = comanda.products.find(p => p.id === product.id)
+      const existingProduct = comanda.products.find(p => p.id === product._id)
       
       if (existingProduct) {
         setComanda(prev => ({
           ...prev,
           products: prev.products.map(p => 
-            p.id === product.id 
+            p.id === product._id 
               ? { ...p, quantity: p.quantity + 1 }
               : p
           )
@@ -163,7 +177,9 @@ export default function ComandaDetalhesPage() {
         setComanda(prev => ({
           ...prev,
           products: [...prev.products, { 
-            ...product, 
+            id: product._id,
+            name: product.name, 
+            price: product.price, 
             quantity: 1, 
             soldBy: soldByProfessionalName || comanda.professionalName,
             soldById: soldByProfessionalId || comanda.professionalId
@@ -459,16 +475,24 @@ export default function ComandaDetalhesPage() {
                 <div className="mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
                   <h3 className="font-medium mb-3">Selecionar Serviço</h3>
                   <div className="grid md:grid-cols-2 gap-2">
-                    {availableServices.map(service => (
-                      <button
-                        key={service.id}
-                        onClick={() => addService(service)}
-                        className="text-left p-3 border border-gray-200 hover:border-black transition-colors"
-                      >
-                        <div className="font-medium text-gray-900">{service.name}</div>
-                        <div className="text-sm text-gray-700 font-medium">R$ {service.price.toFixed(2)}</div>
-                      </button>
-                    ))}
+                    {availableServices.length === 0 ? (
+                      <div className="col-span-2 text-center py-8 text-gray-500">
+                        <Scissors className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Nenhum serviço encontrado no banco de dados</p>
+                        <p className="text-sm">Verifique se há serviços cadastrados</p>
+                      </div>
+                    ) : (
+                      availableServices.map(service => (
+                        <button
+                          key={service._id}
+                          onClick={() => addService(service)}
+                          className="text-left p-3 border border-gray-200 hover:border-black transition-colors"
+                        >
+                          <div className="font-medium text-gray-900">{service.name}</div>
+                          <div className="text-sm text-gray-700 font-medium">R$ {service.price.toFixed(2)}</div>
+                        </button>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
@@ -525,20 +549,29 @@ export default function ComandaDetalhesPage() {
                   
                   {/* Seleção de Produto */}
                   <div className="grid md:grid-cols-2 gap-2 mb-4">
-                    {availableProducts.map(product => (
-                      <button
-                        key={product.id}
-                        onClick={() => setSelectedProduct(product)}
-                        className={`text-left p-3 border transition-colors ${
-                          selectedProduct?.id === product.id 
-                            ? 'border-black bg-gray-100' 
-                            : 'border-gray-200 hover:border-black'
-                        }`}
-                      >
-                        <div className="font-medium text-gray-900">{product.name}</div>
-                        <div className="text-sm text-gray-700 font-medium">R$ {product.price.toFixed(2)}</div>
-                      </button>
-                    ))}
+                    {availableProducts.length === 0 ? (
+                      <div className="col-span-2 text-center py-8 text-gray-500">
+                        <ShoppingBag className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                        <p>Nenhum produto encontrado no banco de dados</p>
+                        <p className="text-sm">Verifique se há produtos cadastrados</p>
+                      </div>
+                    ) : (
+                      availableProducts.map(product => (
+                        <button
+                          key={product._id}
+                          onClick={() => setSelectedProduct(product)}
+                          className={`text-left p-3 border transition-colors ${
+                            selectedProduct?._id === product._id 
+                              ? 'border-black bg-gray-100' 
+                              : 'border-gray-200 hover:border-black'
+                          }`}
+                        >
+                          <div className="font-medium text-gray-900">{product.name}</div>
+                          <div className="text-sm text-gray-700 font-medium">R$ {product.price.toFixed(2)}</div>
+                          <div className="text-xs text-gray-500">Estoque: {product.stock}</div>
+                        </button>
+                      ))
+                    )}
                   </div>
 
                   {/* Seleção de Profissional e Adicionar */}
