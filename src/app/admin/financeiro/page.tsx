@@ -223,24 +223,36 @@ export default function FinanceiroPage() {
       }
     }
 
-    const criarCategoria = async () => {
-      try {
-        const response = await fetch('/api/despesas/categorias', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nome: novaCategoria })
-        })
-        
-        if (response.ok) {
-          const result = await response.json()
-          setCategorias([...categorias, result.data])
-          setNovaCategoria('')
-          setShowCategoriaModal(false)
-        }
-      } catch (error) {
-        console.error('Erro ao criar categoria:', error)
+      const criarCategoria = async () => {
+    try {
+      console.log('🔍 Tentando criar categoria:', novaCategoria)
+      
+      const response = await fetch('/api/despesas/categorias', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nome: novaCategoria })
+      })
+      
+      console.log('🔍 Response status:', response.status)
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log('✅ Categoria criada com sucesso:', result)
+        setCategorias([...categorias, result.data])
+        setNovaCategoria('')
+        setShowCategoriaModal(false)
+        // Recarregar categorias para garantir sincronização
+        loadCategorias()
+      } else {
+        const errorData = await response.json()
+        console.error('❌ Erro na API:', errorData)
+        alert(`Erro ao criar categoria: ${errorData.error || 'Erro desconhecido'}`)
       }
+    } catch (error) {
+      console.error('❌ Erro ao criar categoria:', error)
+      alert('Erro ao criar categoria. Verifique o console para mais detalhes.')
     }
+  }
 
   useEffect(() => {
     if (selectedPeriod === 'custom') {
@@ -704,8 +716,8 @@ export default function FinanceiroPage() {
 
       {/* Modal Nova Despesa */}
       {showDespesaModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Nova Despesa</h3>
               <button
@@ -726,7 +738,7 @@ export default function FinanceiroPage() {
                   step="0.01"
                   value={novaDespesa.valor}
                   onChange={(e) => setNovaDespesa({...novaDespesa, valor: e.target.value})}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
                   placeholder="0,00"
                 />
               </div>
@@ -739,7 +751,7 @@ export default function FinanceiroPage() {
                   <select
                     value={novaDespesa.categoria}
                     onChange={(e) => setNovaDespesa({...novaDespesa, categoria: e.target.value})}
-                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                    className="flex-1 border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
                   >
                     <option value="">Selecione uma categoria</option>
                     {categorias.map((cat) => (
@@ -764,7 +776,7 @@ export default function FinanceiroPage() {
                 <textarea
                   value={novaDespesa.observacao}
                   onChange={(e) => setNovaDespesa({...novaDespesa, observacao: e.target.value})}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
                   rows={3}
                   placeholder="Descrição da despesa..."
                 />
@@ -792,8 +804,8 @@ export default function FinanceiroPage() {
 
       {/* Modal Nova Categoria */}
       {showCategoriaModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Nova Categoria</h3>
               <button
@@ -813,7 +825,7 @@ export default function FinanceiroPage() {
                   type="text"
                   value={novaCategoria}
                   onChange={(e) => setNovaCategoria(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
                   placeholder="Ex: Aluguel, Material, Marketing..."
                 />
               </div>
