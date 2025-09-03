@@ -15,13 +15,13 @@ import {
 } from 'lucide-react'
 
 interface Comanda {
-  _id: string
+  id: string
   clienteId: string
   clienteNome: string
   clienteTelefone: string
   profissionalId: string
   profissionalNome: string
-  dataInicio: string
+  inicioAt: string
   servicos: Array<{
     nome: string
     preco: number
@@ -210,10 +210,10 @@ export default function FinalizarAtendimentoPage() {
       
       // Dados da finalização para salvar
       const finalizacaoData = {
-        comandaId: comanda._id,
+        comandaId: comanda.id,
         clienteId: comanda.clienteId,
         profissionalId: comanda.profissionalId,
-        dataInicio: comanda.dataInicio,
+        dataInicio: comanda.inicioAt,
         dataFim: finalizacao.completedAt,
         valorOriginal: comanda.valorTotal,
         valorFinal: valorFinalCalculado,
@@ -253,7 +253,7 @@ export default function FinalizarAtendimentoPage() {
       
       // Chamar API para finalizar comanda
       console.log('🚀 Enviando dados para API de finalização...')
-      console.log('📦 Comanda ID:', comanda._id)
+      console.log('📦 Comanda ID:', comanda.id)
       console.log('💰 Dados enviados:', finalizacaoData)
       
       const response = await fetch('/api/comandas/finalizar', {
@@ -262,7 +262,7 @@ export default function FinalizarAtendimentoPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          comandaId: comanda._id,
+          comandaId: comanda.id,
           finalizacaoData: finalizacaoData
         })
       })
@@ -403,7 +403,7 @@ export default function FinalizarAtendimentoPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Data e Hora</label>
-                <p className="text-gray-700">{new Date(comanda.dataInicio).toLocaleString('pt-BR')}</p>
+                <p className="text-gray-700">{new Date(comanda.inicioAt).toLocaleString('pt-BR')}</p>
               </div>
             </div>
 
