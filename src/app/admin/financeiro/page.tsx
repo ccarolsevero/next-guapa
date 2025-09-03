@@ -1,42 +1,18 @@
 'use client'
-
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown, 
-  CreditCard, 
-  Banknote, 
-  Calendar,
-  Plus,
-  Download,
-  Filter,
-  BarChart3,
-  Users,
-  Package,
-  Loader2,
-  ChevronDown,
-  Scissors
-} from 'lucide-react'
+import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, Download, TrendingUp, TrendingDown } from 'lucide-react'
 
 interface FinancialData {
   revenue: Array<{ month: string; amount: number }>
   expenses: Array<{ month: string; amount: number }>
-  recentPayments: Array<{
-    id: number
-    clientName: string
-    service: string
-    amount: number
-    method: string
-    date: string
-    status: string
-  }>
-  paymentMethods: Array<{
-    method: string
-    count: number
-    amount: number
-  }>
+  totals: {
+    revenue: number
+    expenses: number
+    profit: number
+    comandas: number
+  }
+  paymentMethods: Array<{ _id: string; count: number; amount: number }>
+  recentPayments: Array<{ clientName: string; service: string; amount: number; method: string }>
   comissoesPorProfissional: Array<{
     _id: string
     nome: string
@@ -47,23 +23,17 @@ interface FinancialData {
       item: string
       valor: number
       comissao: number
-      data: string
+      profissionalId: string
     }>
   }>
-  totals: {
-    revenue: number
-    expenses: number
-    profit: number
-    comandas: number
-  }
 }
 
 export default function FinanceiroPage() {
-  const [selectedPeriod, setSelectedPeriod] = useState('6months')
-  const [selectedStatus, setSelectedStatus] = useState('all')
   const [financialData, setFinancialData] = useState<FinancialData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState('1month')
+  const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null)
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
@@ -72,48 +42,9 @@ export default function FinanceiroPage() {
     { value: '1year', label: 'Último Ano' }
   ]
 
-  const statusOptions = [
-    { value: 'all', label: 'Todos' },
-    { value: 'PAID', label: 'Pago' },
-    { value: 'PENDING', label: 'Pendente' },
-    { value: 'CANCELLED', label: 'Cancelado' }
-  ]
-
-  // Carregar dados financeiros do banco
-  const loadFinancialData = async (period: string) => {
-    try {
-      setLoading(true)
-      setError(null)
-      
-      console.log('🔄 Carregando dados financeiros para período:', period)
-      
-      const response = await fetch(`/api/financeiro?period=${period}`)
-      
-      if (!response.ok) {
-        throw new Error(`Erro ${response.status}: ${response.statusText}`)
-      }
-      
-      const result = await response.json()
-      
-      if (result.success) {
-        setFinancialData(result.data)
-        console.log('✅ Dados financeiros carregados:', result.data)
-      } else {
-        throw new Error(result.error || 'Erro ao carregar dados')
-      }
-      
-    } catch (error) {
-      console.error('❌ Erro ao carregar dados financeiros:', error)
-      setError(error instanceof Error ? error.message : 'Erro desconhecido')
-    } finally {
-      setLoading(false)
-    }
+  const toggleProfessional = (professionalId: string) => {
+    setExpandedProfessional(expandedProfessional === professionalId ? null : professionalId)
   }
-
-  // Carregar dados quando o período mudar
-  useEffect(() => {
-    loadFinancialData(selectedPeriod)
-  }, [selectedPeriod])
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -122,82 +53,71 @@ export default function FinanceiroPage() {
     }).format(value)
   }
 
-  const getTotalRevenue = () => {
-    return financialData?.totals.revenue || 0
-  }
+  const getTotalRevenue = () => financialData?.totals?.revenue || 0
+  const getTotalExpenses = () => financialData?.totals?.expenses || 0
+  const getTotalProfit = () => financialData?.totals?.profit || 0
 
-  const getTotalExpenses = () => {
-    return financialData?.totals.expenses || 0
-  }
-
-  const getTotalProfit = () => {
-    return getTotalRevenue() - getTotalExpenses()
-  }
-
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method) {
-      case 'PIX': return DollarSign
-      case 'CASH': return Banknote
-      case 'CREDIT_CARD': return CreditCard
-      case 'DEBIT_CARD': return CreditCard
-      default: return DollarSign
+  const loadFinancialData = async (period: string) => {
+    try {
+      setLoading(true)
+      const response = await fetch(`/api/financeiro?period=${period}`)
+      if (!response.ok) {
+        throw new Error('Erro ao carregar dados financeiros')
+      }
+      const data = await response.json()
+      setFinancialData(data)
+      setError(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      console.error('Erro ao carregar dados:', err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const getPaymentMethodLabel = (method: string) => {
-    switch (method) {
-      case 'PIX': return 'PIX'
-      case 'CASH': return 'Dinheiro'
-      case 'CREDIT_CARD': return 'Cartão de Crédito'
-      case 'DEBIT_CARD': return 'Cartão de Débito'
-      default: return method
-    }
+  useEffect(() => {
+    loadFinancialData(selectedPeriod)
+  }, [selectedPeriod])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-[#D15556]" />
+      </div>
+    )
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'bg-green-100 text-green-800'
-      case 'PENDING': return 'bg-yellow-100 text-yellow-800'
-      case 'CANCELLED': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
-    }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Erro: {error}</p>
+          <button 
+            onClick={() => loadFinancialData(selectedPeriod)}
+            className="px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444]"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      </div>
+    )
   }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'PAID': return 'Pago'
-      case 'PENDING': return 'Pendente'
-      case 'CANCELLED': return 'Cancelado'
-      default: return status
-    }
-  }
-
-  const filteredPayments = financialData?.recentPayments.filter(payment => {
-    return selectedStatus === 'all' || payment.status === selectedStatus
-  }) || []
-
-  // Dados para gráficos
-  const revenue = financialData?.revenue || []
-  const expenses = financialData?.expenses || []
-  const paymentMethods = financialData?.paymentMethods || []
-  const comissoesPorProfissional = financialData?.comissoesPorProfissional || []
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Financeiro</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Controle financeiro completo do salão
-          </p>
-        </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Financeiro</h1>
+        <p className="text-gray-600">Acompanhe o desempenho financeiro do seu negócio</p>
+      </div>
+
+      {/* Seletor de Período */}
+      <div className="mb-8">
+        <div className="flex items-center space-x-4">
+          <label className="text-sm font-medium text-gray-700">Período:</label>
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-            style={{ color: '#000000' }}
+            className="border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#D15556]"
           >
             {periods.map((period) => (
               <option key={period.value} value={period.value}>
@@ -205,342 +125,133 @@ export default function FinanceiroPage() {
               </option>
             ))}
           </select>
-          
-          <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
-            <Download className="w-4 h-4 mr-2" />
-            Exportar
-          </button>
         </div>
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-pink-600 mr-3" />
-          <span className="text-lg text-gray-600">Carregando dados financeiros...</span>
-        </div>
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Erro ao carregar dados</h3>
-              <div className="mt-2 text-sm text-red-700">{error}</div>
-              <div className="mt-4">
-                <button
-                  onClick={() => loadFinancialData(selectedPeriod)}
-                  className="bg-red-100 text-red-800 px-3 py-2 rounded-md text-sm font-medium hover:bg-red-200"
-                >
-                  Tentar novamente
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Dados financeiros */}
       {financialData && !loading && (
         <>
-          {/* Cards de Resumo */}
+          {/* Resumo Financeiro */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <DollarSign className="h-8 w-8 text-green-600" />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Faturamento Total</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(getTotalRevenue())}
+                  </p>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Receita Total</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(getTotalRevenue())}</dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TrendingDown className="h-8 w-8 text-red-600" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Comissões</dt>
-                    <dd className="text-lg font-medium text-gray-900">{formatCurrency(getTotalExpenses())}</dd>
-                  </dl>
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-green-600" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <TrendingUp className="h-8 w-8 text-blue-600" />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total de Comissões</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(getTotalExpenses())}
+                  </p>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Lucro Líquido</dt>
-                    <dd className={`text-lg font-medium ${getTotalProfit() >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(getTotalProfit())}
-                    </dd>
-                  </dl>
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <TrendingDown className="w-6 h-6 text-red-600" />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <Package className="h-8 w-8 text-purple-600" />
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Lucro Líquido</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {formatCurrency(getTotalProfit())}
+                  </p>
                 </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Comandas</dt>
-                    <dd className="text-lg font-medium text-gray-900">{financialData.totals.comandas}</dd>
-                  </dl>
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total de Comandas</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {financialData?.totals?.comandas || 0}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                  <Package className="w-6 h-6 text-purple-600" />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Gráfico Receita vs Despesas */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita vs Despesas</h3>
-            <div className="h-64 flex items-end justify-between space-x-2">
-              {revenue.map((item, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-gray-200 rounded-t-lg relative group">
-                    <div 
-                      className="bg-green-500 transition-all duration-300 group-hover:bg-green-600"
-                      style={{ height: `${(item.amount / Math.max(...revenue.map(r => r.amount), 1)) * 120}px` }}
-                    ></div>
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div>Receita: {formatCurrency(item.amount)}</div>
-                      <div>Despesa: {formatCurrency(expenses[index]?.amount || 0)}</div>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-xs text-gray-600">{item.month}</div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-center space-x-6 mt-4">
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-green-500 rounded mr-2"></div>
-                <span className="text-sm text-gray-600">Receita</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-4 h-4 bg-red-500 rounded mr-2"></div>
-                <span className="text-sm text-gray-600">Despesa</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Métodos de Pagamento e Resumo Mensal */}
+          {/* Gráficos */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Métodos de Pagamento</h3>
-              <div className="space-y-4">
-                {paymentMethods.map((method, index) => {
-                  const IconComponent = getPaymentMethodIcon(method.method)
-                  return (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center">
-                        <IconComponent className="w-5 h-5 text-gray-600 mr-3" />
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {getPaymentMethodLabel(method.method)}
-                          </div>
-                          <div className="text-sm text-gray-600">{method.count} transações</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-gray-900">
-                          {formatCurrency(method.amount)}
-                        </div>
-                        <div className="text-sm text-gray-600">
-                          {getTotalRevenue() > 0 ? ((method.amount / getTotalRevenue()) * 100).toFixed(1) : '0'}%
-                        </div>
-                      </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
+              <div className="space-y-3">
+                {financialData?.revenue && financialData.revenue.length > 0 ? (
+                  financialData.revenue.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{item.month}</span>
+                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
                     </div>
-                  )
-                })}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhum dado de receita disponível</p>
+                )}
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Resumo Mensal</h3>
-              <div className="space-y-4">
-                {revenue.slice(-3).map((item, index) => {
-                  const expense = expenses[index + 3]
-                  const profit = item.amount - (expense?.amount || 0)
-                  return (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-gray-900">{item.month}</span>
-                        <span className={`font-semibold ${profit > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(profit)}
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        Receita: {formatCurrency(item.amount)} | Despesa: {formatCurrency(expense?.amount || 0)}
-                      </div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
+              <div className="space-y-3">
+                {financialData?.expenses && financialData.expenses.length > 0 ? (
+                  financialData.expenses.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{item.month}</span>
+                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
                     </div>
-                  )
-                })}
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhum dado de comissão disponível</p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Comissionamento por Profissional */}
+          {/* Métodos de Pagamento */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Comissionamento por Profissional
-                </h3>
-                <p className="text-sm text-gray-500">Vendas e comissões do mês atual</p>
+                <h3 className="text-lg font-semibold text-gray-900">Métodos de Pagamento</h3>
+                <p className="text-sm text-gray-700">Distribuição por forma de pagamento</p>
               </div>
             </div>
             
-            {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
-              <div className="space-y-4">
-                {financialData.comissoesPorProfissional.map((comissao, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg border border-gray-100">
-                    {/* Header do Profissional */}
-                    <div className="p-4 cursor-pointer hover:bg-gray-100 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
-                            <Users className="w-6 h-6 text-[#D15556]" />
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-gray-900">{comissao.nome}</h4>
-                            <p className="text-sm text-gray-600">Profissional</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-6">
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600">Comissão Total</p>
-                            <p className="text-lg font-medium text-[#D15556]">
-                              R$ {comissao.totalComissao.toFixed(2)}
-                            </p>
-                          </div>
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
+            {financialData?.paymentMethods && financialData.paymentMethods.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {financialData.paymentMethods.map((method, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        {method._id === 'PIX' && <DollarSign className="w-5 h-5 text-green-600 mr-2" />}
+                        {method._id === 'Cartão de Crédito' && <CreditCard className="w-5 h-5 text-blue-600 mr-2" />}
+                        {method._id === 'Cartão de Débito' && <CreditCard className="w-5 h-5 text-green-600 mr-2" />}
+                        {method._id === 'Dinheiro' && <Banknote className="w-5 h-5 text-green-600 mr-2" />}
+                        <div>
+                          <p className="font-medium text-gray-900">{method._id || 'Não especificado'}</p>
+                          <p className="text-sm text-gray-600">{method.count} transações</p>
                         </div>
                       </div>
-                    </div>
-
-                    {/* Detalhes das Comissões */}
-                    <div className="border-t border-gray-100 p-4 bg-white">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Serviços */}
-                        <div className="bg-white p-4 rounded-lg border border-gray-100">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-medium text-gray-900 flex items-center">
-                              <Scissors className="w-4 h-4 mr-2" />
-                              Serviços
-                            </h4>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-600">Total</p>
-                              <p className="font-medium text-[#D15556]">
-                                R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Serviço')
-                                  .reduce((sum, d) => sum + d.valor, 0)
-                                  .toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="space-y-2 mb-4">
-                            {comissao.detalhes
-                              .filter(d => d.tipo === 'Serviço')
-                              .map((detalhe, detIndex) => (
-                                <div key={detIndex} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{detalhe.item}</span>
-                                  <span className="font-medium">R$ {detalhe.valor.toFixed(2)}</span>
-                                </div>
-                              ))}
-                          </div>
-                          <div className="flex justify-between text-sm font-medium border-t pt-2">
-                            <span>Comissão (10%):</span>
-                            <span className="text-[#D15556]">
-                              R$ {comissao.detalhes
-                                .filter(d => d.tipo === 'Serviço')
-                                .reduce((sum, d) => sum + d.comissao, 0)
-                                .toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Produtos */}
-                        <div className="bg-white p-4 rounded-lg border border-gray-100">
-                          <div className="flex items-center justify-between mb-4">
-                            <h4 className="font-medium text-gray-900 flex items-center">
-                              <Package className="w-4 h-4 mr-2" />
-                              Produtos
-                            </h4>
-                            <div className="text-right">
-                              <p className="text-sm text-gray-600">Total</p>
-                              <p className="font-medium text-[#D15556]">
-                                R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Produto')
-                                  .reduce((sum, d) => sum + d.valor, 0)
-                                  .toFixed(2)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="space-y-2 mb-4">
-                            {comissao.detalhes
-                              .filter(d => d.tipo === 'Produto')
-                              .map((detalhe, detIndex) => (
-                                <div key={detIndex} className="flex justify-between text-sm">
-                                  <span className="text-gray-600">{detalhe.item}</span>
-                                  <span className="font-medium">R$ {detalhe.valor.toFixed(2)}</span>
-                                </div>
-                              ))}
-                          </div>
-                          <div className="flex justify-between text-sm font-medium border-t pt-2">
-                            <span>Comissão (15%):</span>
-                            <span className="text-[#D15556]">
-                              R$ {comissao.detalhes
-                                .filter(d => d.tipo === 'Produto')
-                                .reduce((sum, d) => sum + d.comissao, 0)
-                                .toFixed(2)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Resumo Total */}
-                      <div className="mt-4 p-4 bg-[#EED7B6]/20 rounded-lg">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                          <div>
-                            <p className="text-sm text-gray-600">Total de Vendas</p>
-                            <p className="text-lg font-medium text-gray-900">
-                              R$ {comissao.detalhes
-                                .reduce((sum, d) => sum + d.valor, 0)
-                                .toFixed(2)}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Total de Itens</p>
-                            <p className="text-lg font-medium text-gray-900">
-                              {comissao.quantidadeItens}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Comissão Total</p>
-                            <p className="text-lg font-medium text-[#D15556]">
-                              R$ {comissao.totalComissao.toFixed(2)}
-                            </p>
-                          </div>
-                        </div>
+                      <div className="text-right">
+                        <p className="text-lg font-semibold text-[#D15556]">
+                          R$ {method.amount.toFixed(2)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -548,8 +259,8 @@ export default function FinanceiroPage() {
               </div>
             ) : (
               <div className="text-center py-8">
-                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Nenhuma comissão registrada para este período</p>
+                <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600">Nenhum método de pagamento registrado</p>
               </div>
             )}
           </div>
@@ -559,17 +270,12 @@ export default function FinanceiroPage() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
-                <p className="text-sm text-gray-500">Últimas transações realizadas</p>
+                <p className="text-sm text-gray-700">Últimas transações realizadas</p>
               </div>
-              <div className="flex items-center space-x-2">
-                <select className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white">
-                  <option>Todos</option>
-                  <option>Hoje</option>
-                  <option>Esta semana</option>
-                  <option>Este mês</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              </div>
+              <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Exportar
+              </button>
             </div>
             
             {financialData?.recentPayments && financialData.recentPayments.length > 0 ? (
@@ -596,6 +302,171 @@ export default function FinanceiroPage() {
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">Nenhum pagamento encontrado para este período</p>
+              </div>
+            )}
+          </div>
+
+          {/* Comissionamento por Profissional */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Comissionamento por Profissional
+                </h3>
+                <p className="text-sm text-gray-700">Vendas e comissões do mês atual</p>
+              </div>
+            </div>
+            
+            {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
+              <div className="space-y-4">
+                {financialData.comissoesPorProfissional.map((comissao, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg border border-gray-100">
+                    {/* Header do Profissional */}
+                    <div 
+                      className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                      onClick={() => toggleProfessional(comissao._id.toString())}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
+                            <Users className="w-6 h-6 text-[#D15556]" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{comissao.nome}</h4>
+                            <p className="text-sm text-gray-700">Profissional</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-6">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-700">Comissão Total</p>
+                            <p className="text-lg font-medium text-[#D15556]">
+                              R$ {comissao.totalComissao.toFixed(2)}
+                            </p>
+                          </div>
+                          {expandedProfessional === comissao._id.toString() ? (
+                            <ChevronUp className="w-5 h-5 text-gray-500" />
+                          ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-500" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Detalhes das Comissões - Expandidos/Colapsados */}
+                    {expandedProfessional === comissao._id.toString() && (
+                      <div className="border-t border-gray-100 p-4 bg-white">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {/* Serviços */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-medium text-gray-900 flex items-center">
+                                <Scissors className="w-4 h-4 mr-2" />
+                                Serviços
+                              </h4>
+                              <div className="text-right">
+                                <p className="text-sm text-gray-700">Total</p>
+                                <p className="font-medium text-[#D15556]">
+                                  R$ {comissao.detalhes
+                                    .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                    .reduce((sum, d) => sum + d.valor, 0)
+                                    .toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-2 mb-4">
+                              {comissao.detalhes
+                                .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                .map((detalhe, detIndex) => (
+                                  <div key={detIndex} className="flex justify-between text-sm">
+                                    <span className="text-gray-700">{detalhe.item}</span>
+                                    <span className="font-medium text-gray-900">R$ {detalhe.valor.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-between text-sm font-medium border-t pt-2">
+                              <span className="text-gray-700">Comissão (10%):</span>
+                              <span className="text-[#D15556]">
+                                R$ {comissao.detalhes
+                                  .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                  .reduce((sum, d) => sum + d.comissao, 0)
+                                  .toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Produtos */}
+                          <div className="bg-white p-4 rounded-lg border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                              <h4 className="font-medium text-gray-900 flex items-center">
+                                <Package className="w-4 h-4 mr-2" />
+                                Produtos
+                              </h4>
+                              <div className="text-right">
+                                <p className="text-sm text-gray-700">Total</p>
+                                <p className="font-medium text-[#D15556]">
+                                  R$ {comissao.detalhes
+                                    .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                    .reduce((sum, d) => sum + d.valor, 0)
+                                    .toFixed(2)}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="space-y-2 mb-4">
+                              {comissao.detalhes
+                                .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                .map((detalhe, detIndex) => (
+                                  <div key={detIndex} className="flex justify-between text-sm">
+                                    <span className="text-gray-700">{detalhe.item}</span>
+                                    <span className="font-medium text-gray-900">R$ {detalhe.valor.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-between text-sm font-medium border-t pt-2">
+                              <span className="text-gray-700">Comissão (15%):</span>
+                              <span className="text-[#D15556]">
+                                R$ {comissao.detalhes
+                                  .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                  .reduce((sum, d) => sum + d.comissao, 0)
+                                  .toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Resumo Total */}
+                        <div className="mt-4 p-4 bg-[#EED7B6]/20 rounded-lg">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            <div>
+                              <p className="text-sm text-gray-700">Total de Vendas</p>
+                              <p className="text-lg font-medium text-gray-900">
+                                R$ {comissao.detalhes
+                                  .reduce((sum, d) => sum + d.valor, 0)
+                                  .toFixed(2)}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-700">Total de Itens</p>
+                              <p className="text-lg font-medium text-gray-900">
+                                {comissao.quantidadeItens}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-sm text-gray-700">Comissão Total</p>
+                              <p className="text-lg font-medium text-[#D15556]">
+                                R$ {comissao.totalComissao.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-600">Nenhuma comissão registrada para este período</p>
               </div>
             )}
           </div>
