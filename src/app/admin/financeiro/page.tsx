@@ -53,6 +53,17 @@ export default function FinanceiroPage() {
     }).format(value)
   }
 
+  const formatPaymentMethod = (method: string) => {
+    const methods: { [key: string]: string } = {
+      'cash': 'Dinheiro',
+      'debit': 'Cartão de Débito',
+      'credit': 'Cartão de Crédito',
+      'pix': 'PIX',
+      'transfer': 'Transferência'
+    }
+    return methods[method] || method
+  }
+
   const getTotalRevenue = () => financialData?.totals?.revenue || 0
   const getTotalExpenses = () => financialData?.totals?.expenses || 0
   const getTotalProfit = () => financialData?.totals?.profit || 0
@@ -249,7 +260,7 @@ export default function FinanceiroPage() {
                         {method._id === 'Cartão de Débito' && <CreditCard className="w-5 h-5 text-green-600 mr-2" />}
                         {method._id === 'Dinheiro' && <Banknote className="w-5 h-5 text-green-600 mr-2" />}
                     <div>
-                          <p className="font-medium text-gray-900">{method._id || 'Não especificado'}</p>
+                          <p className="font-medium text-gray-900">{formatPaymentMethod(method._id) || 'Não especificado'}</p>
                           <p className="text-sm text-gray-600">{method.count} transações</p>
                         </div>
                       </div>
