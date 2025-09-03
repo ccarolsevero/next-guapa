@@ -80,7 +80,7 @@ export default function ComandaDetalhesPage() {
     console.log('  - Total produtos:', productsTotal)
     console.log('  - Total geral:', newTotal)
     
-    setComanda(prev => ({ ...prev, valorTotal: newTotal }))
+    setComanda((prev: any) => ({ ...prev, valorTotal: newTotal }))
   }
 
   const openEditModal = () => {
@@ -135,7 +135,14 @@ export default function ComandaDetalhesPage() {
         if (response.ok) {
           const data = await response.json()
           console.log('📊 Dados da comanda recebidos:', data)
-          setComanda(data.comanda)
+          
+          // Só sobrescreve se não tivermos dados locais ou se for a primeira carga
+          if (!comanda || Object.keys(comanda).length === 0) {
+            console.log('📥 Carregando comanda inicial do banco')
+            setComanda(data.comanda)
+          } else {
+            console.log('📋 Comanda já carregada localmente, mantendo estado')
+          }
         } else {
           console.error('❌ Erro na API de comanda:', response.status)
           const errorText = await response.text()
@@ -149,7 +156,7 @@ export default function ComandaDetalhesPage() {
     }
 
     fetchComanda()
-  }, [comandaId])
+  }, [comandaId]) // Removido comanda da dependência para evitar loop infinito
 
   // Buscar dados do banco
   useEffect(() => {
@@ -206,19 +213,19 @@ export default function ComandaDetalhesPage() {
   }, [])
 
   const addService = (service: any) => {
-    const existingService = comanda?.servicos.find(s => s.id === service._id)
+    const existingService = comanda?.servicos.find((s: any) => s.id === service._id)
     
     if (existingService) {
-      setComanda(prev => ({
+      setComanda((prev: any) => ({
         ...prev,
-        servicos: prev.servicos.map(s => 
+        servicos: prev.servicos.map((s: any) => 
           s.id === service._id 
             ? { ...s, quantidade: s.quantidade + 1 }
             : s
         )
       }))
     } else {
-      setComanda(prev => ({
+      setComanda((prev: any) => ({
         ...prev,
         servicos: [...prev.servicos, { 
           id: service._id,
@@ -260,9 +267,9 @@ export default function ComandaDetalhesPage() {
       
       if (existingProduct) {
         console.log('📝 Atualizando quantidade do produto existente')
-        setComanda(prev => ({
+        setComanda((prev: any) => ({
           ...prev,
-          produtos: prev.produtos.map(p => 
+          produtos: prev.produtos.map((p: any) => 
             p.id === product._id 
               ? { ...p, quantidade: p.quantidade + 1 }
               : p
@@ -282,7 +289,7 @@ export default function ComandaDetalhesPage() {
         }
         console.log('🆕 Novo produto:', newProduct)
         
-        setComanda(prev => ({
+        setComanda((prev: any) => ({
           ...prev,
           produtos: [...prev.produtos, newProduct]
         }))
