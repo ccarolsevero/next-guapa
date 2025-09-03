@@ -33,13 +33,16 @@ export default function FinanceiroPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState('1month')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
   const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null)
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
     { value: '3months', label: 'Últimos 3 Meses' },
     { value: '6months', label: 'Últimos 6 Meses' },
-    { value: '1year', label: 'Último Ano' }
+    { value: '1year', label: 'Último Ano' },
+    { value: 'custom', label: 'Período Personalizado' }
   ]
 
   const toggleProfessional = (professionalId: string) => {
@@ -121,10 +124,16 @@ export default function FinanceiroPage() {
   const getTotalExpenses = () => financialData?.totals?.expenses || 0
   const getTotalProfit = () => financialData?.totals?.profit || 0
 
-  const loadFinancialData = async (period: string) => {
+  const loadFinancialData = async (period: string, startDate?: string, endDate?: string) => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/financeiro?period=${period}`)
+      
+      let url = `/api/financeiro?period=${period}`
+      if (period === 'custom' && startDate && endDate) {
+        url += `&startDate=${startDate}&endDate=${endDate}`
+      }
+      
+      const response = await fetch(url)
       if (!response.ok) {
         throw new Error('Erro ao carregar dados financeiros')
       }
@@ -145,8 +154,14 @@ export default function FinanceiroPage() {
   }
 
   useEffect(() => {
-    loadFinancialData(selectedPeriod)
-  }, [selectedPeriod])
+    if (selectedPeriod === 'custom') {
+      if (customStartDate && customEndDate) {
+        loadFinancialData(selectedPeriod, customStartDate, customEndDate)
+      }
+    } else {
+      loadFinancialData(selectedPeriod)
+    }
+  }, [selectedPeriod, customStartDate, customEndDate])
 
   if (loading) {
     return (
@@ -182,11 +197,11 @@ export default function FinanceiroPage() {
       {/* Seletor de Período */}
       <div className="mb-8">
         <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Período:</label>
+          <label className="text-sm font-semibold text-gray-900">Período:</label>
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+            className="border border-gray-400 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
           >
             {periods.map((period) => (
               <option key={period.value} value={period.value}>
@@ -194,6 +209,29 @@ export default function FinanceiroPage() {
               </option>
             ))}
           </select>
+          
+          {selectedPeriod === 'custom' && (
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-semibold text-gray-900">De:</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  className="border border-gray-400 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm font-semibold text-gray-900">Até:</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  className="border border-gray-400 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -326,15 +364,9 @@ export default function FinanceiroPage() {
 
           {/* Pagamentos Recentes */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
-                <p className="text-sm text-gray-700">Últimas transações realizadas</p>
-              </div>
-              <button className="px-4 py-2 text-sm border border-gray-300 rounded-md bg-white hover:bg-gray-50 flex items-center gap-2">
-                <Download className="w-4 h-4" />
-                Exportar
-              </button>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
+              <p className="text-sm text-gray-700">Últimas transações realizadas</p>
             </div>
             
             {financialData?.recentPayments && financialData.recentPayments.length > 0 ? (
