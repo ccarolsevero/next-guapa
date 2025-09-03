@@ -238,7 +238,7 @@ export async function GET(request: NextRequest) {
     })
     
     // 3. Buscar métodos de pagamento das comandas
-    let metodosPagamento = await db.collection('comandas').aggregate([
+    const metodosPagamento = await db.collection('comandas').aggregate([
       {
         $match: {
           status: 'finalizada',
@@ -271,7 +271,10 @@ export async function GET(request: NextRequest) {
       {
         $match: {
           status: 'finalizada',
-          dataFinalizacao: { $gte: dataInicio, $lte: hoje }
+          $or: [
+            { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
+            { updatedAt: { $gte: dataInicio, $lte: hoje } }
+          ]
         }
       },
       {
