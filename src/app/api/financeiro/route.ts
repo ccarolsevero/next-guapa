@@ -64,12 +64,13 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
     
-    // 2. Buscar comissões por profissional
+    // 2. Buscar comissões por profissional (últimos 30 dias para mostrar dados atuais)
+    const dataInicioComissoes = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000)
+    
     const comissoesPorProfissional = await db.collection('comissoes').aggregate([
       {
         $match: {
-          data: { $gte: dataInicio, $lte: hoje },
-          status: 'pendente'
+          data: { $gte: dataInicioComissoes, $lte: hoje }
         }
       },
       {
@@ -105,11 +106,11 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
     
-    // 3. Buscar métodos de pagamento
+    // 3. Buscar métodos de pagamento (últimos 30 dias)
     const metodosPagamento = await db.collection('finalizacoes').aggregate([
       {
         $match: {
-          dataCriacao: { $gte: dataInicio, $lte: hoje }
+          dataCriacao: { $gte: dataInicioComissoes, $lte: hoje }
         }
       },
       {
@@ -124,11 +125,11 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
     
-    // 4. Buscar pagamentos recentes
+    // 4. Buscar pagamentos recentes (últimos 30 dias)
     const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
       {
         $match: {
-          dataCriacao: { $gte: dataInicio, $lte: hoje }
+          dataCriacao: { $gte: dataInicioComissoes, $lte: hoje }
         }
       },
       {
@@ -210,6 +211,9 @@ export async function GET(request: NextRequest) {
     console.log('💰 Total faturamento:', totalFaturamento)
     console.log('💸 Total comissões:', totalComissoes)
     console.log('📊 Total comandas:', totalComandas)
+    console.log('💳 Métodos de pagamento:', paymentMethods.length)
+    console.log('👥 Comissões por profissional:', comissoesPorProfissional.length)
+    console.log('📋 Pagamentos recentes:', recentPayments.length)
     
     return NextResponse.json({
       success: true,
