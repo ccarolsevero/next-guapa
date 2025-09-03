@@ -2,6 +2,21 @@
 import { useState, useEffect } from 'react'
 import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, Download, TrendingUp, TrendingDown } from 'lucide-react'
 
+interface Despesa {
+  _id: string
+  valor: number
+  categoria: string
+  observacao: string
+  data: string
+  createdAt: string
+}
+
+interface Categoria {
+  _id: string
+  nome: string
+  createdAt: string
+}
+
 interface FinancialData {
   revenue: Array<{ month: string; amount: number }>
   expenses: Array<{ month: string; amount: number }>
@@ -36,6 +51,16 @@ export default function FinanceiroPage() {
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
   const [expandedProfessional, setExpandedProfessional] = useState<string | null>(null)
+  const [showDespesaModal, setShowDespesaModal] = useState(false)
+  const [despesas, setDespesas] = useState<Despesa[]>([])
+  const [categorias, setCategorias] = useState<Categoria[]>([])
+  const [novaDespesa, setNovaDespesa] = useState({
+    valor: '',
+    categoria: '',
+    observacao: ''
+  })
+  const [novaCategoria, setNovaCategoria] = useState('')
+  const [showCategoriaModal, setShowCategoriaModal] = useState(false)
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
@@ -153,6 +178,70 @@ export default function FinanceiroPage() {
     }
   }
 
+  const loadDespesas = async () => {
+    try {
+      const response = await fetch('/api/despesas')
+      if (response.ok) {
+        const result = await response.json()
+        setDespesas(result.data || [])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar despesas:', error)
+    }
+  }
+
+  const loadCategorias = async () => {
+    try {
+      const response = await fetch('/api/despesas/categorias')
+      if (response.ok) {
+        const result = await response.json()
+        setCategorias(result.data || [])
+      }
+    } catch (error) {
+        console.error('Erro ao carregar categorias:', error)
+      }
+    }
+
+    const criarDespesa = async () => {
+      try {
+        const response = await fetch('/api/despesas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(novaDespesa)
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          setDespesas([result.data, ...despesas])
+          setNovaDespesa({ valor: '', categoria: '', observacao: '' })
+          setShowDespesaModal(false)
+          // Recarregar dados financeiros para atualizar totais
+          loadFinancialData(selectedPeriod, customStartDate, customEndDate)
+        }
+      } catch (error) {
+        console.error('Erro ao criar despesa:', error)
+      }
+    }
+
+    const criarCategoria = async () => {
+      try {
+        const response = await fetch('/api/despesas/categorias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nome: novaCategoria })
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          setCategorias([...categorias, result.data])
+          setNovaCategoria('')
+          setShowCategoriaModal(false)
+        }
+      } catch (error) {
+        console.error('Erro ao criar categoria:', error)
+      }
+    }
+
   useEffect(() => {
     if (selectedPeriod === 'custom') {
       if (customStartDate && customEndDate) {
@@ -161,6 +250,9 @@ export default function FinanceiroPage() {
     } else {
       loadFinancialData(selectedPeriod)
     }
+    
+    loadDespesas()
+    loadCategorias()
   }, [selectedPeriod, customStartDate, customEndDate])
 
   if (loading) {
@@ -296,38 +388,49 @@ export default function FinanceiroPage() {
             </div>
           </div>
 
-          {/* Gráficos */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
-              <div className="space-y-3">
-                {financialData?.revenue && financialData.revenue.length > 0 ? (
-                  financialData.revenue.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{item.month}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">Nenhum dado de receita disponível</p>
-                )}
-        </div>
-      </div>
-
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
-              <div className="space-y-3">
-                {financialData?.expenses && financialData.expenses.length > 0 ? (
-                  financialData.expenses.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{item.month}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">Nenhum dado de comissão disponível</p>
-                )}
+                    {/* Despesas */}
+          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Controle de Despesas</h3>
+                <p className="text-sm text-gray-700">Gerencie as despesas da empresa</p>
               </div>
+              <button
+                onClick={() => setShowDespesaModal(true)}
+                className="px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] flex items-center gap-2"
+              >
+                <DollarSign className="w-4 h-4" />
+                Nova Despesa
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {despesas.length > 0 ? (
+                despesas.map((despesa) => (
+                  <div key={despesa._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                        <DollarSign className="w-5 h-5 text-red-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{despesa.categoria}</p>
+                        <p className="text-sm text-gray-500">{despesa.observacao}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
+                      <p className="text-sm text-gray-500">
+                        {new Date(despesa.data).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">Nenhuma despesa registrada</p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -405,8 +508,8 @@ export default function FinanceiroPage() {
                   Comissionamento por Profissional
                 </h3>
                 <p className="text-sm text-gray-700">Vendas e comissões do mês atual</p>
-          </div>
-        </div>
+              </div>
+            </div>
 
             {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
           <div className="space-y-4">
@@ -559,9 +662,180 @@ export default function FinanceiroPage() {
                 <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-600">Nenhuma comissão registrada para este período</p>
         </div>
-            )}
-      </div>
+                        )}
+          </div>
+
+          {/* Gráficos - Movidos para o final */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
+              <div className="space-y-3">
+                {financialData?.revenue && financialData.revenue.length > 0 ? (
+                  financialData.revenue.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{item.month}</span>
+                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhum dado de receita disponível</p>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
+              <div className="space-y-3">
+                {financialData?.expenses && financialData.expenses.length > 0 ? (
+                  financialData.expenses.map((item, index) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">{item.month}</span>
+                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">Nenhum dado de comissão disponível</p>
+                )}
+              </div>
+            </div>
+          </div>
         </>
+      )}
+
+      {/* Modal Nova Despesa */}
+      {showDespesaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Nova Despesa</h3>
+              <button
+                onClick={() => setShowDespesaModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valor (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={novaDespesa.valor}
+                  onChange={(e) => setNovaDespesa({...novaDespesa, valor: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  placeholder="0,00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoria
+                </label>
+                <div className="flex space-x-2">
+                  <select
+                    value={novaDespesa.categoria}
+                    onChange={(e) => setNovaDespesa({...novaDespesa, categoria: e.target.value})}
+                    className="flex-1 border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categorias.map((cat) => (
+                      <option key={cat._id} value={cat.nome}>
+                        {cat.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => setShowCategoriaModal(true)}
+                    className="px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observação
+                </label>
+                <textarea
+                  value={novaDespesa.observacao}
+                  onChange={(e) => setNovaDespesa({...novaDespesa, observacao: e.target.value})}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  rows={3}
+                  placeholder="Descrição da despesa..."
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowDespesaModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={criarDespesa}
+                  disabled={!novaDespesa.valor || !novaDespesa.categoria}
+                  className="flex-1 px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salvar Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nova Categoria */}
+      {showCategoriaModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Nova Categoria</h3>
+              <button
+                onClick={() => setShowCategoriaModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nome da Categoria
+                </label>
+                <input
+                  type="text"
+                  value={novaCategoria}
+                  onChange={(e) => setNovaCategoria(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#D15556]"
+                  placeholder="Ex: Aluguel, Material, Marketing..."
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowCategoriaModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={criarCategoria}
+                  disabled={!novaCategoria.trim()}
+                  className="flex-1 px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Criar Categoria
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
