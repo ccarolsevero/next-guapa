@@ -66,21 +66,47 @@ export default function ComandaDetalhesPage() {
   const [editLoading, setEditLoading] = useState(false)
 
   const updateTotal = () => {
-    if (!comanda) return
+    if (!comanda) {
+      console.log('❌ updateTotal: comanda é null/undefined')
+      return
+    }
     
     console.log('🔄 Atualizando total da comanda...')
+    console.log('  - Comanda completa:', comanda)
     console.log('  - Serviços:', comanda.servicos)
     console.log('  - Produtos:', comanda.produtos)
+    console.log('  - Produtos length:', comanda.produtos?.length || 0)
     
-    const servicesTotal = comanda.servicos.reduce((sum: number, service: any) => sum + (service.preco * service.quantidade), 0)
-    const productsTotal = comanda.produtos.reduce((sum: number, product: any) => sum + (product.preco * product.quantidade), 0)
+    if (!comanda.servicos || !Array.isArray(comanda.servicos)) {
+      console.log('❌ updateTotal: servicos não é um array válido')
+      return
+    }
+    
+    if (!comanda.produtos || !Array.isArray(comanda.produtos)) {
+      console.log('❌ updateTotal: produtos não é um array válido')
+      return
+    }
+    
+    const servicesTotal = comanda.servicos.reduce((sum: number, service: any) => {
+      console.log('  - Serviço:', service, 'Preço:', service.preco, 'Qtd:', service.quantidade)
+      return sum + (service.preco * service.quantidade)
+    }, 0)
+    
+    const productsTotal = comanda.produtos.reduce((sum: number, product: any) => {
+      console.log('  - Produto:', product, 'Preço:', product.preco, 'Qtd:', product.quantidade)
+      return sum + (product.preco * product.quantidade)
+    }, 0)
+    
     const newTotal = servicesTotal + productsTotal
     
     console.log('  - Total serviços:', servicesTotal)
     console.log('  - Total produtos:', productsTotal)
     console.log('  - Total geral:', newTotal)
     
-    setComanda((prev: any) => ({ ...prev, valorTotal: newTotal }))
+    setComanda((prev: any) => {
+      console.log('💾 Salvando novo valor total:', newTotal)
+      return { ...prev, valorTotal: newTotal }
+    })
   }
 
   const openEditModal = () => {
