@@ -45,7 +45,8 @@ interface Product {
 
 export default function NovaComandaPage() {
   const router = useRouter()
-  const [searchTerm, setSearchTerm] = useState('')
+  const [clientSearchTerm, setClientSearchTerm] = useState('')
+  const [serviceSearchTerm, setServiceSearchTerm] = useState('')
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
   const [selectedService, setSelectedService] = useState<Service | null>(null)
@@ -138,9 +139,9 @@ export default function NovaComandaPage() {
 
   // Filtrar clientes baseado na busca
   const filteredClients = clients.filter(client => 
-    client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.phone.includes(searchTerm) ||
-    client.email.toLowerCase().includes(searchTerm.toLowerCase())
+    client.name.toLowerCase().includes(clientSearchTerm.toLowerCase()) ||
+    client.phone.includes(clientSearchTerm) ||
+    client.email.toLowerCase().includes(clientSearchTerm.toLowerCase())
   )
 
   const createComanda = async () => {
@@ -238,8 +239,8 @@ export default function NovaComandaPage() {
                       <input
                         type="text"
                         placeholder="Buscar cliente por nome, telefone ou email..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={clientSearchTerm}
+                        onChange={(e) => setClientSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                         style={{ color: '#000000' }}
                       />
@@ -255,7 +256,7 @@ export default function NovaComandaPage() {
                       ) : filteredClients.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Search className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                          <p>Nenhum cliente encontrado com &quot;{searchTerm}&quot;</p>
+                          <p>Nenhum cliente encontrado com &quot;{clientSearchTerm}&quot;</p>
                           <p className="text-sm">Tente outro termo de busca</p>
                         </div>
                       ) : (
@@ -382,8 +383,8 @@ export default function NovaComandaPage() {
                           <input
                             type="text"
                             placeholder="Buscar serviço por nome..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            value={serviceSearchTerm}
+                            onChange={(e) => setServiceSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                             style={{ color: '#000000' }}
                           />
@@ -391,7 +392,7 @@ export default function NovaComandaPage() {
                         
                         <div className="max-h-60 overflow-y-auto space-y-2">
                           {services.filter(service => 
-                            service.name.toLowerCase().includes(searchTerm.toLowerCase())
+                            service.name.toLowerCase().includes(serviceSearchTerm.toLowerCase())
                           ).map((service) => (
                             <div 
                               key={service._id}

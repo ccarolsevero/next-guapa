@@ -28,6 +28,20 @@ export default function ComandaDetalhesPage() {
   const router = useRouter()
   const params = useParams()
   const comandaId = params.id
+  
+  // Detectar se está em modo somente leitura (acessado do histórico)
+  const [isReadOnly, setIsReadOnly] = useState(false)
+  
+  // Verificar se está sendo acessado do histórico
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const fromHistory = urlParams.get('fromHistory')
+    setIsReadOnly(fromHistory === 'true')
+    
+    if (fromHistory === 'true') {
+      console.log('📖 Modo somente leitura ativado (acessado do histórico)')
+    }
+  }, [])
 
   const [comanda, setComanda] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -516,24 +530,42 @@ export default function ComandaDetalhesPage() {
                 Voltar
               </Link>
               <div>
-                <h1 className="text-2xl font-light text-gray-900">Comanda #{comanda?.id}</h1>
-                <p className="text-sm text-gray-600">{comanda?.clienteNome}</p>
+                <h1 className="text-2xl font-light text-gray-900">
+                  {isReadOnly ? 'Detalhes da Comanda' : 'Comanda'} #{comanda?.id}
+                </h1>
+                <p className="text-sm text-gray-600">
+                  {comanda?.clienteNome}
+                  {isReadOnly && ' - Modo Visualização'}
+                </p>
               </div>
             </div>
             <div className="flex space-x-3">
-              <button
-                onClick={openEditModal}
-                className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 transition-colors font-medium tracking-wide flex items-center"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </button>
-              <Link
-                href={`/admin/comandas/${comanda?.id}/finalizar`}
-                className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
-              >
-                Finalizar
-              </Link>
+              {!isReadOnly && (
+                <>
+                  <button
+                    onClick={openEditModal}
+                    className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 transition-colors font-medium tracking-wide flex items-center"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </button>
+                  <Link
+                    href={`/admin/comandas/${comanda?.id}/finalizar`}
+                    className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+                  >
+                    Finalizar
+                  </Link>
+                </>
+              )}
+              {isReadOnly && (
+                <Link
+                  href={`/admin/clientes/${comanda?.clienteId}/historico`}
+                  className="bg-gray-600 text-white px-6 py-2 hover:bg-gray-700 transition-colors font-medium tracking-wide flex items-center"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Voltar ao Histórico
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -576,13 +608,15 @@ export default function ComandaDetalhesPage() {
                   <Scissors className="w-5 h-5 mr-2" />
                   Serviços
                 </h2>
-                <button
-                  onClick={() => setShowAddService(!showAddService)}
-                  className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
-                >
-                  <Plus className="w-4 h-4 inline mr-1" />
-                  Adicionar
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={() => setShowAddService(!showAddService)}
+                    className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1" />
+                    Adicionar
+                  </button>
+                )}
               </div>
 
               {showAddService && (
@@ -648,13 +682,15 @@ export default function ComandaDetalhesPage() {
                   <ShoppingBag className="w-5 h-5 mr-2" />
                   Produtos
                 </h2>
-                <button
-                  onClick={() => setShowAddProduct(!showAddProduct)}
-                  className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
-                >
-                  <Plus className="w-4 h-4 inline mr-1" />
-                  Adicionar
-                </button>
+                {!isReadOnly && (
+                  <button
+                    onClick={() => setShowAddProduct(!showAddProduct)}
+                    className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
+                  >
+                    <Plus className="w-4 h-4 inline mr-1" />
+                    Adicionar
+                  </button>
+                )}
               </div>
 
               {showAddProduct && (

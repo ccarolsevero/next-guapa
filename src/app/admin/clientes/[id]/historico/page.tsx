@@ -347,7 +347,7 @@ export default function HistoricoClientePage() {
                       </td>
                       <td className="px-6 py-4 text-sm font-medium">
                         <Link
-                          href={`/admin/comandas/${comanda._id}`}
+                          href={`/admin/comandas/${comanda._id}?fromHistory=true`}
                           className="text-blue-600 hover:text-blue-800 transition-colors"
                         >
                           Ver Detalhes
