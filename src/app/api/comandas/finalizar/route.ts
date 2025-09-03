@@ -19,7 +19,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { db } = await connectToDatabase()
+    // Conectar ao MongoDB
+    const { MongoClient } = await import('mongodb')
+    const uri = process.env.MONGODB_URI!
+    const client = new MongoClient(uri)
+    await client.connect()
+    const db = client.db(process.env.DB_NAME || 'guapa')
     
     console.log('🔄 Finalizando comanda:', comandaId)
     console.log('💰 Dados da finalização:', finalizacaoData)
@@ -141,6 +146,9 @@ export async function POST(request: NextRequest) {
     console.log('💰 Faturamento atualizado:', faturamentoResult)
     console.log('💳 Comissões salvas:', finalizacaoData.detalhesComissao?.length || 0)
 
+    // Fechar conexão
+    await client.close()
+
     return NextResponse.json({
       success: true,
       message: 'Comanda finalizada com sucesso',
@@ -150,6 +158,14 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('❌ Erro ao finalizar comanda:', error)
+    
+    // Fechar conexão em caso de erro também
+    try {
+      await client.close()
+    } catch (closeError) {
+      console.error('❌ Erro ao fechar conexão:', closeError)
+    }
+    
     return NextResponse.json(
       { error: 'Erro interno do servidor ao finalizar comanda' },
       { status: 500 }
