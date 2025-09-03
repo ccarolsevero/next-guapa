@@ -11,7 +11,8 @@ import {
   User,
   CreditCard,
   FileText,
-  Star
+  Star,
+  Scissors
 } from 'lucide-react'
 
 interface Comanda {
@@ -118,6 +119,18 @@ export default function FinalizarAtendimentoPage() {
 
     fetchComanda()
   }, [comandaId])
+
+  // Preencher automaticamente o valor recebido com o valor final
+  useEffect(() => {
+    if (comanda && comanda.valorTotal > 0 && finalizacao.receivedAmount === 0) {
+      const valorFinal = calcularValorFinal()
+      if (valorFinal > 0) {
+        setFinalizacao(prev => ({ ...prev, receivedAmount: valorFinal }))
+      }
+    }
+  }, [comanda, finalizacao.receivedAmount])
+
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
@@ -229,7 +242,7 @@ export default function FinalizarAtendimentoPage() {
         valorFinal: valorFinalCalculado,
         desconto: finalizacao.discount,
         creditAmount: finalizacao.creditAmount,
-        metodoPagamento: finalizacao.paymentMethod,
+        paymentMethod: finalizacao.paymentMethod,
         valorRecebido: finalizacao.receivedAmount,
         troco: finalizacao.change,
         observacoes: finalizacao.observations || '',
@@ -252,7 +265,7 @@ export default function FinalizarAtendimentoPage() {
       if (!finalizacaoData.profissionalId) {
         throw new Error('ID do profissional não encontrado')
       }
-      if (!finalizacaoData.metodoPagamento) {
+      if (!finalizacaoData.paymentMethod) {
         throw new Error('Forma de pagamento não selecionada')
       }
       if (finalizacaoData.valorRecebido < finalizacaoData.valorFinal) {
@@ -281,9 +294,20 @@ export default function FinalizarAtendimentoPage() {
       console.log('📡 Status OK:', response.ok)
 
       if (!response.ok) {
-        const errorData = await response.json()
-        console.error('❌ Erro na API:', errorData)
-        throw new Error(errorData.error || 'Erro ao finalizar comanda')
+        console.error('❌ Status da resposta:', response.status)
+        console.error('❌ Status text:', response.statusText)
+        
+        let errorData
+        try {
+          errorData = await response.json()
+          console.error('❌ Erro na API (JSON):', errorData)
+          throw new Error(errorData.error || 'Erro ao finalizar comanda')
+        } catch (jsonError) {
+          // Se não conseguir fazer parse do JSON, tentar ler como texto
+          const errorText = await response.text()
+          console.error('❌ Erro na API (texto):', errorText)
+          throw new Error(`Erro ${response.status}: ${response.statusText}`)
+        }
       }
 
       const result = await response.json()
@@ -296,14 +320,14 @@ export default function FinalizarAtendimentoPage() {
       setTimeout(() => {
         router.push('/admin/comandas')
       }, 3000)
-          } catch (error) {
+    } catch (error) {
         console.error('❌ Erro ao finalizar atendimento:', error)
         if (error instanceof Error) {
           console.error('❌ Mensagem de erro:', error.message)
           console.error('❌ Stack trace:', error.stack)
         }
         setMessage('❌ Erro ao finalizar atendimento. Tente novamente.')
-      } finally {
+    } finally {
       setIsLoading(false)
     }
   }
@@ -359,12 +383,12 @@ export default function FinalizarAtendimentoPage() {
     return Math.max(0, valorFinal)
   }
   
-  const valorFinal = calcularValorFinal()
-  const { totalComissao, detalhes } = calcularComissoes()
-
   const getCurrentSaoPauloTime = () => {
     return new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16)
   }
+
+  const valorFinal = calcularValorFinal()
+  const { totalComissao, detalhes } = calcularComissoes()
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -401,7 +425,7 @@ export default function FinalizarAtendimentoPage() {
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Cliente</label>
                 <p className="text-gray-700">{comanda.clienteNome}</p>
-              </div>
+                </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Profissional</label>
                 <p className="text-gray-700">{comanda.profissionalNome}</p>
@@ -425,28 +449,42 @@ export default function FinalizarAtendimentoPage() {
                     minute: '2-digit'
                   })}
                 </p>
-              </div>
-            </div>
+                          </div>
+                      </div>
 
             {/* Resumo da comanda */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              <h4 className="text-base font-bold text-gray-900 mb-3">Resumo da comanda:</h4>
-              <div className="space-y-3">
+            <div className="mt-8 p-6 bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl border border-blue-100 shadow-sm">
+              <h4 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
+                <DollarSign className="w-6 h-6 mr-3 text-blue-600" />
+                Resumo da Comanda
+              </h4>
+              <div className="space-y-4">
                 {comanda.servicos.map((servico, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 px-3 bg-white rounded-md border border-gray-100">
-                    <span className="text-gray-900 font-semibold text-base">{servico.nome} (x{servico.quantidade})</span>
-                    <span className="text-green-700 font-bold text-lg">R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
-                  </div>
-                ))}
+                  <div key={index} className="flex justify-between items-center py-4 px-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full mr-4"></div>
+                      <span className="text-gray-900 font-semibold text-lg">{servico.nome} (x{servico.quantidade})</span>
+                    </div>
+                    <span className="text-green-600 font-bold text-xl">R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
+                          </div>
+                        ))}
                 {comanda.produtos.map((produto, index) => (
-                  <div key={index} className="flex justify-between items-center py-2 px-3 bg-white rounded-md border border-gray-100">
-                    <span className="text-gray-900 font-semibold text-base">{produto.nome} (x{produto.quantidade})</span>
-                    <span className="text-green-700 font-bold text-lg">R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
+                  <div key={index} className="flex justify-between items-center py-4 px-6 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full mr-4"></div>
+                      <span className="text-gray-900 font-semibold text-lg">{produto.nome} (x{produto.quantidade})</span>
+                      {produto.vendidoPor && (
+                        <span className="ml-3 text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                          Vendido por: {produto.vendidoPor}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-green-600 font-bold text-xl">R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
                   </div>
                 ))}
-                <div className="border-t-2 border-gray-300 pt-3 flex justify-between items-center bg-blue-50 p-3 rounded-md">
-                  <span className="text-gray-900 font-bold text-lg">Total:</span>
-                  <span className="text-blue-800 font-bold text-xl">R$ {comanda.valorTotal.toFixed(2)}</span>
+                <div className="border-t-2 border-blue-200 pt-6 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl">
+                  <span className="text-gray-900 font-bold text-2xl">Total:</span>
+                  <span className="text-blue-700 font-bold text-3xl">R$ {comanda.valorTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -456,10 +494,11 @@ export default function FinalizarAtendimentoPage() {
           <div className="bg-white p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-black mb-6 flex items-center">
               <DollarSign className="w-6 h-6 mr-3 text-green-600" />
-              Valor e Pagamento - Deploy Forçado
+              Valor e Pagamento
             </h2>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Primeira linha: Valor Original, Sinal, Desconto */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Original (R$)
@@ -474,43 +513,53 @@ export default function FinalizarAtendimentoPage() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Sinal (R$)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="text"
+                    name="creditAmount"
+                    value={finalizacao.creditAmount > 0 ? finalizacao.creditAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.')
+                      const numValue = parseFloat(value) || 0
+                      
+                      // Limitar crédito ao valor total da comanda
+                      if (numValue <= comanda.valorTotal) {
+                        setFinalizacao(prev => ({ ...prev, creditAmount: numValue }))
+                      }
+                    }}
+                    placeholder="0,00"
+                    className={`w-full p-3 pl-10 border transition-colors ${
+                      finalizacao.creditAmount > 0 
+                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
+                        : 'border-gray-300 bg-white text-black'
+                    } focus:ring-0 focus:border-black`}
+                  />
+                </div>
+                {finalizacao.creditAmount > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago para reserva
+                  </p>
+                )}
+              </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Desconto
                 </label>
                 
-                {/* Seletor de tipo de desconto */}
-                <div className="flex space-x-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType('fixed')}
-                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      discountType === 'fixed'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    R$ (Valor)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiscountType('percentage')}
-                    className={`px-3 py-2 text-sm font-medium rounded-colors ${
-                      discountType === 'percentage'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    % (Porcentagem)
-                  </button>
-                </div>
+
                 
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
                     {discountType === 'percentage' ? '%' : 'R$'}
                   </span>
-                  <input
+                <input
                     type="text"
                     name="discount"
                     value={finalizacao.discount > 0 ? 
@@ -559,75 +608,37 @@ export default function FinalizarAtendimentoPage() {
                     }
                   </p>
                 )}
-              </div>
-              
-              {/* Campo de Crédito (Sinal Pago) */}
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Sinal (Reserva do Horário)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                  <input
-                    type="text"
-                    name="creditAmount"
-                    value={finalizacao.creditAmount > 0 ? finalizacao.creditAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
-                    onChange={(e) => {
-                      const value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.')
-                      const numValue = parseFloat(value) || 0
-                      
-                      // Limitar crédito ao valor total da comanda
-                      if (numValue <= comanda.valorTotal) {
-                        setFinalizacao(prev => ({ ...prev, creditAmount: numValue }))
-                      }
-                    }}
-                    placeholder="0,00"
-                    className={`w-full p-3 pl-10 border transition-colors ${
-                      finalizacao.creditAmount > 0 
-                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
-                        : 'border-gray-300 bg-white text-black'
-                    } focus:ring-0 focus:border-black`}
-                  />
-                </div>
-                {finalizacao.creditAmount > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago para reserva
-                  </p>
-                )}
-                <p className="text-xs text-gray-500 mt-1">
-                  💡 Valor pago antecipadamente para reservar o horário
-                </p>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Valor Final (R$)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                  <input
-                    type="number"
-                    value={valorFinal.toFixed(2)}
-                    disabled
-                    className={`w-full p-3 pl-10 border font-bold ${
-                      valorFinal < comanda.valorTotal 
-                        ? 'border-green-500 bg-green-50 text-green-800' 
-                        : 'border-gray-300 bg-gray-100 text-gray-700'
+                
+                {/* Seletor de tipo de desconto - abaixo do campo */}
+                <div className="flex space-x-2 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('fixed')}
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                      discountType === 'fixed'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
-                  />
+                  >
+                    R$ (Valor)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('percentage')}
+                    className={`px-2 py-1 text-xs font-medium rounded-md transition-colors ${
+                      discountType === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    % (Porcentagem)
+                  </button>
                 </div>
-                {valorFinal < comanda.valorTotal && (
-                  <p className="text-xs text-green-600 mt-1">
-                    {finalizacao.discount > 0 && `Desconto: R$ ${finalizacao.discount.toFixed(2)}`}
-                    {finalizacao.discount > 0 && finalizacao.creditAmount > 0 && ' + '}
-                    {finalizacao.creditAmount > 0 && `Crédito: R$ ${finalizacao.creditAmount.toFixed(2)}`}
-                    {finalizacao.discount > 0 || finalizacao.creditAmount > 0 ? ` = Total: R$ ${(comanda.valorTotal - valorFinal).toFixed(2)}` : ''}
-                  </p>
-                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            {/* Segunda linha: Forma de Pagamento, Valor Final, Valor Recebido */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Forma de Pagamento *
@@ -647,16 +658,16 @@ export default function FinalizarAtendimentoPage() {
                   ))}
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Recebido (R$)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                  <input
+                <input
                     type="text"
-                    name="receivedAmount"
+                  name="receivedAmount"
                     value={finalizacao.receivedAmount > 0 ? finalizacao.receivedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
                     onChange={(e) => {
                       const value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.')
@@ -686,14 +697,34 @@ export default function FinalizarAtendimentoPage() {
                     Faltam R$ {(valorFinal - finalizacao.receivedAmount).toFixed(2)}
                   </p>
                 )}
-                {finalizacao.receivedAmount >= valorFinal && (
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Valor Final (R$)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="text"
+                    value={valorFinal.toFixed(2)}
+                    disabled
+                    className={`w-full p-3 pl-10 border font-bold ${
+                      valorFinal < comanda.valorTotal 
+                        ? 'border-green-500 bg-green-50 text-green-800' 
+                        : 'border-gray-300 bg-gray-100 text-gray-700'
+                    }`}
+                  />
+                </div>
+                {valorFinal < comanda.valorTotal && (
                   <p className="text-xs text-green-600 mt-1">
-                    Valor suficiente ✓
+                    {finalizacao.discount > 0 && `Desconto: R$ ${finalizacao.discount.toFixed(2)}`}
+                    {finalizacao.discount > 0 && finalizacao.creditAmount > 0 && ' + '}
+                    {finalizacao.creditAmount > 0 && `Crédito: R$ ${finalizacao.creditAmount.toFixed(2)}`}
+                    {finalizacao.discount > 0 || finalizacao.creditAmount > 0 ? ` = Total: R$ ${(comanda.valorTotal - valorFinal).toFixed(2)}` : ''}
                   </p>
                 )}
               </div>
-              
-
             </div>
           </div>
 
@@ -720,7 +751,7 @@ export default function FinalizarAtendimentoPage() {
                   placeholder="Observações sobre o atendimento... (opcional)"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Recomendações
@@ -734,7 +765,7 @@ export default function FinalizarAtendimentoPage() {
                   placeholder="Recomendações para a cliente (produtos, cuidados, próximos passos)... (opcional)"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Próximo Agendamento Sugerido
@@ -747,17 +778,17 @@ export default function FinalizarAtendimentoPage() {
                   className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Horário de Conclusão
                 </label>
                 <div className="flex gap-2">
-                  <input
-                    type="datetime-local"
-                    name="completedAt"
+                <input
+                  type="datetime-local"
+                  name="completedAt"
                     value={finalizacao.completedAt}
-                    onChange={handleInputChange}
+                  onChange={handleInputChange}
                     required
                     className="flex-1 p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                   />
@@ -776,46 +807,6 @@ export default function FinalizarAtendimentoPage() {
 
           {/* Botão de Finalização */}
           <div className="text-center">
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-gray-600">
-                💡 Sistema atualizado: Finalização salva status, faturamento e comissões automaticamente
-              </p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch('/api/faturamento')
-                      const data = await response.json()
-                      console.log('💰 Faturamento atual:', data)
-                      alert(`Faturamento do dia: R$ ${data.faturamento.valorTotal.toFixed(2)}\nComandas: ${data.comandasFinalizadas}`)
-                    } catch (error) {
-                      console.error('Erro ao consultar faturamento:', error)
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  📊 Ver Faturamento
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      const response = await fetch(`/api/debug/cliente?nome=${encodeURIComponent(comanda.clienteNome)}`)
-                      const data = await response.json()
-                      console.log('🔍 Debug cliente:', data)
-                      alert(`Debug Cliente:\nCliente encontrado: ${data.debug.clienteEncontrado ? 'SIM' : 'NÃO'}\nComandas: ${data.debug.comandasEncontradas}\nFinalizações: ${data.debug.finalizacoesEncontradas}`)
-                    } catch (error) {
-                      console.error('Erro ao debug cliente:', error)
-                    }
-                  }}
-                  className="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
-                >
-                  🔍 Debug Cliente
-                </button>
-              </div>
-            </div>
             <button
               type="submit"
               disabled={isLoading || !finalizacao.paymentMethod || finalizacao.receivedAmount < valorFinal}
