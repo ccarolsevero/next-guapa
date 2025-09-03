@@ -6,6 +6,31 @@ interface FaturamentoId {
   month: number
 }
 
+interface Servico {
+  nome: string
+  valor: number
+  profissionalId: string
+  profissionalNome: string
+}
+
+interface Produto {
+  nome: string
+  valor: number
+  profissionalId: string
+  profissionalNome: string
+}
+
+interface Comanda {
+  _id: string
+  valorTotal: number
+  dataFinalizacao: Date
+  createdAt: Date
+  servicos: Servico[]
+  produtos: Produto[]
+  clienteId: string
+  metodoPagamento: string
+}
+
 export async function GET(request: NextRequest) {
   let client: MongoClient | null = null
   
@@ -56,94 +81,136 @@ export async function GET(request: NextRequest) {
     
     console.log('📅 Período:', { dataInicio: dataInicio.toISOString(), hoje: hoje.toISOString() })
     
-    // 1. Buscar faturamento por mês
-    console.log('💰 Buscando faturamento por mês...')
-    const faturamentoPorMes = await db.collection('faturamento').aggregate([
-      {
-        $match: {
-          data: { $gte: dataInicio, $lte: hoje }
-        }
-      },
-      {
-        $group: {
-          _id: {
-            year: { $year: '$data' },
-            month: { $month: '$data' }
-          },
-          valorTotal: { $sum: '$valorTotal' },
-          totalComissoes: { $sum: '$totalComissoes' },
-          quantidadeComandas: { $sum: '$quantidadeComandas' }
-        }
-      },
-      {
-        $sort: { '_id.year': 1, '_id.month': 1 }
+    // 1. Buscar comandas finalizadas para calcular faturamento
+    console.log('💰 Buscando comandas finalizadas...')
+    const comandasFinalizadas = await db.collection('comandas').find({
+      status: 'finalizada',
+      dataFinalizacao: { $gte: dataInicio, $lte: hoje }
+    }).toArray()
+    
+    console.log('📊 Comandas finalizadas encontradas:', comandasFinalizadas.length)
+    
+    // Calcular faturamento total das comandas
+    const totalFaturamento = comandasFinalizadas.reduce((sum: number, comanda: Document) => {
+      return sum + (comanda.valorTotal || 0)
+    }, 0)
+    
+    // Calcular comissões totais das comandas
+    const totalComissoes = comandasFinalizadas.reduce((sum: number, comanda: Document) => {
+      let comissaoTotal = 0
+      
+      // Comissões de serviços (10%)
+      if (comanda.servicos && Array.isArray(comanda.servicos)) {
+        comanda.servicos.forEach((servico: Document) => {
+          comissaoTotal += (servico.valor || 0) * 0.10
+        })
       }
-    ]).toArray()
+      
+      // Comissões de produtos (15%)
+      if (comanda.produtos && Array.isArray(comanda.produtos)) {
+        comanda.produtos.forEach((produto: Document) => {
+          comissaoTotal += (produto.valor || 0) * 0.15
+        })
+      }
+      
+      return sum + comissaoTotal
+    }, 0)
     
-    console.log('📊 Faturamento por mês encontrado:', faturamentoPorMes.length)
-    
-    // 2. Buscar comissões por profissional (últimos 30 dias para mostrar dados atuais)
-    const dataInicioComissoes = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000)
-    console.log('📅 Data início comissões (30 dias):', dataInicioComissoes.toISOString())
-    
+    // 2. Buscar comissões por profissional das comandas
     console.log('👥 Buscando comissões por profissional...')
-    const comissoesPorProfissional = await db.collection('comissoes').aggregate([
-      {
-        $match: {
-          data: { $gte: dataInicioComissoes, $lte: hoje }
-        }
-      },
-      {
-        $lookup: {
-          from: 'professionals',
-          localField: 'profissionalId',
-          foreignField: '_id',
-          as: 'profissional'
-        }
-      },
-      {
-        $unwind: '$profissional'
-      },
-      {
-        $group: {
-          _id: '$profissionalId',
-          nome: { $first: '$profissional.name' },
-          totalComissao: { $sum: '$comissao' },
-          quantidadeItens: { $sum: 1 },
-          detalhes: {
-            $push: {
-              tipo: '$tipo',
-              item: '$item',
-              valor: '$valor',
-              comissao: '$comissao',
-              data: '$data',
-              profissionalId: '$profissionalId'
-            }
+    const comissoesPorProfissional = []
+    
+    // Agrupar comissões por profissional
+    const comissoesPorProf = new Map()
+    
+    comandasFinalizadas.forEach((comanda: Document) => {
+      // Comissões de serviços
+      if (comanda.servicos && Array.isArray(comanda.servicos)) {
+        comanda.servicos.forEach((servico: Document) => {
+          const servicoData = servico as Servico
+          const comandaData = comanda as Comanda
+          const profissionalId = servicoData.profissionalId || comandaData._id
+          const profissionalNome = servicoData.profissionalNome || 'Profissional não definido'
+          const comissao = (servicoData.valor || 0) * 0.10
+          
+          if (!comissoesPorProf.has(profissionalId)) {
+            comissoesPorProf.set(profissionalId, {
+              profissional: profissionalNome,
+              totalComissao: 0,
+              quantidadeItens: 0,
+              detalhes: []
+            })
           }
-        }
-      },
-      {
-        $sort: { totalComissao: -1 }
+          
+          const prof = comissoesPorProf.get(profissionalId)
+          prof.totalComissao += comissao
+          prof.quantidadeItens += 1
+          prof.detalhes.push({
+            tipo: 'servico',
+            item: servicoData.nome || 'Serviço',
+            valor: servicoData.valor || 0,
+            comissao: comissao,
+            data: comandaData.dataFinalizacao || comandaData.createdAt
+          })
+        })
       }
-    ]).toArray()
+      
+      // Comissões de produtos
+      if (comanda.produtos && Array.isArray(comanda.produtos)) {
+        comanda.produtos.forEach((produto: Document) => {
+          const produtoData = produto as Produto
+          const comandaData = comanda as Comanda
+          const profissionalId = produtoData.profissionalId || 'vendedor'
+          const profissionalNome = produtoData.profissionalNome || 'Vendedor'
+          const comissao = (produtoData.valor || 0) * 0.15
+          
+          if (!comissoesPorProf.has(profissionalId)) {
+            comissoesPorProf.set(profissionalId, {
+              profissional: profissionalNome,
+              totalComissao: 0,
+              quantidadeItens: 0,
+              detalhes: []
+            })
+          }
+          
+          const prof = comissoesPorProf.get(profissionalId)
+          prof.totalComissao += comissao
+          prof.quantidadeItens += 1
+          prof.detalhes.push({
+            tipo: 'produto',
+            item: produtoData.nome || 'Produto',
+            valor: produtoData.valor || 0,
+            comissao: comissao,
+            data: comandaData.dataFinalizacao || comandaData.createdAt
+          })
+        })
+      }
+    })
+    
+    // Converter Map para array
+    comissoesPorProfissional.push(...Array.from(comissoesPorProf.values()))
+    
+    // Ordenar por total de comissão
+    comissoesPorProfissional.sort((a, b) => b.totalComissao - a.totalComissao)
     
     console.log('💰 Comissões por profissional encontradas:', comissoesPorProfissional.length)
     comissoesPorProfissional.forEach((comissao, index) => {
-      console.log(`   ${index + 1}. ${comissao.nome}: R$ ${comissao.totalComissao.toFixed(2)}`)
+      console.log(`   ${index + 1}. ${comissao.profissional}: R$ ${comissao.totalComissao.toFixed(2)}`)
     })
     
-    // 3. Buscar métodos de pagamento (últimos 30 dias)
-    const metodosPagamento = await db.collection('finalizacoes').aggregate([
+    // 3. Buscar métodos de pagamento das comandas
+    const metodosPagamento = await db.collection('comandas').aggregate([
       {
         $match: {
-          dataCriacao: { $gte: dataInicioComissoes, $lte: hoje }
+          status: 'finalizada',
+          dataFinalizacao: { $gte: dataInicio, $lte: hoje }
         }
       },
       {
         $group: {
           _id: '$metodoPagamento',
           count: { $sum: 1 },
-          amount: { $sum: '$valorFinal' }
+          amount: { $sum: '$valorTotal' }
         }
       },
       {
@@ -151,23 +218,18 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
     
-    // 4. Buscar pagamentos recentes (últimos 30 dias)
-    const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
+    // 4. Buscar pagamentos recentes das comandas
+    const pagamentosRecentes = await db.collection('comandas').aggregate([
       {
         $match: {
-          dataCriacao: { $gte: dataInicioComissoes, $lte: hoje }
-        }
-      },
-      {
-        $addFields: {
-          clienteIdObjectId: { $toObjectId: '$clienteId' },
-          comandaIdObjectId: { $toObjectId: '$comandaId' }
+          status: 'finalizada',
+          dataFinalizacao: { $gte: dataInicio, $lte: hoje }
         }
       },
       {
         $lookup: {
           from: 'clients',
-          localField: 'clienteIdObjectId',
+          localField: 'clienteId',
           foreignField: '_id',
           as: 'cliente'
         }
@@ -176,24 +238,13 @@ export async function GET(request: NextRequest) {
         $unwind: '$cliente'
       },
       {
-        $lookup: {
-          from: 'comandas',
-          localField: 'comandaIdObjectId',
-          foreignField: '_id',
-          as: 'comanda'
-        }
-      },
-      {
-        $unwind: '$comanda'
-      },
-      {
         $project: {
           _id: 1,
           clientName: '$cliente.name',
-          service: { $arrayElemAt: ['$comanda.servicos.nome', 0] },
-          amount: '$valorFinal',
+          service: { $arrayElemAt: ['$servicos.nome', 0] },
+          amount: '$valorTotal',
           method: '$metodoPagamento',
-          date: '$dataCriacao',
+          date: '$dataFinalizacao',
           status: 'PAID'
         }
       },
@@ -206,9 +257,7 @@ export async function GET(request: NextRequest) {
     ]).toArray()
     
     // 5. Calcular totais
-    const totalFaturamento = faturamentoPorMes.reduce((sum: number, item: Document) => sum + (item.valorTotal || 0), 0)
-    const totalComissoes = faturamentoPorMes.reduce((sum: number, item: Document) => sum + (item.totalComissoes || 0), 0)
-    const totalComandas = faturamentoPorMes.reduce((sum: number, item: Document) => sum + (item.quantidadeComandas || 0), 0)
+    const totalComandas = comandasFinalizadas.length
     
     // 6. Calcular total de despesas
     const despesas = await db.collection('despesas').find({
@@ -218,15 +267,21 @@ export async function GET(request: NextRequest) {
     const totalDespesas = despesas.reduce((sum: number, despesa: Document) => sum + (despesa.valor || 0), 0)
     
     // 7. Formatar dados para o frontend
-    const revenue = faturamentoPorMes.map((item: Document) => ({
-      month: new Date((item._id as FaturamentoId).year, (item._id as FaturamentoId).month - 1).toLocaleDateString('pt-BR', { month: 'short' }),
-      amount: item.valorTotal || 0
-    }))
+    const revenue = comandasFinalizadas.map((comanda: Document) => {
+      const comandaData = comanda as Comanda
+      return {
+        month: new Date(comandaData.dataFinalizacao || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
+        amount: comandaData.valorTotal || 0
+      }
+    })
     
-    const expenses = faturamentoPorMes.map((item: Document) => ({
-      month: new Date((item._id as FaturamentoId).year, (item._id as FaturamentoId).month - 1).toLocaleDateString('pt-BR', { month: 'short' }),
-      amount: item.totalComissoes || 0
-    }))
+    const expenses = comandasFinalizadas.map((comanda: Document) => {
+      const comandaData = comanda as Comanda
+      return {
+        month: new Date(comandaData.dataFinalizacao || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
+        amount: comandaData.valorTotal || 0 // Assuming valorTotal is the total amount for expenses
+      }
+    })
     
     // Formatar métodos de pagamento
     const paymentMethods = metodosPagamento.map((item: Document) => ({
@@ -248,7 +303,7 @@ export async function GET(request: NextRequest) {
     
     // Formatar comissões por profissional
     const commissionsByProfessional = comissoesPorProfissional.map((item: Document) => ({
-      profissional: item.nome || 'Profissional não encontrado',
+      profissional: item.profissional || 'Profissional não encontrado',
       totalComissao: item.totalComissao || 0,
       quantidadeItens: item.quantidadeItens || 0,
       detalhes: item.detalhes || []
