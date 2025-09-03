@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp, Package } from 'lucide-react'
+import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp } from 'lucide-react'
 
 interface Service {
   _id: string
@@ -114,13 +114,6 @@ export default function ServicosPage() {
         </div>
         <div className="mt-4 sm:mt-0">
           <div className="flex space-x-3">
-            <Link
-              href="/admin/pacotes"
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-            >
-              <Package className="w-4 h-4 mr-2" />
-              Gerenciar Pacotes
-            </Link>
             <Link
               href="/admin/servicos/editar/novo"
               className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"

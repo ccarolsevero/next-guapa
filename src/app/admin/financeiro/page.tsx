@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, Download, TrendingUp, TrendingDown } from 'lucide-react'
+import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, Download, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
 
 interface Despesa {
   _id: string
@@ -18,19 +18,14 @@ interface Categoria {
 }
 
 interface FinancialData {
-  revenue: Array<{ month: string; amount: number }>
-  expenses: Array<{ month: string; amount: number }>
-  totals: {
-    revenue: number
-    expenses: number
-    profit: number
-    comandas: number
-  }
-  paymentMethods: Array<{ _id: string; count: number; amount: number }>
-  recentPayments: Array<{ clientName: string; service: string; amount: number; method: string }>
-  comissoesPorProfissional: Array<{
-    _id: string
-    nome: string
+  totalRevenue: number
+  totalCommissions: number
+  totalOrders: number
+  totalExpenses: number
+  paymentMethods: Array<{ method: string; count: number; amount: number }>
+  recentPayments: Array<{ id: number; clientName: string; service: string; amount: number; method: string; date: string; status: string }>
+  commissionsByProfessional: Array<{
+    profissional: string
     totalComissao: number
     quantidadeItens: number
     detalhes: Array<{
@@ -38,7 +33,7 @@ interface FinancialData {
       item: string
       valor: number
       comissao: number
-      profissionalId: string
+      data: string
     }>
   }>
 }
@@ -145,9 +140,12 @@ export default function FinanceiroPage() {
     return methods
   }
 
-  const getTotalRevenue = () => financialData?.totals?.revenue || 0
-  const getTotalExpenses = () => financialData?.totals?.expenses || 0
-  const getTotalProfit = () => financialData?.totals?.profit || 0
+  const getTotalRevenue = () => financialData?.totalRevenue || 0
+  const getTotalExpenses = () => financialData?.totalCommissions || 0
+  const getTotalProfit = () => {
+    if (!financialData) return 0
+    return (financialData.totalRevenue || 0) - (financialData.totalCommissions || 0) - (financialData.totalExpenses || 0)
+  }
 
   const loadFinancialData = async (period: string, startDate?: string, endDate?: string) => {
     try {
@@ -168,7 +166,28 @@ export default function FinanceiroPage() {
       const data = result.data || result
       console.log('📊 Dados recebidos da API:', data)
       
-      setFinancialData(data)
+      if (data.success && data.data) {
+        setFinancialData({
+          totalRevenue: data.data.totals?.revenue || 0,
+          totalCommissions: data.data.totals?.expenses || 0,
+          totalOrders: data.data.totals?.comandas || 0,
+          totalExpenses: data.data.totalExpenses || 0,
+          paymentMethods: data.data.paymentMethods || [],
+          recentPayments: data.data.recentPayments || [],
+          commissionsByProfessional: data.data.comissoesPorProfissional || []
+        })
+      } else {
+        setFinancialData({
+          totalRevenue: data.totals?.revenue || 0,
+          totalCommissions: data.totals?.expenses || 0,
+          totalOrders: data.totals?.comandas || 0,
+          totalExpenses: data.totalExpenses || 0,
+          paymentMethods: data.paymentMethods || [],
+          recentPayments: data.recentPayments || [],
+          commissionsByProfessional: data.comissoesPorProfissional || []
+        })
+      }
+      
       setError(null)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -374,13 +393,13 @@ export default function FinanceiroPage() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Lucro Líquido</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                {formatCurrency(getTotalProfit())}
+                  <p className="text-sm text-gray-600">Total de Despesas</p>
+                  <p className="text-2xl font-bold text-red-600">
+                    {formatCurrency(financialData?.totalExpenses || 0)}
               </p>
             </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-red-600" />
           </div>
         </div>
             </div>
@@ -388,49 +407,56 @@ export default function FinanceiroPage() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Total de Comandas</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {financialData?.totals?.comandas || 0}
+                  <p className="text-sm text-gray-600">Lucro Líquido</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {formatCurrency(getTotalProfit())}
                   </p>
                 </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                  <Package className="w-6 h-6 text-purple-600" />
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <DollarSign className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </div>
           </div>
 
-                    {/* Despesas */}
+          {/* Controle de Despesas */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Controle de Despesas</h3>
                 <p className="text-sm text-gray-700">Gerencie as despesas da empresa</p>
-              </div>
+        </div>
               <button
                 onClick={() => setShowDespesaModal(true)}
-                className="px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] flex items-center gap-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
               >
                 <DollarSign className="w-4 h-4" />
                 Nova Despesa
               </button>
-            </div>
-            
+      </div>
+
             <div className="space-y-3">
               {despesas.length > 0 ? (
                 despesas.map((despesa) => (
-                  <div key={despesa._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <div key={despesa._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <div className="p-2 rounded-full bg-red-100">
                         <DollarSign className="w-5 h-5 text-red-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{despesa.categoria}</p>
-                        <p className="text-sm text-gray-500">{despesa.observacao}</p>
+                        <div className="flex items-center space-x-2">
+                          <span className="font-medium text-gray-900">{despesa.categoria}</span>
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+                            {despesa.tipo || 'Variável'}
+                          </span>
+                        </div>
+                        {despesa.observacao && (
+                          <p className="text-sm text-gray-600">{despesa.observacao}</p>
+                        )}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
+                      <p className="text-lg font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
                       <p className="text-sm text-gray-500">
                         {new Date(despesa.data).toLocaleDateString('pt-BR')}
                       </p>
@@ -439,8 +465,9 @@ export default function FinanceiroPage() {
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">Nenhuma despesa registrada</p>
+                  <p className="text-sm text-gray-400">Clique em "Nova Despesa" para começar</p>
                 </div>
               )}
             </div>
@@ -452,16 +479,16 @@ export default function FinanceiroPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Métodos de Pagamento</h3>
                 <p className="text-sm text-gray-700">Distribuição por forma de pagamento</p>
-              </div>
-            </div>
+        </div>
+      </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {getPaymentMethods().map((method) => (
                 <div key={method.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center">
+                  <div className="flex items-center">
                       {method.icon}
-                      <div>
+                    <div>
                         <p className="font-medium text-gray-900">{method.name}</p>
                         <p className="text-sm text-gray-600">{method.count} transações</p>
                       </div>
@@ -479,22 +506,24 @@ export default function FinanceiroPage() {
 
           {/* Pagamentos Recentes */}
           <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
-              <p className="text-sm text-gray-700">Últimas transações realizadas</p>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
+                <p className="text-sm text-gray-700">Últimas transações realizadas</p>
+              </div>
             </div>
-            
-            {financialData?.recentPayments && financialData.recentPayments.length > 0 ? (
-              <div className="space-y-3">
-                {financialData.recentPayments.map((payment, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+
+            <div className="space-y-3">
+              {financialData?.recentPayments && financialData.recentPayments.length > 0 ? (
+                financialData.recentPayments.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Package className="w-5 h-5 text-blue-600" />
+                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-5 h-5 text-green-600" />
                       </div>
                       <div>
                         <p className="font-medium text-gray-900">{payment.clientName}</p>
-                        <p className="text-sm text-gray-500">{payment.service}</p>
+                        <p className="text-sm text-gray-600">{payment.service}</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -502,14 +531,13 @@ export default function FinanceiroPage() {
                       <p className="text-sm text-gray-500">{payment.method}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">Nenhum pagamento encontrado para este período</p>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Nenhum pagamento recente</p>
                 </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Comissionamento por Profissional */}
@@ -520,17 +548,17 @@ export default function FinanceiroPage() {
                   Comissionamento por Profissional
                 </h3>
                 <p className="text-sm text-gray-700">Vendas e comissões do mês atual</p>
-              </div>
-            </div>
+          </div>
+        </div>
 
-            {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
+            {financialData?.commissionsByProfessional && financialData.commissionsByProfessional.length > 0 ? (
           <div className="space-y-4">
-                {financialData.comissoesPorProfissional.map((comissao, index) => (
+                {financialData.commissionsByProfessional.map((comissao, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg border border-gray-100">
                     {/* Header do Profissional */}
                     <div 
                       className="p-4 cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => toggleProfessional(comissao._id.toString())}
+                      onClick={() => toggleProfessional(comissao.profissional)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -538,7 +566,7 @@ export default function FinanceiroPage() {
                             <Users className="w-6 h-6 text-[#D15556]" />
                   </div>
                           <div>
-                            <h4 className="font-medium text-gray-900">{comissao.nome}</h4>
+                            <h4 className="font-medium text-gray-900">{comissao.profissional}</h4>
                             <p className="text-sm text-gray-700">Profissional</p>
                   </div>
                 </div>
@@ -549,7 +577,7 @@ export default function FinanceiroPage() {
                               R$ {comissao.totalComissao.toFixed(2)}
                             </p>
                           </div>
-                          {expandedProfessional === comissao._id.toString() ? (
+                          {expandedProfessional === comissao.profissional ? (
                             <ChevronUp className="w-5 h-5 text-gray-500" />
                           ) : (
                             <ChevronDown className="w-5 h-5 text-gray-500" />
@@ -559,7 +587,7 @@ export default function FinanceiroPage() {
       </div>
 
                     {/* Detalhes das Comissões - Expandidos/Colapsados */}
-                    {expandedProfessional === comissao._id.toString() && (
+                    {expandedProfessional === comissao.profissional && (
                       <div className="border-t border-gray-100 p-4 bg-white">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {/* Serviços */}
@@ -573,7 +601,7 @@ export default function FinanceiroPage() {
                                 <p className="text-sm text-gray-700">Total</p>
                                 <p className="font-medium text-[#D15556]">
                                   R$ {comissao.detalhes
-                                    .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                    .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
                                     .reduce((sum, d) => sum + d.valor, 0)
                                     .toFixed(2)}
                                 </p>
@@ -581,7 +609,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="space-y-2 mb-4">
                               {comissao.detalhes
-                                .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
                                 .map((detalhe, detIndex) => (
                                   <div key={detIndex} className="flex justify-between text-sm">
                                     <span className="text-gray-700">{detalhe.item}</span>
@@ -593,7 +621,7 @@ export default function FinanceiroPage() {
                               <span className="text-gray-700">Comissão (10%):</span>
                               <span className="text-[#D15556]">
                                 R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Serviço' && d.profissionalId === comissao._id.toString())
+                                  .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
                               </span>
@@ -611,7 +639,7 @@ export default function FinanceiroPage() {
                                 <p className="text-sm text-gray-700">Total</p>
                                 <p className="font-medium text-[#D15556]">
                                   R$ {comissao.detalhes
-                                    .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                    .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
                                     .reduce((sum, d) => sum + d.valor, 0)
                                     .toFixed(2)}
                                 </p>
@@ -619,7 +647,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="space-y-2 mb-4">
                               {comissao.detalhes
-                                .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
                                 .map((detalhe, detIndex) => (
                                   <div key={detIndex} className="flex justify-between text-sm">
                                     <span className="text-gray-700">{detalhe.item}</span>
@@ -631,7 +659,7 @@ export default function FinanceiroPage() {
                               <span className="text-gray-700">Comissão (15%):</span>
                               <span className="text-[#D15556]">
                                 R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
+                                  .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
                         </span>
@@ -682,32 +710,20 @@ export default function FinanceiroPage() {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
               <div className="space-y-3">
-                {financialData?.revenue && financialData.revenue.length > 0 ? (
-                  financialData.revenue.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{item.month}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">Nenhum dado de receita disponível</p>
-                )}
+                <div className="text-center text-gray-500 py-8">
+                  <p>Gráfico de receita mensal</p>
+                  <p className="text-sm">Dados disponíveis no período selecionado</p>
+                </div>
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
               <div className="space-y-3">
-                {financialData?.expenses && financialData.expenses.length > 0 ? (
-                  financialData.expenses.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">{item.month}</span>
-                      <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 text-center py-4">Nenhum dado de comissão disponível</p>
-                )}
+                <div className="text-center text-gray-500 py-8">
+                  <p>Gráfico de comissões mensais</p>
+                  <p className="text-sm">Dados disponíveis no período selecionado</p>
+                </div>
               </div>
             </div>
           </div>
@@ -846,8 +862,8 @@ export default function FinanceiroPage() {
                 </button>
               </div>
             </div>
-          </div>
         </div>
+      </div>
       )}
     </div>
   )
