@@ -112,9 +112,11 @@ export async function GET(request: NextRequest) {
 // POST - Criar nova comanda
 export async function POST(request: NextRequest) {
   try {
-    await connectDB()
+    console.log('🔄 === API COMANDAS - POST ===')
     
     const body = await request.json()
+    console.log('📦 Body recebido:', body)
+    
     const {
       clientId,
       professionalId,
@@ -133,32 +135,76 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Criar comanda com horário de São Paulo
-    const comanda = new Comanda({
-      clientId,
-      professionalId,
+    // Conectar ao MongoDB diretamente
+    const { MongoClient } = await import('mongodb')
+    const uri = process.env.MONGODB_URI!
+    const client = new MongoClient(uri)
+    await client.connect()
+    const db = client.db(process.env.DB_NAME || 'guapa')
+    
+    console.log('✅ Conectado ao MongoDB')
+    console.log('🔍 Criando comanda para cliente:', clientId)
+
+    // Criar comanda usando MongoDB direto
+    const comandaData = {
+      clientId: new (await import('mongodb')).ObjectId(clientId),
+      professionalId: new (await import('mongodb')).ObjectId(professionalId),
       status: status || 'em_atendimento',
       dataInicio: new Date(),
       servicos,
       produtos: produtos || [],
       observacoes: observacoes || '',
-      valorTotal: valorTotal || 0
-    })
+      valorTotal: valorTotal || 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
 
-    await comanda.save()
+    const result = await db.collection('comandas').insertOne(comandaData)
+    console.log('✅ Comanda criada com ID:', result.insertedId)
 
-    // Retornar comanda criada com dados populados
-    const comandaPopulada = await Comanda.findById(comanda._id)
-      .populate('clientId', 'name phone email')
-      .populate('professionalId', 'name')
+    // Buscar comanda criada com dados populados
+    const comandaPopulada = await db.collection('comandas').aggregate([
+      { $match: { _id: result.insertedId } },
+      {
+        $lookup: {
+          from: 'clients',
+          localField: 'clientId',
+          foreignField: '_id',
+          as: 'clientData'
+        }
+      },
+      {
+        $lookup: {
+          from: 'professionals',
+          localField: 'professionalId',
+          foreignField: '_id',
+          as: 'professionalData'
+        }
+      },
+      {
+        $addFields: {
+          clientId: { $arrayElemAt: ['$clientData', 0] },
+          professionalId: { $arrayElemAt: ['$professionalData', 0] }
+        }
+      },
+      {
+        $project: {
+          clientData: 0,
+          professionalData: 0
+        }
+      }
+    ]).toArray()
+
+    await client.close()
+    console.log('✅ Comanda retornada com dados populados')
 
     return NextResponse.json({
       message: 'Comanda criada com sucesso',
-      comanda: comandaPopulada
+      comanda: comandaPopulada[0]
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Erro ao criar comanda:', error)
+    console.error('❌ Erro ao criar comanda:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
