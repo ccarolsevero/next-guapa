@@ -4,9 +4,15 @@ import { ObjectId } from 'mongodb'
 
 export async function POST(request: NextRequest) {
   try {
-    const { comandaId, finalizacaoData } = await request.json()
+    console.log('🔄 API de finalização chamada')
+    
+    const body = await request.json()
+    console.log('📦 Body recebido:', body)
+    
+    const { comandaId, finalizacaoData } = body
     
     if (!comandaId || !finalizacaoData) {
+      console.error('❌ Dados inválidos:', { comandaId, finalizacaoData })
       return NextResponse.json(
         { error: 'Comanda ID e dados de finalização são obrigatórios' },
         { status: 400 }

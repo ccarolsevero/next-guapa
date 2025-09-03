@@ -218,6 +218,7 @@ export default function FinalizarAtendimentoPage() {
         valorOriginal: comanda.valorTotal,
         valorFinal: valorFinalCalculado,
         desconto: finalizacao.discount,
+        creditAmount: finalizacao.creditAmount,
         metodoPagamento: finalizacao.paymentMethod,
         valorRecebido: finalizacao.receivedAmount,
         troco: finalizacao.change,
@@ -229,6 +230,23 @@ export default function FinalizarAtendimentoPage() {
         totalComissao: totalComissao,
         detalhesComissao: detalhes,
         faturamento: valorFinalCalculado
+      }
+
+      // Validações antes de enviar
+      if (!finalizacaoData.comandaId) {
+        throw new Error('ID da comanda não encontrado')
+      }
+      if (!finalizacaoData.clienteId) {
+        throw new Error('ID do cliente não encontrado')
+      }
+      if (!finalizacaoData.profissionalId) {
+        throw new Error('ID do profissional não encontrado')
+      }
+      if (!finalizacaoData.metodoPagamento) {
+        throw new Error('Forma de pagamento não selecionada')
+      }
+      if (finalizacaoData.valorRecebido < finalizacaoData.valorFinal) {
+        throw new Error('Valor recebido é menor que o valor final')
       }
 
       console.log('✅ Dados da finalização:', finalizacaoData)
@@ -268,10 +286,12 @@ export default function FinalizarAtendimentoPage() {
       setTimeout(() => {
         router.push('/admin/comandas')
       }, 3000)
-    } catch (error) {
-      console.error('❌ Erro ao finalizar atendimento:', error)
-      setMessage('❌ Erro ao finalizar atendimento. Tente novamente.')
-    } finally {
+          } catch (error) {
+        console.error('❌ Erro ao finalizar atendimento:', error)
+        console.error('❌ Detalhes do erro:', error.message)
+        console.error('❌ Stack trace:', error.stack)
+        setMessage(`❌ Erro ao finalizar atendimento: ${error.message}`)
+      } finally {
       setIsLoading(false)
     }
   }
@@ -415,7 +435,7 @@ export default function FinalizarAtendimentoPage() {
           <div className="bg-white p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-black mb-6 flex items-center">
               <DollarSign className="w-6 h-6 mr-3 text-green-600" />
-              Valor e Pagamento
+              Valor e Pagamento - Deploy Forçado
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
