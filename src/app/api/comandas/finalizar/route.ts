@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { connectToDatabase } from '@/lib/mongodb'
-import { ObjectId } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 export async function POST(request: NextRequest) {
-  let client: any = null
+  let client: MongoClient | null = null
   
   try {
     console.log('🔄 API de finalização chamada')
@@ -30,37 +29,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Validar campos obrigatórios
-    const camposObrigatorios = ['clienteId', 'profissionalId', 'valorFinal', 'paymentMethod']
-    for (const campo of camposObrigatorios) {
-      if (!finalizacaoData[campo]) {
-        console.error(`❌ Campo obrigatório ausente: ${campo}`)
-        return NextResponse.json(
-          { error: `Campo obrigatório ausente: ${campo}` },
-          { status: 400 }
-        )
-      }
-    }
-
-    // Validar se clienteId e profissionalId são ObjectIds válidos
-    if (!ObjectId.isValid(finalizacaoData.clienteId)) {
-      console.error('❌ ClienteId inválido:', finalizacaoData.clienteId)
-      return NextResponse.json(
-        { error: 'ID do cliente inválido' },
-        { status: 400 }
-      )
-    }
-
-    if (!ObjectId.isValid(finalizacaoData.profissionalId)) {
-      console.error('❌ ProfissionalId inválido:', finalizacaoData.profissionalId)
-      return NextResponse.json(
-        { error: 'ID do profissional inválido' },
-        { status: 400 }
-      )
-    }
-
     // Conectar ao MongoDB
-    const { MongoClient } = await import('mongodb')
     const uri = process.env.MONGODB_URI!
     client = new MongoClient(uri)
     await client.connect()
@@ -68,12 +37,28 @@ export async function POST(request: NextRequest) {
     
     console.log('🔄 Finalizando comanda:', comandaId)
     console.log('💰 Dados da finalização:', finalizacaoData)
-    console.log('🔍 Tipo do comandaId:', typeof comandaId)
-    console.log('🔍 ComandaId é string válida?', comandaId && comandaId.length > 0)
 
-    // 1. Atualizar status da comanda para 'finalizada'
+    // 1. Buscar a comanda para obter dados necessários
+    console.log('🔍 Buscando comanda no banco...')
+    const comanda = await db.collection('comandas').findOne({ _id: new ObjectId(comandaId) })
+    
+    if (!comanda) {
+      console.error('❌ Comanda não encontrada:', comandaId)
+      return NextResponse.json(
+        { error: 'Comanda não encontrada' },
+        { status: 404 }
+      )
+    }
+
+    console.log('✅ Comanda encontrada:', {
+      status: comanda.status,
+      clienteId: comanda.clienteId,
+      profissionalId: comanda.profissionalId,
+      valorTotal: comanda.valorTotal
+    })
+
+    // 2. Atualizar status da comanda para 'finalizada'
     console.log('🔄 Atualizando comanda no banco...')
-    console.log('🔍 Query de busca:', { _id: new ObjectId(comandaId) })
     
     // Garantir que dataFim seja uma data válida
     const dataFim = finalizacaoData.dataFim ? new Date(finalizacaoData.dataFim) : new Date()
@@ -81,7 +66,7 @@ export async function POST(request: NextRequest) {
     console.log('🔍 Dados para atualizar:', { 
       status: 'finalizada',
       dataFim: dataFim,
-      valorFinal: finalizacaoData.valorFinal,
+      valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
       desconto: finalizacaoData.desconto || 0,
       creditAmount: finalizacaoData.creditAmount || 0
     })
@@ -92,7 +77,7 @@ export async function POST(request: NextRequest) {
         $set: { 
           status: 'finalizada',
           dataFim: dataFim,
-          valorFinal: finalizacaoData.valorFinal,
+          valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
           desconto: finalizacaoData.desconto || 0,
           creditAmount: finalizacaoData.creditAmount || 0
         }
@@ -108,14 +93,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. Salvar dados da finalização em uma nova coleção
-    const finalizacaoResult = await db.collection('finalizacoes').insertOne({
-      ...finalizacaoData,
+    // 3. Salvar dados da finalização em uma nova coleção
+    console.log('💳 Salvando dados da finalização...')
+    
+    // Preparar dados da finalização
+    const dadosFinalizacao = {
+      comandaId: new ObjectId(comandaId),
+      clienteId: finalizacaoData.clienteId || comanda.clienteId,
+      profissionalId: finalizacaoData.profissionalId || comanda.profissionalId,
+      valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
+      metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'Não definido',
+      desconto: finalizacaoData.desconto || 0,
+      creditAmount: finalizacaoData.creditAmount || 0,
+      totalComissao: finalizacaoData.totalComissao || 0,
+      servicos: finalizacaoData.servicos || comanda.servicos || [],
+      produtos: finalizacaoData.produtos || comanda.produtos || [],
       dataCriacao: new Date(),
       status: 'ativo'
-    })
+    }
+    
+    console.log('📋 Dados da finalização a serem salvos:', dadosFinalizacao)
+    
+    const finalizacaoResult = await db.collection('finalizacoes').insertOne(dadosFinalizacao)
+    console.log('✅ Finalização salva:', finalizacaoResult.insertedId)
 
-    // 3. Atualizar faturamento do dia (criar ou atualizar registro)
+    // 4. Atualizar faturamento do dia (criar ou atualizar registro)
     console.log('🔄 Atualizando faturamento do dia...')
     const hoje = new Date()
     const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest) {
     
     console.log('📅 Data início:', dataInicio.toISOString())
     console.log('📅 Data fim:', dataFimFaturamento.toISOString())
-    console.log('💰 Valor para somar:', finalizacaoData.valorFinal)
+    console.log('💰 Valor para somar:', dadosFinalizacao.valorFinal)
 
     const faturamentoResult = await db.collection('faturamento').updateOne(
       { 
@@ -134,8 +136,8 @@ export async function POST(request: NextRequest) {
       },
       { 
         $inc: { 
-          valorTotal: finalizacaoData.valorFinal,
-          totalComissoes: finalizacaoData.totalComissao || 0,
+          valorTotal: dadosFinalizacao.valorFinal,
+          totalComissoes: dadosFinalizacao.totalComissao || 0,
           quantidadeComandas: 1
         },
         $setOnInsert: { 
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Resultado da atualização do faturamento:', faturamentoResult)
 
-    // 4. Salvar comissões dos profissionais
+    // 5. Salvar comissões dos profissionais
     if (finalizacaoData.detalhesComissao && Array.isArray(finalizacaoData.detalhesComissao) && finalizacaoData.detalhesComissao.length > 0) {
       console.log('💰 Salvando comissões:', finalizacaoData.detalhesComissao.length)
       
@@ -159,12 +161,12 @@ export async function POST(request: NextRequest) {
           if (detalhe.vendidoPor && detalhe.vendidoPor !== 'Não definido' && ObjectId.isValid(detalhe.vendidoPor)) {
             vendidoPorId = new ObjectId(detalhe.vendidoPor)
           } else {
-            vendidoPorId = new ObjectId(finalizacaoData.profissionalId)
+            vendidoPorId = new ObjectId(dadosFinalizacao.profissionalId)
           }
           
           await db.collection('comissoes').insertOne({
             comandaId: new ObjectId(comandaId),
-            profissionalId: new ObjectId(finalizacaoData.profissionalId),
+            profissionalId: new ObjectId(dadosFinalizacao.profissionalId),
             tipo: detalhe.tipo || 'Serviço',
             item: detalhe.item || 'Item não especificado',
             valor: detalhe.valor || 0,
@@ -173,6 +175,8 @@ export async function POST(request: NextRequest) {
             data: new Date(),
             status: 'pendente'
           })
+          
+          console.log(`✅ Comissão salva para: ${detalhe.item}`)
         } catch (comissaoError) {
           console.error('❌ Erro ao salvar comissão:', comissaoError)
           console.error('❌ Detalhe da comissão:', detalhe)
@@ -182,31 +186,35 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ Nenhuma comissão para salvar')
     }
 
-    // 5. Atualizar histórico do cliente
+    // 6. Atualizar histórico do cliente
     try {
-      console.log('🔄 Atualizando histórico do cliente:', finalizacaoData.clienteId)
+      console.log('🔄 Atualizando histórico do cliente:', dadosFinalizacao.clienteId)
       
-      await db.collection('clientes').updateOne(
-        { _id: new ObjectId(finalizacaoData.clienteId) },
-        { 
-          $push: { 
-            historico: {
-              tipo: 'comanda_finalizada',
-              comandaId: new ObjectId(comandaId),
-              data: new Date(),
-              valor: finalizacaoData.valorFinal,
-              servicos: finalizacaoData.servicos || [],
-              produtos: finalizacaoData.produtos || []
+      if (dadosFinalizacao.clienteId) {
+        await db.collection('clientes').updateOne(
+          { _id: new ObjectId(dadosFinalizacao.clienteId) },
+          { 
+            $push: { 
+              historico: {
+                tipo: 'comanda_finalizada',
+                comandaId: new ObjectId(comandaId),
+                data: new Date(),
+                valor: dadosFinalizacao.valorFinal,
+                servicos: dadosFinalizacao.servicos || [],
+                produtos: dadosFinalizacao.produtos || []
+              }
+            },
+            $inc: { 
+              totalGasto: dadosFinalizacao.valorFinal,
+              quantidadeVisitas: 1
             }
-          },
-          $inc: { 
-            totalGasto: finalizacaoData.valorFinal,
-            quantidadeVisitas: 1
           }
-        }
-      )
-      
-      console.log('✅ Histórico do cliente atualizado com sucesso')
+        )
+        
+        console.log('✅ Histórico do cliente atualizado com sucesso')
+      } else {
+        console.log('⚠️ Cliente ID não encontrado, pulando atualização do histórico')
+      }
     } catch (clienteError) {
       console.error('❌ Erro ao atualizar histórico do cliente:', clienteError)
       // Não falhar a finalização por causa do histórico
