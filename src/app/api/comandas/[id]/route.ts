@@ -107,10 +107,20 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('🔧 === API COMANDAS [ID] - PUT ===')
+    console.log('📡 Conectando ao banco...')
+    
     await connectDB()
     
     const comandaId = params.id
     const body = await request.json()
+    
+    console.log('📥 Dados recebidos para atualização:')
+    console.log('  - Comanda ID:', comandaId)
+    console.log('  - Body completo:', body)
+    console.log('  - Valor total recebido:', body.valorTotal)
+    console.log('  - Serviços:', body.servicos?.length || 0)
+    console.log('  - Produtos:', body.produtos?.length || 0)
     
     // Usar conexão direta do MongoDB
     const { MongoClient } = await import('mongodb')
@@ -121,26 +131,41 @@ export async function PUT(
     const db = client.db(process.env.DB_NAME || 'guapa')
     const comandasCollection = db.collection('comandas')
     
+    // Preparar dados para atualização
+    const updateData = {
+      ...body,
+      updatedAt: new Date()
+    }
+    
+    console.log('💾 Dados para atualização no banco:')
+    console.log('  - Update data:', updateData)
+    
     const result = await comandasCollection.updateOne(
       { _id: new (await import('mongodb')).ObjectId(comandaId) },
-      { $set: body }
+      { $set: updateData }
     )
+    
+    console.log('✅ Resultado da atualização:')
+    console.log('  - Matched count:', result.matchedCount)
+    console.log('  - Modified count:', result.modifiedCount)
     
     await client.close()
     
     if (result.matchedCount === 0) {
+      console.log('❌ Comanda não encontrada para atualização')
       return NextResponse.json(
         { error: 'Comanda não encontrada' },
         { status: 404 }
       )
     }
     
+    console.log('✅ Comanda atualizada com sucesso no banco')
     return NextResponse.json({
       message: 'Comanda atualizada com sucesso'
     })
 
   } catch (error) {
-    console.error('Erro ao atualizar comanda:', error)
+    console.error('❌ Erro ao atualizar comanda:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
