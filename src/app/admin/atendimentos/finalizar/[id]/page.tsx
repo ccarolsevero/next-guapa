@@ -47,6 +47,7 @@ interface Finalizacao {
   recommendedProducts: string
   completedAt: string
   discount: number
+  creditAmount: number
 }
 
 const paymentMethods = [
@@ -69,14 +70,16 @@ export default function FinalizarAtendimentoPage() {
     receivedAmount: 0,
     change: 0,
     observations: '',
-    nextAppointment: '',
+    nextAppointment: new Date().toISOString().slice(0, 10),
     recommendedProducts: '',
-    completedAt: new Date().toISOString().slice(0, 16),
-    discount: 0
+    completedAt: new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16),
+    discount: 0,
+    creditAmount: 0
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('fixed')
 
   // Buscar dados da comanda
   useEffect(() => {
@@ -92,6 +95,13 @@ export default function FinalizarAtendimentoPage() {
           const data = await response.json()
           setComanda(data.comanda)
           console.log('✅ Comanda carregada:', data.comanda)
+          
+          // TODO: Futuramente implementar busca automática do sinal do agendamento
+          // const sinal = await buscarSinalAgendamento(data.comanda.appointmentId)
+          // if (sinal > 0) {
+          //   setFinalizacao(prev => ({ ...prev, creditAmount: sinal }))
+          //   console.log('💰 Sinal do agendamento carregado:', sinal)
+          // }
         } else {
           console.error('❌ Erro ao carregar comanda:', response.status)
         }
@@ -126,7 +136,16 @@ export default function FinalizarAtendimentoPage() {
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const discount = parseFloat(e.target.value) || 0
-    const valorFinal = Math.max(0, (comanda?.valorTotal || 0) - discount)
+    let valorFinal = 0
+    
+    if (discountType === 'percentage') {
+      // Desconto em porcentagem
+      const discountAmount = (comanda?.valorTotal || 0) * (discount / 100)
+      valorFinal = Math.max(0, (comanda?.valorTotal || 0) - discountAmount)
+    } else {
+      // Desconto em valor fixo
+      valorFinal = Math.max(0, (comanda?.valorTotal || 0) - discount)
+    }
     
     setFinalizacao(prev => ({
       ...prev,
@@ -177,8 +196,17 @@ export default function FinalizarAtendimentoPage() {
     setMessage('')
 
     try {
-      const valorFinal = comanda.valorTotal - finalizacao.discount
+      // Usar a função calcularValorFinal para obter o valor correto
+      const valorFinalCalculado = calcularValorFinal()
       const { totalComissao, detalhes } = calcularComissoes()
+      
+      console.log('🔄 Finalizando atendimento...')
+      console.log('💰 Valor original:', comanda.valorTotal)
+      console.log('💸 Desconto:', finalizacao.discount)
+      console.log('💳 Crédito:', finalizacao.creditAmount)
+      console.log('💵 Valor final:', valorFinalCalculado)
+      console.log('💳 Método de pagamento:', finalizacao.paymentMethod)
+      console.log('💵 Valor recebido:', finalizacao.receivedAmount)
       
       // Dados da finalização para salvar
       const finalizacaoData = {
@@ -188,38 +216,52 @@ export default function FinalizarAtendimentoPage() {
         dataInicio: comanda.dataInicio,
         dataFim: finalizacao.completedAt,
         valorOriginal: comanda.valorTotal,
-        valorFinal: valorFinal,
+        valorFinal: valorFinalCalculado,
         desconto: finalizacao.discount,
         metodoPagamento: finalizacao.paymentMethod,
         valorRecebido: finalizacao.receivedAmount,
         troco: finalizacao.change,
-        observacoes: finalizacao.observations,
-        proximoAgendamento: finalizacao.nextAppointment,
-        produtosRecomendados: finalizacao.recommendedProducts,
+        observacoes: finalizacao.observations || '',
+        proximoAgendamento: finalizacao.nextAppointment || '',
+        produtosRecomendados: finalizacao.recommendedProducts || '',
         servicos: comanda.servicos,
         produtos: comanda.produtos,
         totalComissao: totalComissao,
         detalhesComissao: detalhes,
-        faturamento: valorFinal
+        faturamento: valorFinalCalculado
       }
 
-      console.log('Dados da finalização:', finalizacaoData)
+      console.log('✅ Dados da finalização:', finalizacaoData)
       
-      // TODO: Implementar API para salvar finalização
-      // 1. Atualizar status da comanda para 'finalizada'
-      // 2. Salvar dados financeiros
-      // 3. Calcular e salvar comissões
-      // 4. Atualizar faturamento
-      // 5. Salvar no histórico do cliente
+      // Chamar API para finalizar comanda
+      const response = await fetch('/api/comandas/finalizar', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          comandaId: comanda._id,
+          finalizacaoData: finalizacaoData
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao finalizar comanda')
+      }
+
+      const result = await response.json()
+      console.log('✅ Resultado da finalização:', result)
       
-      setMessage('Atendimento finalizado com sucesso! Dados salvos no histórico da cliente e relatórios financeiros.')
+      setMessage('✅ Atendimento finalizado com sucesso! Dados salvos no histórico da cliente e relatórios financeiros.')
       
       // Redirecionar após 3 segundos
       setTimeout(() => {
         router.push('/admin/comandas')
       }, 3000)
     } catch (error) {
-      setMessage('Erro ao finalizar atendimento. Tente novamente.')
+      console.error('❌ Erro ao finalizar atendimento:', error)
+      setMessage('❌ Erro ao finalizar atendimento. Tente novamente.')
     } finally {
       setIsLoading(false)
     }
@@ -258,8 +300,30 @@ export default function FinalizarAtendimentoPage() {
     )
   }
 
-  const valorFinal = comanda.valorTotal - finalizacao.discount
+  const calcularValorFinal = () => {
+    let valorFinal = comanda.valorTotal
+    
+    // Aplicar desconto
+    if (discountType === 'percentage') {
+      const discountAmount = comanda.valorTotal * (finalizacao.discount / 100)
+      valorFinal -= discountAmount
+    } else {
+      valorFinal -= finalizacao.discount
+    }
+    
+    // Aplicar crédito (sinal)
+    valorFinal -= finalizacao.creditAmount
+    
+    // Garantir que o valor final não seja negativo
+    return Math.max(0, valorFinal)
+  }
+  
+  const valorFinal = calcularValorFinal()
   const { totalComissao, detalhes } = calcularComissoes()
+
+  const getCurrentSaoPauloTime = () => {
+    return new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16)
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -316,23 +380,23 @@ export default function FinalizarAtendimentoPage() {
 
             {/* Resumo da comanda */}
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-bold text-gray-900 mb-2">Resumo da comanda:</h4>
+              <h4 className="text-sm font-bold text-black mb-2">Resumo da comanda:</h4>
               <div className="space-y-2">
                 {comanda.servicos.map((servico, index) => (
                   <div key={index} className="flex justify-between text-sm">
-                    <span>{servico.nome} (x{servico.quantidade})</span>
-                    <span>R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
+                    <span className="text-black font-medium">{servico.nome} (x{servico.quantidade})</span>
+                    <span className="text-black font-semibold">R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
                   </div>
                 ))}
                 {comanda.produtos.map((produto, index) => (
                   <div key={index} className="flex justify-between text-sm">
-                    <span>{produto.nome} (x{produto.quantidade})</span>
-                    <span>R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
+                    <span className="text-black font-medium">{produto.nome} (x{produto.quantidade})</span>
+                    <span className="text-black font-semibold">R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
                   </div>
                 ))}
                 <div className="border-t pt-2 flex justify-between font-bold">
-                  <span>Total:</span>
-                  <span>R$ {comanda.valorTotal.toFixed(2)}</span>
+                  <span className="text-black">Total:</span>
+                  <span className="text-black">R$ {comanda.valorTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -350,40 +414,166 @@ export default function FinalizarAtendimentoPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Original (R$)
                 </label>
-                <input
-                  type="number"
-                  value={comanda.valorTotal.toFixed(2)}
-                  disabled
-                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="text"
+                    value={comanda.valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    disabled
+                    className="w-full p-3 pl-10 border border-gray-300 bg-gray-100 text-gray-700 font-medium"
+                  />
+                </div>
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Desconto (R$)
+                  Desconto
                 </label>
-                <input
-                  type="number"
-                  name="discount"
-                  value={finalizacao.discount}
-                  onChange={handleDiscountChange}
-                  min="0"
-                  max={comanda.valorTotal}
-                  step="0.01"
-                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                />
+                
+                {/* Seletor de tipo de desconto */}
+                <div className="flex space-x-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('fixed')}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      discountType === 'fixed'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    R$ (Valor)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('percentage')}
+                    className={`px-3 py-2 text-sm font-medium rounded-colors ${
+                      discountType === 'percentage'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    % (Porcentagem)
+                  </button>
+                </div>
+                
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                    {discountType === 'percentage' ? '%' : 'R$'}
+                  </span>
+                  <input
+                    type="text"
+                    name="discount"
+                    value={finalizacao.discount > 0 ? 
+                      (discountType === 'percentage' 
+                        ? `${Math.round(finalizacao.discount)}%` 
+                        : finalizacao.discount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                      ) : ''
+                    }
+                    onChange={(e) => {
+                      let value = e.target.value
+                      
+                      if (discountType === 'percentage') {
+                        // Remover % e converter para número
+                        value = value.replace('%', '').replace(/[^\d,]/g, '').replace(',', '.')
+                        const numValue = parseFloat(value) || 0
+                        
+                        // Limitar porcentagem a 100%
+                        if (numValue <= 100) {
+                          setFinalizacao(prev => ({ ...prev, discount: numValue }))
+                        }
+                      } else {
+                        // Formato normal para valores
+                        value = value.replace(/[^\d,]/g, '').replace(',', '.')
+                        const numValue = parseFloat(value) || 0
+                        
+                        // Limitar valor fixo ao total da comanda
+                        if (numValue <= comanda.valorTotal) {
+                          setFinalizacao(prev => ({ ...prev, discount: numValue }))
+                        }
+                      }
+                    }}
+                    placeholder={discountType === 'percentage' ? '0,0%' : '0,00'}
+                    className={`w-full p-3 pl-10 border transition-colors ${
+                      finalizacao.discount > 0 
+                        ? 'border-green-500 bg-green-50 text-green-800' 
+                        : 'border-gray-300 bg-white text-black'
+                    } focus:ring-0 focus:border-black`}
+                  />
+                </div>
+                
+                {finalizacao.discount > 0 && (
+                  <p className="text-xs text-green-600 mt-1">
+                    {discountType === 'percentage' 
+                      ? `Desconto de ${finalizacao.discount.toFixed(1)}% (R$ ${((finalizacao.discount / 100) * comanda.valorTotal).toFixed(2)})`
+                      : `Desconto de R$ ${finalizacao.discount.toFixed(2)} (${((finalizacao.discount / comanda.valorTotal) * 100).toFixed(1)}%)`
+                    }
+                  </p>
+                )}
+              </div>
+              
+              {/* Campo de Crédito (Sinal Pago) */}
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Crédito (Sinal Pago)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="text"
+                    name="creditAmount"
+                    value={finalizacao.creditAmount > 0 ? finalizacao.creditAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.')
+                      const numValue = parseFloat(value) || 0
+                      
+                      // Limitar crédito ao valor total da comanda
+                      if (numValue <= comanda.valorTotal) {
+                        setFinalizacao(prev => ({ ...prev, creditAmount: numValue }))
+                      }
+                    }}
+                    placeholder="0,00"
+                    className={`w-full p-3 pl-10 border transition-colors ${
+                      finalizacao.creditAmount > 0 
+                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
+                        : 'border-gray-300 bg-white text-black'
+                    } focus:ring-0 focus:border-black`}
+                  />
+                </div>
+                {finalizacao.creditAmount > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  💡 Futuramente: este valor será preenchido automaticamente com o sinal do agendamento
+                </p>
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Final (R$)
                 </label>
-                <input
-                  type="number"
-                  value={valorFinal.toFixed(2)}
-                  disabled
-                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700 font-bold"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="number"
+                    value={valorFinal.toFixed(2)}
+                    disabled
+                    className={`w-full p-3 pl-10 border font-bold ${
+                      valorFinal < comanda.valorTotal 
+                        ? 'border-green-500 bg-green-50 text-green-800' 
+                        : 'border-gray-300 bg-gray-100 text-gray-700'
+                    }`}
+                  />
+                </div>
+                {valorFinal < comanda.valorTotal && (
+                  <p className="text-xs text-green-600 mt-1">
+                    {finalizacao.discount > 0 && `Desconto: R$ ${finalizacao.discount.toFixed(2)}`}
+                    {finalizacao.discount > 0 && finalizacao.creditAmount > 0 && ' + '}
+                    {finalizacao.creditAmount > 0 && `Crédito: R$ ${finalizacao.creditAmount.toFixed(2)}`}
+                    {finalizacao.discount > 0 || finalizacao.creditAmount > 0 ? ` = Total: R$ ${(comanda.valorTotal - valorFinal).toFixed(2)}` : ''}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -412,82 +602,74 @@ export default function FinalizarAtendimentoPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Recebido (R$)
                 </label>
-                <input
-                  type="number"
-                  name="receivedAmount"
-                  value={finalizacao.receivedAmount}
-                  onChange={handleInputChange}
-                  min={valorFinal}
-                  step="0.01"
-                  required
-                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="text"
+                    name="receivedAmount"
+                    value={finalizacao.receivedAmount > 0 ? finalizacao.receivedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/[^\d,]/g, '').replace(',', '.')
+                      const numValue = parseFloat(value) || 0
+                      setFinalizacao(prev => ({ ...prev, receivedAmount: numValue }))
+                      
+                      // Calcular troco
+                      const change = numValue - valorFinal
+                      setFinalizacao(prev => ({
+                        ...prev,
+                        change: Math.max(0, change)
+                      }))
+                    }}
+                    required
+                    placeholder={valorFinal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    className={`w-full p-3 pl-10 border transition-colors ${
+                      finalizacao.receivedAmount >= valorFinal 
+                        ? 'border-green-500 bg-green-50 text-green-800' 
+                        : finalizacao.receivedAmount > 0 
+                        ? 'border-orange-500 bg-orange-50 text-orange-800'
+                        : 'border-gray-300 bg-white text-black'
+                    } focus:ring-0 focus:border-black`}
+                  />
+                </div>
+                {finalizacao.receivedAmount > 0 && finalizacao.receivedAmount < valorFinal && (
+                  <p className="text-xs text-orange-600 mt-1">
+                    Faltam R$ {(valorFinal - finalizacao.receivedAmount).toFixed(2)}
+                  </p>
+                )}
+                {finalizacao.receivedAmount >= valorFinal && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Valor suficiente ✓
+                  </p>
+                )}
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Troco (R$)
                 </label>
-                <input
-                  type="number"
-                  value={finalizacao.change.toFixed(2)}
-                  disabled
-                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700"
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                  <input
+                    type="number"
+                    value={finalizacao.change.toFixed(2)}
+                    disabled
+                    className={`w-full p-3 pl-10 border font-medium ${
+                      finalizacao.change > 0 
+                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
+                        : 'border-gray-300 bg-gray-100 text-gray-700'
+                    }`}
+                  />
+                </div>
+                {finalizacao.change > 0 && (
+                  <p className="text-xs text-blue-600 mt-1">
+                    Troco a devolver
+                  </p>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Comissões e Faturamento */}
-          <div className="bg-white p-6 border border-gray-100">
-            <h2 className="text-xl font-bold text-black mb-6 flex items-center">
-              <Star className="w-6 h-6 mr-3 text-yellow-600" />
-              Comissões e Faturamento
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-3">Detalhes das Comissões:</h4>
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {detalhes.map((item, index) => (
-                    <div key={index} className="text-sm p-2 bg-gray-50 rounded">
-                      <div className="flex justify-between">
-                        <span className="font-medium">{item.tipo}: {item.item}</span>
-                        <span className="text-green-600">R$ {item.comissao.toFixed(2)}</span>
-                      </div>
-                      {item.vendidoPor && (
-                        <div className="text-xs text-gray-600">Vendido por: {item.vendidoPor}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                  <div className="flex justify-between font-bold text-green-800">
-                    <span>Total de Comissões:</span>
-                    <span>R$ {totalComissao.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h4 className="text-sm font-bold text-gray-900 mb-3">Resumo Financeiro:</h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span>Valor Final:</span>
-                    <span className="font-bold">R$ {valorFinal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Comissões:</span>
-                    <span className="text-red-600">-R$ {totalComissao.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span className="text-black">Lucro Líquido:</span>
-                    <span className="text-green-600">R$ {(valorFinal - totalComissao).toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* Observações do Atendimento */}
           <div className="bg-white p-6 border border-gray-100">
@@ -507,21 +689,21 @@ export default function FinalizarAtendimentoPage() {
                   onChange={handleInputChange}
                   rows={3}
                   className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                  placeholder="Observações sobre o atendimento..."
+                  placeholder="Observações sobre o atendimento... (opcional)"
                 />
               </div>
               
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Produtos Recomendados
+                  Recomendações
                 </label>
                 <textarea
                   name="recommendedProducts"
                   value={finalizacao.recommendedProducts}
                   onChange={handleInputChange}
-                  rows={2}
+                  rows={3}
                   className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                  placeholder="Produtos recomendados para a cliente..."
+                  placeholder="Recomendações para a cliente (produtos, cuidados, próximos passos)... (opcional)"
                 />
               </div>
               
@@ -530,7 +712,7 @@ export default function FinalizarAtendimentoPage() {
                   Próximo Agendamento Sugerido
                 </label>
                 <input
-                  type="datetime-local"
+                  type="date"
                   name="nextAppointment"
                   value={finalizacao.nextAppointment}
                   onChange={handleInputChange}
@@ -542,14 +724,24 @@ export default function FinalizarAtendimentoPage() {
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Horário de Conclusão
                 </label>
-                <input
-                  type="datetime-local"
-                  name="completedAt"
-                  value={finalizacao.completedAt}
-                  onChange={handleInputChange}
-                  required
-                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="datetime-local"
+                    name="completedAt"
+                    value={finalizacao.completedAt}
+                    onChange={handleInputChange}
+                    required
+                    className="flex-1 p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFinalizacao(prev => ({ ...prev, completedAt: getCurrentSaoPauloTime() }))}
+                    className="px-4 py-3 bg-blue-600 text-white hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Agora
+                  </button>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">Horário de São Paulo (GMT-3)</p>
               </div>
             </div>
           </div>
@@ -559,7 +751,7 @@ export default function FinalizarAtendimentoPage() {
             <button
               type="submit"
               disabled={isLoading || !finalizacao.paymentMethod || finalizacao.receivedAmount < valorFinal}
-              className="bg-green-600 text-white px-8 py-4 hover:bg-green-700 transition-colors font-medium tracking-wide text-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center mx-auto"
+              className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-10 py-4 hover:from-green-600 hover:to-emerald-700 transition-all duration-200 font-bold tracking-wide text-lg disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed flex items-center mx-auto shadow-lg hover:shadow-xl transform hover:scale-105 rounded-lg"
             >
               {isLoading ? (
                 <>
@@ -573,6 +765,18 @@ export default function FinalizarAtendimentoPage() {
                 </>
               )}
             </button>
+            
+            {/* Mensagem de ajuda */}
+            {!finalizacao.paymentMethod && (
+              <p className="text-sm text-orange-600 mt-2">
+                ⚠️ Selecione uma forma de pagamento para continuar
+              </p>
+            )}
+            {finalizacao.paymentMethod && finalizacao.receivedAmount < valorFinal && (
+              <p className="text-sm text-orange-600 mt-2">
+                ⚠️ O valor recebido deve ser maior ou igual ao valor final (R$ {valorFinal.toFixed(2)})
+              </p>
+            )}
           </div>
 
           {/* Mensagem de Status */}

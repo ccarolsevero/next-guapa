@@ -133,11 +133,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Criar comanda
+    // Criar comanda com horário de São Paulo
     const comanda = new Comanda({
       clientId,
       professionalId,
       status: status || 'em_atendimento',
+      dataInicio: new Date(),
       servicos,
       produtos: produtos || [],
       observacoes: observacoes || '',

@@ -47,6 +47,9 @@ export default function ComandaDetalhesPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>('')
   const [editingProductVendor, setEditingProductVendor] = useState<number | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingComanda, setEditingComanda] = useState<any>(null)
+  const [editLoading, setEditLoading] = useState(false)
 
   const updateTotal = () => {
     if (!comanda) return
@@ -56,6 +59,39 @@ export default function ComandaDetalhesPage() {
     const newTotal = servicesTotal + productsTotal
     
     setComanda(prev => ({ ...prev, valorTotal: newTotal }))
+  }
+
+  const openEditModal = () => {
+    setEditingComanda({ ...comanda })
+    setShowEditModal(true)
+  }
+
+  const saveComandaChanges = async () => {
+    if (!editingComanda) return
+    
+    try {
+      setEditLoading(true)
+      
+      const response = await fetch(`/api/comandas/${comandaId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingComanda)
+      })
+      
+      if (response.ok) {
+        setComanda(editingComanda)
+        setShowEditModal(false)
+        alert('Comanda atualizada com sucesso!')
+      } else {
+        const error = await response.json()
+        alert('Erro ao atualizar comanda: ' + error.error)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar comanda:', error)
+      alert('Erro ao atualizar comanda')
+    } finally {
+      setEditLoading(false)
+    }
   }
 
   useEffect(() => {
@@ -477,6 +513,13 @@ export default function ComandaDetalhesPage() {
               </div>
             </div>
             <div className="flex space-x-3">
+              <button
+                onClick={openEditModal}
+                className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 transition-colors font-medium tracking-wide flex items-center"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Editar
+              </button>
               <Link
                 href={`/admin/comandas/${comanda?.id}/finalizar`}
                 className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
@@ -989,6 +1032,189 @@ export default function ComandaDetalhesPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Edição */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-medium text-gray-900">Editar Comanda</h3>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              {/* Informações Básicas */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Informações Básicas</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                    <select
+                      value={editingComanda?.status || 'em_atendimento'}
+                      onChange={(e) => setEditingComanda(prev => ({ ...prev, status: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-0 focus:border-black"
+                    >
+                      <option value="em_atendimento">Em Atendimento</option>
+                      <option value="finalizada">Finalizada</option>
+                      <option value="cancelada">Cancelada</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
+                    <textarea
+                      value={editingComanda?.observacoes || ''}
+                      onChange={(e) => setEditingComanda(prev => ({ ...prev, observacoes: e.target.value }))}
+                      rows={3}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-0 focus:border-black"
+                      placeholder="Observações da comanda..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Serviços */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Serviços</h4>
+                <div className="space-y-3">
+                  {editingComanda?.servicos.map((service: any, index: number) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={service.nome}
+                          onChange={(e) => {
+                            const newServicos = [...editingComanda.servicos]
+                            newServicos[index].nome = e.target.value
+                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                          }}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <input
+                          type="number"
+                          value={service.preco}
+                          onChange={(e) => {
+                            const newServicos = [...editingComanda.servicos]
+                            newServicos[index].preco = parseFloat(e.target.value) || 0
+                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                          }}
+                          step="0.01"
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <div className="w-20">
+                        <input
+                          type="number"
+                          value={service.quantidade}
+                          onChange={(e) => {
+                            const newServicos = [...editingComanda.servicos]
+                            newServicos[index].quantidade = parseInt(e.target.value) || 1
+                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                          }}
+                          min="1"
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newServicos = editingComanda.servicos.filter((_: any, i: number) => i !== index)
+                          setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Produtos */}
+              <div>
+                <h4 className="font-medium text-gray-900 mb-3">Produtos</h4>
+                <div className="space-y-3">
+                  {editingComanda?.produtos.map((product: any, index: number) => (
+                    <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          value={product.nome}
+                          onChange={(e) => {
+                            const newProdutos = [...editingComanda.produtos]
+                            newProdutos[index].nome = e.target.value
+                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                          }}
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <div className="w-24">
+                        <input
+                          type="number"
+                          value={product.preco}
+                          onChange={(e) => {
+                            const newProdutos = [...editingComanda.produtos]
+                            newProdutos[index].preco = parseFloat(e.target.value) || 0
+                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                          }}
+                          step="0.01"
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <div className="w-20">
+                        <input
+                          type="number"
+                          value={product.quantidade}
+                          onChange={(e) => {
+                            const newProdutos = [...editingComanda.produtos]
+                            newProdutos[index].quantidade = parseInt(e.target.value) || 1
+                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                          }}
+                          min="1"
+                          className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
+                        />
+                      </div>
+                      <button
+                        onClick={() => {
+                          const newProdutos = editingComanda.produtos.filter((_: any, i: number) => i !== index)
+                          setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <Trash className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={saveComandaChanges}
+                  disabled={editLoading}
+                  className="px-6 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:bg-gray-400"
+                >
+                  {editLoading ? 'Salvando...' : 'Salvar Alterações'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

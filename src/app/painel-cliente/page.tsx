@@ -432,6 +432,17 @@ function PainelClienteContent() {
                   Histórico
                 </button>
                 <button
+                  onClick={() => setActiveTab('recommendations')}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                    activeTab === 'recommendations'
+                      ? 'bg-[#D15556] text-white'
+                      : 'text-[#006D5B] hover:bg-[#EED7B6]'
+                  }`}
+                >
+                  <Star className="w-5 h-5 inline mr-3" />
+                  Recomendações
+                </button>
+                <button
                   onClick={() => setActiveTab('profile')}
                   className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
                     activeTab === 'profile'
@@ -747,6 +758,108 @@ function PainelClienteContent() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Recomendações */}
+            {activeTab === 'recommendations' && (
+              <div className="space-y-6">
+                <h2 className="text-2xl font-light text-[#006D5B] mb-6">
+                  Minhas Recomendações
+                </h2>
+
+                <div className="bg-white rounded-lg shadow-lg p-6">
+                  <div className="space-y-6">
+                    {/* Recomendações dos atendimentos */}
+                    <div>
+                      <h3 className="text-lg font-medium text-[#006D5B] mb-4 flex items-center">
+                        <Star className="w-5 h-5 mr-2" />
+                        Recomendações dos Atendimentos
+                      </h3>
+                      
+                      {appointments.filter(apt => apt.status === 'completed').length > 0 ? (
+                        <div className="space-y-4">
+                          {appointments
+                            .filter(apt => apt.status === 'completed')
+                            .map((appointment, index) => (
+                              <div key={index} className="border border-gray-200 rounded-lg p-4">
+                                <div className="flex justify-between items-start mb-3">
+                                  <div>
+                                    <h4 className="font-medium text-[#006D5B]">
+                                      {appointment.service}
+                                    </h4>
+                                    <p className="text-sm text-gray-600">
+                                      Profissional: {appointment.professional}
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                      {formatDate(appointment.date)} às {appointment.time}
+                                    </p>
+                                  </div>
+                                  <span className="text-sm text-gray-500">
+                                    R$ {appointment.price.toFixed(2)}
+                                  </span>
+                                </div>
+                                
+                                {/* Aqui viriam as recomendações reais do banco */}
+                                <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                                  <p className="text-sm text-blue-800">
+                                    <strong>Recomendações:</strong> Produtos específicos para seu tipo de cabelo, 
+                                    cuidados diários e próximos passos para manutenção dos resultados.
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                          <h3 className="text-lg font-medium text-gray-500 mb-2">
+                            Nenhuma recomendação ainda
+                          </h3>
+                          <p className="text-gray-400">
+                            Suas recomendações aparecerão aqui após completar atendimentos.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Recomendações gerais */}
+                    <div>
+                      <h3 className="text-lg font-medium text-[#006D5B] mb-4 flex items-center">
+                        <Package className="w-5 h-5 mr-2" />
+                        Produtos Recomendados
+                      </h3>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="font-medium text-[#006D5B] mb-2">Shampoo Profissional</h4>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Ideal para seu tipo de cabelo, com ingredientes naturais.
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-bold text-[#D15556]">R$ 45,00</span>
+                            <button className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors">
+                              Comprar
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="border border-gray-200 rounded-lg p-4">
+                          <h4 className="text-lg font-medium text-[#006D5B] mb-2">Máscara Hidratante</h4>
+                          <p className="text-sm text-gray-600 mb-3">
+                            Tratamento intensivo para cabelos danificados.
+                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-lg font-bold text-[#D15556]">R$ 38,00</span>
+                            <button className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors">
+                              Comprar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
