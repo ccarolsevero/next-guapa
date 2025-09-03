@@ -156,27 +156,31 @@ export async function POST(request: NextRequest) {
       
       for (const detalhe of finalizacaoData.detalhesComissao) {
         try {
-          // Validar se vendidoPor é um ObjectId válido
-          let vendidoPorId
-          if (detalhe.vendidoPor && detalhe.vendidoPor !== 'Não definido' && ObjectId.isValid(detalhe.vendidoPor)) {
-            vendidoPorId = new ObjectId(detalhe.vendidoPor)
+          // Determinar o profissional correto para cada item
+          let profissionalId
+          if (detalhe.tipo === 'Produto' && detalhe.vendidoPor && detalhe.vendidoPor !== 'Não definido' && ObjectId.isValid(detalhe.vendidoPor)) {
+            // Para produtos, usar o vendidoPor
+            profissionalId = new ObjectId(detalhe.vendidoPor)
+            console.log(`🛍️ Produto ${detalhe.item} - Comissão para vendedor: ${detalhe.vendidoPor}`)
           } else {
-            vendidoPorId = new ObjectId(dadosFinalizacao.profissionalId)
+            // Para serviços, usar o profissional da comanda
+            profissionalId = new ObjectId(dadosFinalizacao.profissionalId)
+            console.log(`✂️ Serviço ${detalhe.item} - Comissão para profissional: ${dadosFinalizacao.profissionalId}`)
           }
           
           await db.collection('comissoes').insertOne({
             comandaId: new ObjectId(comandaId),
-            profissionalId: new ObjectId(dadosFinalizacao.profissionalId),
+            profissionalId: profissionalId, // Usar o profissional correto
             tipo: detalhe.tipo || 'Serviço',
             item: detalhe.item || 'Item não especificado',
             valor: detalhe.valor || 0,
             comissao: detalhe.comissao || 0,
-            vendidoPor: vendidoPorId,
+            vendidoPor: detalhe.vendidoPor ? new ObjectId(detalhe.vendidoPor) : null,
             data: new Date(),
             status: 'pendente'
           })
           
-          console.log(`✅ Comissão salva para: ${detalhe.item}`)
+          console.log(`✅ Comissão salva para: ${detalhe.item} - Profissional: ${profissionalId}`)
         } catch (comissaoError) {
           console.error('❌ Erro ao salvar comissão:', comissaoError)
           console.error('❌ Detalhe da comissão:', detalhe)
