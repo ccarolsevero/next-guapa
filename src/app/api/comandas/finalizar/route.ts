@@ -23,8 +23,20 @@ export async function POST(request: NextRequest) {
     
     console.log('🔄 Finalizando comanda:', comandaId)
     console.log('💰 Dados da finalização:', finalizacaoData)
+    console.log('🔍 Tipo do comandaId:', typeof comandaId)
+    console.log('🔍 ComandaId é string válida?', comandaId && comandaId.length > 0)
 
     // 1. Atualizar status da comanda para 'finalizada'
+    console.log('🔄 Atualizando comanda no banco...')
+    console.log('🔍 Query de busca:', { _id: new ObjectId(comandaId) })
+    console.log('🔍 Dados para atualizar:', { 
+      status: 'finalizada',
+      dataFim: finalizacaoData.dataFim,
+      valorFinal: finalizacaoData.valorFinal,
+      desconto: finalizacaoData.desconto,
+      creditAmount: finalizacaoData.creditAmount || 0
+    })
+    
     const comandaUpdateResult = await db.collection('comandas').updateOne(
       { _id: new ObjectId(comandaId) },
       { 
@@ -37,6 +49,8 @@ export async function POST(request: NextRequest) {
         }
       }
     )
+    
+    console.log('✅ Resultado da atualização da comanda:', comandaUpdateResult)
 
     if (comandaUpdateResult.matchedCount === 0) {
       return NextResponse.json(
@@ -53,9 +67,14 @@ export async function POST(request: NextRequest) {
     })
 
     // 3. Atualizar faturamento do dia (criar ou atualizar registro)
+    console.log('🔄 Atualizando faturamento do dia...')
     const hoje = new Date()
     const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
     const dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59)
+    
+    console.log('📅 Data início:', dataInicio.toISOString())
+    console.log('📅 Data fim:', dataFim.toISOString())
+    console.log('💰 Valor para somar:', finalizacaoData.valorFinal)
 
     const faturamentoResult = await db.collection('faturamento').updateOne(
       { 
@@ -77,6 +96,8 @@ export async function POST(request: NextRequest) {
       },
       { upsert: true }
     )
+    
+    console.log('✅ Resultado da atualização do faturamento:', faturamentoResult)
 
     // 4. Salvar comissões dos profissionais
     if (finalizacaoData.detalhesComissao && finalizacaoData.detalhesComissao.length > 0) {
