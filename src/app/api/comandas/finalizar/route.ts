@@ -79,7 +79,9 @@ export async function POST(request: NextRequest) {
           dataFim: dataFim,
           valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
           desconto: finalizacaoData.desconto || 0,
-          creditAmount: finalizacaoData.creditAmount || 0
+          creditAmount: finalizacaoData.creditAmount || 0,
+          metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'dinheiro',
+          dataFinalizacao: new Date()
         }
       }
     )

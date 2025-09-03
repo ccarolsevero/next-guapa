@@ -268,6 +268,10 @@ export async function GET(request: NextRequest) {
         })
       }
     }
+
+    // Debug: verificar o que está sendo retornado
+    console.log('💳 Métodos de pagamento encontrados:', metodosPagamento)
+    console.log('💳 Estrutura dos métodos:', JSON.stringify(metodosPagamento, null, 2))
     
     // 4. Buscar pagamentos recentes das comandas
     const pagamentosRecentes = await db.collection('comandas').aggregate([
