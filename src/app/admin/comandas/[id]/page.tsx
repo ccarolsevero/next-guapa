@@ -288,12 +288,26 @@ export default function ComandaDetalhesPage() {
         }
         console.log('🆕 Novo produto:', newProduct)
         
-        setComanda((prev: any) => ({
-          ...prev,
-          produtos: [...prev.produtos, newProduct]
-        }))
+        setComanda((prev: any) => {
+          console.log('🔄 setComanda sendo executado com:', prev)
+          const newState = {
+            ...prev,
+            produtos: [...prev.produtos, newProduct]
+          }
+          console.log('🆕 Novo estado da comanda:', newState)
+          return newState
+        })
+        
+        // Log imediato após setComanda
+        console.log('📊 Estado da comanda imediatamente após setComanda:')
+        console.log('  - Comanda atual:', comanda)
+        
         // Atualizar total após adicionar produto
-        setTimeout(() => updateTotal(), 100)
+        setTimeout(() => {
+          console.log('⏰ Executando updateTotal após timeout...')
+          console.log('  - Estado da comanda antes de updateTotal:', comanda)
+          updateTotal()
+        }, 100)
         
         // Log do estado atual da comanda
         setTimeout(() => {
