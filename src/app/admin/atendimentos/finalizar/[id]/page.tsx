@@ -759,22 +759,41 @@ export default function FinalizarAtendimentoPage() {
               <p className="text-sm text-gray-600">
                 💡 Sistema atualizado: Finalização salva status, faturamento e comissões automaticamente
               </p>
-              <button
-                type="button"
-                onClick={async () => {
-                  try {
-                    const response = await fetch('/api/faturamento')
-                    const data = await response.json()
-                    console.log('💰 Faturamento atual:', data)
-                    alert(`Faturamento do dia: R$ ${data.faturamento.valorTotal.toFixed(2)}\nComandas: ${data.comandasFinalizadas}`)
-                  } catch (error) {
-                    console.error('Erro ao consultar faturamento:', error)
-                  }
-                }}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                📊 Ver Faturamento
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch('/api/faturamento')
+                      const data = await response.json()
+                      console.log('💰 Faturamento atual:', data)
+                      alert(`Faturamento do dia: R$ ${data.faturamento.valorTotal.toFixed(2)}\nComandas: ${data.comandasFinalizadas}`)
+                    } catch (error) {
+                      console.error('Erro ao consultar faturamento:', error)
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  📊 Ver Faturamento
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(`/api/debug/cliente?nome=${encodeURIComponent(comanda.clienteNome)}`)
+                      const data = await response.json()
+                      console.log('🔍 Debug cliente:', data)
+                      alert(`Debug Cliente:\nCliente encontrado: ${data.debug.clienteEncontrado ? 'SIM' : 'NÃO'}\nComandas: ${data.debug.comandasEncontradas}\nFinalizações: ${data.debug.finalizacoesEncontradas}`)
+                    } catch (error) {
+                      console.error('Erro ao debug cliente:', error)
+                    }
+                  }}
+                  className="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  🔍 Debug Cliente
+                </button>
+              </div>
             </div>
             <button
               type="submit"
