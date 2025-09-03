@@ -83,12 +83,51 @@ export async function GET(request: NextRequest) {
     
     // 1. Buscar comandas finalizadas para calcular faturamento
     console.log('💰 Buscando comandas finalizadas...')
+    
+    // Primeiro, vamos ver todas as comandas para entender a estrutura
+    const todasComandas = await db.collection('comandas').find({}).toArray()
+    console.log('📊 Total de comandas no banco:', todasComandas.length)
+    
+    // Verificar status das comandas
+    const statusComandas = await db.collection('comandas').aggregate([
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]).toArray()
+    console.log('📊 Status das comandas:', statusComandas)
+    
+    // Buscar comandas finalizadas
     const comandasFinalizadas = await db.collection('comandas').find({
-      status: 'finalizada',
-      dataFinalizacao: { $gte: dataInicio, $lte: hoje }
+      status: 'finalizada'
     }).toArray()
     
     console.log('📊 Comandas finalizadas encontradas:', comandasFinalizadas.length)
+    
+    // Se não encontrar comandas finalizadas, buscar por outros critérios
+    if (comandasFinalizadas.length === 0) {
+      console.log('🔍 Tentando buscar comandas com outros critérios...')
+      
+      // Buscar comandas com dataFinalizacao
+      const comandasComData = await db.collection('comandas').find({
+        dataFinalizacao: { $exists: true }
+      }).toArray()
+      console.log('📊 Comandas com dataFinalizacao:', comandasComData.length)
+      
+      // Buscar comandas com valorTotal
+      const comandasComValor = await db.collection('comandas').find({
+        valorTotal: { $exists: true, $gt: 0 }
+      }).toArray()
+      console.log('📊 Comandas com valorTotal:', comandasComValor.length)
+      
+      // Usar comandas com valorTotal se não encontrar finalizadas
+      if (comandasComValor.length > 0) {
+        console.log('✅ Usando comandas com valorTotal para cálculos')
+        comandasFinalizadas.push(...comandasComValor)
+      }
+    }
     
     // Calcular faturamento total das comandas
     const totalFaturamento = comandasFinalizadas.reduce((sum: number, comanda: Document) => {

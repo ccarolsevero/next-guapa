@@ -53,11 +53,12 @@ export default function FinanceiroPage() {
   const [novaDespesa, setNovaDespesa] = useState({
     valor: '',
     categoria: '',
-    observacao: '',
-    tipo: 'variavel' as 'fixa' | 'variavel'
+    observacao: ''
   })
   const [novaCategoria, setNovaCategoria] = useState('')
   const [showCategoriaModal, setShowCategoriaModal] = useState(false)
+  const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null)
+  const [showEditDespesaModal, setShowEditDespesaModal] = useState(false)
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
@@ -234,7 +235,7 @@ export default function FinanceiroPage() {
         if (response.ok) {
           const result = await response.json()
           setDespesas([result.data, ...despesas])
-          setNovaDespesa({ valor: '', categoria: '', observacao: '', tipo: 'variavel' })
+          setNovaDespesa({ valor: '', categoria: '', observacao: '' })
           setShowDespesaModal(false)
           // Recarregar dados financeiros para atualizar totais
           loadFinancialData(selectedPeriod, customStartDate, customEndDate)
@@ -458,10 +459,26 @@ export default function FinanceiroPage() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
-                      <p className="text-sm text-gray-500">
-                        {new Date(despesa.data).toLocaleDateString('pt-BR')}
-                      </p>
+                      <div className="flex items-center space-x-3">
+                        <button
+                          onClick={() => {
+                            setEditingDespesa(despesa)
+                            setShowEditDespesaModal(true)
+                          }}
+                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                          title="Editar despesa"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <div>
+                          <p className="text-lg font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
+                          <p className="text-sm text-gray-500">
+                            {new Date(despesa.data).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ))
