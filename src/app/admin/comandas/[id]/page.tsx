@@ -68,9 +68,17 @@ export default function ComandaDetalhesPage() {
   const updateTotal = () => {
     if (!comanda) return
     
+    console.log('🔄 Atualizando total da comanda...')
+    console.log('  - Serviços:', comanda.servicos)
+    console.log('  - Produtos:', comanda.produtos)
+    
     const servicesTotal = comanda.servicos.reduce((sum: number, service: any) => sum + (service.preco * service.quantidade), 0)
     const productsTotal = comanda.produtos.reduce((sum: number, product: any) => sum + (product.preco * product.quantidade), 0)
     const newTotal = servicesTotal + productsTotal
+    
+    console.log('  - Total serviços:', servicesTotal)
+    console.log('  - Total produtos:', productsTotal)
+    console.log('  - Total geral:', newTotal)
     
     setComanda(prev => ({ ...prev, valorTotal: newTotal }))
   }
@@ -280,6 +288,14 @@ export default function ComandaDetalhesPage() {
         }))
         // Atualizar total após adicionar produto
         setTimeout(() => updateTotal(), 100)
+        
+        // Log do estado atual da comanda
+        setTimeout(() => {
+          console.log('📊 Estado atual da comanda após adicionar produto:')
+          console.log('  - Total de produtos:', comanda?.produtos?.length || 0)
+          console.log('  - Produtos:', comanda?.produtos)
+          console.log('  - Valor total:', comanda?.valorTotal)
+        }, 200)
       }
       setShowAddProduct(false)
       console.log('✅ Produto adicionado com sucesso')
