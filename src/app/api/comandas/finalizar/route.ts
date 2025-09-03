@@ -151,10 +151,51 @@ export async function POST(request: NextRequest) {
     console.log('✅ Resultado da atualização do faturamento:', faturamentoResult)
 
     // 5. Salvar comissões dos profissionais
-    if (finalizacaoData.detalhesComissao && Array.isArray(finalizacaoData.detalhesComissao) && finalizacaoData.detalhesComissao.length > 0) {
-      console.log('💰 Salvando comissões:', finalizacaoData.detalhesComissao.length)
+    console.log('💰 Preparando para salvar comissões...')
+    
+    // Se detalhesComissao não estiver disponível, criar a partir da comanda
+    let detalhesComissao = finalizacaoData.detalhesComissao
+    
+    if (!detalhesComissao || !Array.isArray(detalhesComissao) || detalhesComissao.length === 0) {
+      console.log('⚠️ detalhesComissao não encontrado, criando a partir da comanda...')
       
-      for (const detalhe of finalizacaoData.detalhesComissao) {
+      detalhesComissao = []
+      
+      // Adicionar serviços da comanda
+      if (comanda.servicos && comanda.servicos.length > 0) {
+        comanda.servicos.forEach(servico => {
+          const comissao = servico.preco * servico.quantidade * 0.10
+          detalhesComissao.push({
+            tipo: 'Serviço',
+            item: servico.nome,
+            valor: servico.preco * servico.quantidade,
+            comissao: comissao,
+            vendidoPor: null // Serviços não têm vendidoPor
+          })
+        })
+      }
+      
+      // Adicionar produtos da comanda
+      if (comanda.produtos && comanda.produtos.length > 0) {
+        comanda.produtos.forEach(produto => {
+          const comissao = produto.preco * produto.quantidade * 0.15
+          detalhesComissao.push({
+            tipo: 'Produto',
+            item: produto.nome,
+            valor: produto.preco * produto.quantidade,
+            comissao: comissao,
+            vendidoPor: produto.vendidoPor || 'Não definido'
+          })
+        })
+      }
+      
+      console.log(`✅ Criados ${detalhesComissao.length} detalhes de comissão a partir da comanda`)
+    }
+    
+    if (detalhesComissao && Array.isArray(detalhesComissao) && detalhesComissao.length > 0) {
+      console.log('💰 Salvando comissões:', detalhesComissao.length)
+      
+      for (const detalhe of detalhesComissao) {
         try {
           // Determinar o profissional correto para cada item
           let profissionalId
@@ -162,6 +203,17 @@ export async function POST(request: NextRequest) {
             // Para produtos, usar o vendidoPor
             profissionalId = new ObjectId(detalhe.vendidoPor)
             console.log(`🛍️ Produto ${detalhe.item} - Comissão para vendedor: ${detalhe.vendidoPor}`)
+          } else if (detalhe.tipo === 'Produto' && typeof detalhe.vendidoPor === 'string' && detalhe.vendidoPor !== 'Não definido') {
+            // Se vendidoPor for string (nome), buscar o ID do profissional
+            const profissional = await db.collection('professionals').findOne({ name: detalhe.vendidoPor })
+            if (profissional) {
+              profissionalId = profissional._id
+              console.log(`🛍️ Produto ${detalhe.item} - Comissão para vendedor: ${detalhe.vendidoPor} (ID: ${profissionalId})`)
+            } else {
+              // Fallback para o profissional da comanda
+              profissionalId = new ObjectId(dadosFinalizacao.profissionalId)
+              console.log(`⚠️ Produto ${detalhe.item} - Vendedor não encontrado, usando profissional da comanda: ${dadosFinalizacao.profissionalId}`)
+            }
           } else {
             // Para serviços, usar o profissional da comanda
             profissionalId = new ObjectId(dadosFinalizacao.profissionalId)
@@ -175,7 +227,7 @@ export async function POST(request: NextRequest) {
             item: detalhe.item || 'Item não especificado',
             valor: detalhe.valor || 0,
             comissao: detalhe.comissao || 0,
-            vendidoPor: detalhe.vendidoPor ? new ObjectId(detalhe.vendidoPor) : null,
+            vendidoPor: detalhe.vendidoPor ? (typeof detalhe.vendidoPor === 'string' ? detalhe.vendidoPor : detalhe.vendidoPor.toString()) : null,
             data: new Date(),
             status: 'pendente'
           })
