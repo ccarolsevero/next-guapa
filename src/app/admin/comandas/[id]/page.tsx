@@ -148,8 +148,8 @@ export default function ComandaDetalhesPage() {
   // Flag para controlar se já carregamos a comanda inicial
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   
-  // Forçar re-renderização quando valorTotal mudar
-  const [forceUpdate, setForceUpdate] = useState(0)
+  // Estado separado para o valor total (força re-renderização)
+  const [valorTotalDisplay, setValorTotalDisplay] = useState(0)
   
   // Buscar dados da comanda específica
   useEffect(() => {
@@ -375,8 +375,8 @@ export default function ComandaDetalhesPage() {
           return updatedComanda
         })
         
-        // Forçar re-renderização para atualizar o resumo
-        setForceUpdate(prev => prev + 1)
+        // Atualizar o estado separado do valor total para forçar re-renderização
+        setValorTotalDisplay(calculatedTotal)
       } else {
         console.error('❌ Erro ao salvar comanda no banco:', response.status)
         const errorData = await response.json()
@@ -1177,7 +1177,7 @@ export default function ComandaDetalhesPage() {
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-medium">
                     <span className="text-gray-900">Total:</span>
-                    <span className="text-black font-bold">R$ {comanda?.valorTotal.toFixed(2)}</span>
+                    <span className="text-black font-bold">R$ {(valorTotalDisplay || comanda?.valorTotal || 0).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
