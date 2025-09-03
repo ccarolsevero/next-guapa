@@ -64,7 +64,12 @@ export default function FinanceiroPage() {
       if (!response.ok) {
         throw new Error('Erro ao carregar dados financeiros')
       }
-      const data = await response.json()
+      const result = await response.json()
+      
+      // A API retorna os dados dentro de result.data
+      const data = result.data || result
+      console.log('📊 Dados recebidos da API:', data)
+      
       setFinancialData(data)
       setError(null)
     } catch (err) {
