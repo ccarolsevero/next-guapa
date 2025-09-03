@@ -724,28 +724,7 @@ export default function FinanceiroPage() {
                         )}
           </div>
 
-          {/* Gráficos - Movidos para o final */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
-              <div className="space-y-3">
-                <div className="text-center text-gray-500 py-8">
-                  <p>Gráfico de receita mensal</p>
-                  <p className="text-sm">Dados disponíveis no período selecionado</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
-              <div className="space-y-3">
-                <div className="text-center text-gray-500 py-8">
-                  <p>Gráfico de comissões mensais</p>
-                  <p className="text-sm">Dados disponíveis no período selecionado</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </>
       )}
 
