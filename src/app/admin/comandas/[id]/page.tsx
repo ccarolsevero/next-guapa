@@ -119,29 +119,26 @@ export default function ComandaDetalhesPage() {
   // Removido useEffect que causava loop infinito
   // updateTotal() será chamado manualmente quando necessário
 
+  // Flag para controlar se já carregamos a comanda inicial
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
+  
   // Buscar dados da comanda específica
   useEffect(() => {
     const fetchComanda = async () => {
-      if (!comandaId) return
+      if (!comandaId || initialLoadComplete) return
       
       try {
         setLoading(true)
-        console.log('🔄 Buscando comanda:', comandaId)
+        console.log('🔄 Buscando comanda inicial:', comandaId)
         
         const response = await fetch(`/api/comandas/${comandaId}`)
         console.log('📡 Resposta da API de comanda:', response.status)
         
         if (response.ok) {
           const data = await response.json()
-          console.log('📊 Dados da comanda recebidos:', data)
-          
-          // Só sobrescreve se não tivermos dados locais ou se for a primeira carga
-          if (!comanda || Object.keys(comanda).length === 0) {
-            console.log('📥 Carregando comanda inicial do banco')
-            setComanda(data.comanda)
-          } else {
-            console.log('📋 Comanda já carregada localmente, mantendo estado')
-          }
+          console.log('📥 Carregando comanda inicial do banco')
+          setComanda(data.comanda)
+          setInitialLoadComplete(true)
         } else {
           console.error('❌ Erro na API de comanda:', response.status)
           const errorText = await response.text()
@@ -155,7 +152,7 @@ export default function ComandaDetalhesPage() {
     }
 
     fetchComanda()
-  }, [comandaId]) // Removido comanda da dependência para evitar loop infinito
+  }, [comandaId, initialLoadComplete])
 
   // Buscar dados do banco
   useEffect(() => {
