@@ -345,14 +345,34 @@ export default function ComandaDetalhesPage() {
     try {
       console.log('💾 Salvando comanda no banco:', comandaData.id)
       
+      // Calcular o valor total antes de salvar
+      const servicesTotal = comandaData.servicos.reduce((sum: number, service: any) => sum + (service.preco * service.quantidade), 0)
+      const productsTotal = comandaData.produtos.reduce((sum: number, product: any) => sum + (product.preco * product.quantidade), 0)
+      const calculatedTotal = servicesTotal + productsTotal
+      
+      console.log('🧮 Calculando total antes de salvar:')
+      console.log('  - Total serviços:', servicesTotal)
+      console.log('  - Total produtos:', productsTotal)
+      console.log('  - Total calculado:', calculatedTotal)
+      
+      // Atualizar o valor total na comanda
+      const comandaToSave = {
+        ...comandaData,
+        valorTotal: calculatedTotal
+      }
+      
       const response = await fetch(`/api/comandas/${comandaData.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(comandaData)
+        body: JSON.stringify(comandaToSave)
       })
       
       if (response.ok) {
         console.log('✅ Comanda salva no banco com sucesso')
+        console.log('💰 Valor total salvo:', calculatedTotal)
+        
+        // Atualizar o estado local com o valor total calculado
+        setComanda(prev => ({ ...prev, valorTotal: calculatedTotal }))
       } else {
         console.error('❌ Erro ao salvar comanda no banco:', response.status)
         const errorData = await response.json()
