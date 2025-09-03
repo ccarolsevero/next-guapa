@@ -159,9 +159,14 @@ export async function GET(request: NextRequest) {
         }
       },
       {
+        $addFields: {
+          clienteIdObjectId: { $toObjectId: '$clienteId' }
+        }
+      },
+      {
         $lookup: {
           from: 'clients',
-          localField: 'clienteId',
+          localField: 'clienteIdObjectId',
           foreignField: '_id',
           as: 'cliente'
         }
@@ -170,9 +175,14 @@ export async function GET(request: NextRequest) {
         $unwind: '$cliente'
       },
       {
+        $addFields: {
+          comandaIdObjectId: { $toObjectId: '$comandaId' }
+        }
+      },
+      {
         $lookup: {
           from: 'comandas',
-          localField: 'comandaId',
+          localField: 'comandaIdObjectId',
           foreignField: '_id',
           as: 'comanda'
         }
@@ -188,7 +198,9 @@ export async function GET(request: NextRequest) {
           amount: '$valorFinal',
           method: '$metodoPagamento',
           date: '$dataCriacao',
-          status: 'PAID'
+          status: 'PAID',
+          clienteIdObjectId: 0,
+          comandaIdObjectId: 0
         }
       },
       {

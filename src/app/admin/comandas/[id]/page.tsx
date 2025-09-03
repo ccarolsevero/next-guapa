@@ -28,7 +28,7 @@ export default function ComandaDetalhesPage() {
   const router = useRouter()
   const params = useParams()
   const comandaId = params.id
-  
+
   // Detectar se está em modo somente leitura (acessado do histórico)
   const [isReadOnly, setIsReadOnly] = useState(false)
   
@@ -289,8 +289,8 @@ export default function ComandaDetalhesPage() {
 
       const existingProduct = comanda?.produtos.find(p => p.id === product._id)
       console.log('🔍 Produto existente:', existingProduct)
-      
-      if (existingProduct) {
+    
+    if (existingProduct) {
         console.log('📝 Atualizando quantidade do produto existente')
         const updatedComanda = {
           ...comanda,
@@ -306,7 +306,7 @@ export default function ComandaDetalhesPage() {
         
         // Atualizar estado local com o valor total calculado
         setComanda(updatedComanda)
-      } else {
+    } else {
         console.log('🆕 Adicionando novo produto')
         const newProduct = { 
           id: product._id,
@@ -328,8 +328,8 @@ export default function ComandaDetalhesPage() {
         
         // Atualizar estado local com o valor total calculado
         setComanda(updatedComanda)
-      }
-      setShowAddProduct(false)
+    }
+    setShowAddProduct(false)
       console.log('✅ Produto adicionado e salvo no banco com sucesso')
     } catch (error) {
       console.error('❌ Erro ao adicionar produto:', error)
@@ -680,12 +680,12 @@ export default function ComandaDetalhesPage() {
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </button>
-                  <Link
+              <Link
                     href={`/admin/comandas/${comanda?.id}/finalizar`}
-                    className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
-                  >
-                    Finalizar
-                  </Link>
+                className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+              >
+                Finalizar
+              </Link>
                 </>
               )}
               {isReadOnly && (
@@ -740,13 +740,13 @@ export default function ComandaDetalhesPage() {
                   Serviços
                 </h2>
                 {!isReadOnly && (
-                  <button
-                    onClick={() => setShowAddService(!showAddService)}
-                    className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
-                  >
-                    <Plus className="w-4 h-4 inline mr-1" />
-                    Adicionar
-                  </button>
+                <button
+                  onClick={() => setShowAddService(!showAddService)}
+                  className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
+                >
+                  <Plus className="w-4 h-4 inline mr-1" />
+                  Adicionar
+                </button>
                 )}
               </div>
 
@@ -762,14 +762,14 @@ export default function ComandaDetalhesPage() {
                       </div>
                     ) : (
                       availableServices.map(service => (
-                        <button
+                      <button
                           key={service._id}
-                          onClick={() => addService(service)}
-                          className="text-left p-3 border border-gray-200 hover:border-black transition-colors"
-                        >
+                        onClick={() => addService(service)}
+                        className="text-left p-3 border border-gray-200 hover:border-black transition-colors"
+                      >
                           <div className="font-medium text-gray-900">{service.name}</div>
                           <div className="text-sm text-gray-700 font-medium">R$ {service.price.toFixed(2)}</div>
-                        </button>
+                      </button>
                       ))
                     )}
                   </div>
@@ -814,13 +814,13 @@ export default function ComandaDetalhesPage() {
                   Produtos
                 </h2>
                 {!isReadOnly && (
-                  <button
-                    onClick={() => setShowAddProduct(!showAddProduct)}
-                    className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
-                  >
-                    <Plus className="w-4 h-4 inline mr-1" />
-                    Adicionar
-                  </button>
+                <button
+                  onClick={() => setShowAddProduct(!showAddProduct)}
+                  className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
+                >
+                  <Plus className="w-4 h-4 inline mr-1" />
+                  Adicionar
+                </button>
                 )}
               </div>
 
@@ -838,7 +838,7 @@ export default function ComandaDetalhesPage() {
                       </div>
                     ) : (
                       availableProducts.map(product => (
-                        <button
+                      <button
                           key={product._id}
                           onClick={() => setSelectedProduct(product)}
                           className={`text-left p-3 border transition-colors ${
@@ -850,7 +850,7 @@ export default function ComandaDetalhesPage() {
                           <div className="font-medium text-gray-900">{product.name}</div>
                           <div className="text-sm text-gray-700 font-medium">R$ {product.price.toFixed(2)}</div>
                           <div className="text-xs text-gray-500">Estoque: {product.stock}</div>
-                        </button>
+                      </button>
                       ))
                     )}
                   </div>
