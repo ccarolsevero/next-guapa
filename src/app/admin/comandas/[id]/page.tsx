@@ -366,7 +366,11 @@ export default function ComandaDetalhesPage() {
         console.log('💰 Valor total salvo:', calculatedTotal)
         
         // Atualizar o estado local com o valor total calculado
-        setComanda(prev => ({ ...prev, valorTotal: calculatedTotal }))
+        setComanda(prev => {
+          const updatedComanda = { ...prev, valorTotal: calculatedTotal }
+          console.log('🔄 Estado local atualizado com novo valor total:', updatedComanda.valorTotal)
+          return updatedComanda
+        })
       } else {
         console.error('❌ Erro ao salvar comanda no banco:', response.status)
         const errorData = await response.json()
