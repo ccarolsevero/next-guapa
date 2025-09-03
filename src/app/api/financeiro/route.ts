@@ -246,13 +246,21 @@ export async function GET(request: NextRequest) {
       status: 'PAID'
     }))
     
+    // Formatar comissões por profissional
+    const commissionsByProfessional = comissoesPorProfissional.map((item: Document) => ({
+      profissional: item.nome || 'Profissional não encontrado',
+      totalComissao: item.totalComissao || 0,
+      quantidadeItens: item.quantidadeItens || 0,
+      detalhes: item.detalhes || []
+    }))
+    
     console.log('✅ Dados financeiros carregados com sucesso')
     console.log('💰 Total faturamento:', totalFaturamento)
     console.log('💸 Total comissões:', totalComissoes)
     console.log('📊 Total comandas:', totalComandas)
     console.log('💸 Total despesas:', totalDespesas)
     console.log('💳 Métodos de pagamento:', paymentMethods.length)
-    console.log('👥 Comissões por profissional:', comissoesPorProfissional.length)
+    console.log('👥 Comissões por profissional:', commissionsByProfessional.length)
     console.log('📋 Pagamentos recentes:', recentPayments.length)
     
     return NextResponse.json({
