@@ -21,11 +21,11 @@ export async function GET(request: NextRequest) {
     console.log('  - Cliente ID:', clientId || 'todos')
     console.log('  - Profissional ID:', professionalId || 'todos')
     
-    const query: Record<string, string> = {}
+    const query: Record<string, any> = {}
     
     if (status) query.status = status
-    if (clientId) query.clientId = clientId
-    if (professionalId) query.professionalId = professionalId
+    if (clientId) query.clientId = new (await import('mongodb')).ObjectId(clientId)
+    if (professionalId) query.professionalId = new (await import('mongodb')).ObjectId(professionalId)
 
     console.log('🔍 Query final:', JSON.stringify(query, null, 2))
     
