@@ -64,6 +64,52 @@ export default function FinanceiroPage() {
     return methods[method] || method
   }
 
+  const getPaymentMethods = () => {
+    const methods = [
+      {
+        id: 'cash',
+        name: 'Dinheiro',
+        icon: <Banknote className="w-5 h-5 text-green-600 mr-2" />,
+        count: 0,
+        amount: 0
+      },
+      {
+        id: 'debit',
+        name: 'Cartão de Débito',
+        icon: <CreditCard className="w-5 h-5 text-green-600 mr-2" />,
+        count: 0,
+        amount: 0
+      },
+      {
+        id: 'credit',
+        name: 'Cartão de Crédito',
+        icon: <CreditCard className="w-5 h-5 text-blue-600 mr-2" />,
+        count: 0,
+        amount: 0
+      },
+      {
+        id: 'pix',
+        name: 'PIX',
+        icon: <DollarSign className="w-5 h-5 text-green-600 mr-2" />,
+        count: 0,
+        amount: 0
+      }
+    ]
+
+    // Associar dados da API aos métodos
+    if (financialData?.paymentMethods) {
+      financialData.paymentMethods.forEach((apiMethod: { _id: string; count: number; amount: number }) => {
+        const method = methods.find(m => m.id === apiMethod._id)
+        if (method) {
+          method.count = apiMethod.count || 0
+          method.amount = apiMethod.amount || 0
+        }
+      })
+    }
+
+    return methods
+  }
+
   const getTotalRevenue = () => financialData?.totals?.revenue || 0
   const getTotalExpenses = () => financialData?.totals?.expenses || 0
   const getTotalProfit = () => financialData?.totals?.profit || 0
@@ -246,39 +292,29 @@ export default function FinanceiroPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Métodos de Pagamento</h3>
                 <p className="text-sm text-gray-700">Distribuição por forma de pagamento</p>
-        </div>
-      </div>
+              </div>
+            </div>
 
-            {financialData?.paymentMethods && financialData.paymentMethods.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {financialData.paymentMethods.map((method, index) => (
-                  <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                    <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                        {method._id === 'PIX' && <DollarSign className="w-5 h-5 text-green-600 mr-2" />}
-                        {method._id === 'Cartão de Crédito' && <CreditCard className="w-5 h-5 text-blue-600 mr-2" />}
-                        {method._id === 'Cartão de Débito' && <CreditCard className="w-5 h-5 text-green-600 mr-2" />}
-                        {method._id === 'Dinheiro' && <Banknote className="w-5 h-5 text-green-600 mr-2" />}
-                    <div>
-                          <p className="font-medium text-gray-900">{formatPaymentMethod(method._id) || 'Não especificado'}</p>
-                          <p className="text-sm text-gray-600">{method.count} transações</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-semibold text-[#D15556]">
-                          R$ {method.amount.toFixed(2)}
-                        </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {getPaymentMethods().map((method) => (
+                <div key={method.id} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      {method.icon}
+                      <div>
+                        <p className="font-medium text-gray-900">{method.name}</p>
+                        <p className="text-sm text-gray-600">{method.count} transações</p>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-[#D15556]">
+                        R$ {method.amount.toFixed(2)}
+                      </p>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600">Nenhum método de pagamento registrado</p>
-              </div>
-            )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Pagamentos Recentes */}
