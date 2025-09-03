@@ -520,7 +520,7 @@ export default function FinalizarAtendimentoPage() {
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                  <input
+                <input
                     type="text"
                     name="creditAmount"
                     value={finalizacao.creditAmount > 0 ? finalizacao.creditAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''}
@@ -547,7 +547,7 @@ export default function FinalizarAtendimentoPage() {
                   </p>
                 )}
               </div>
-              
+
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Desconto
@@ -699,10 +699,10 @@ export default function FinalizarAtendimentoPage() {
                 )}
               </div>
 
-              <div>
+                <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Final (R$)
-                </label>
+                  </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
                   <input

@@ -198,9 +198,7 @@ export async function GET(request: NextRequest) {
           amount: '$valorFinal',
           method: '$metodoPagamento',
           date: '$dataCriacao',
-          status: 'PAID',
-          clienteIdObjectId: 0,
-          comandaIdObjectId: 0
+          status: 'PAID'
         }
       },
       {

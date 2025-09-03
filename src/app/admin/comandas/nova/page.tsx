@@ -235,16 +235,16 @@ export default function NovaComandaPage() {
                 {!selectedClient ? (
                   <div>
                     <div className="relative mb-4">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                      <input
-                        type="text"
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
                         placeholder="Buscar cliente por nome, telefone ou email..."
                         value={clientSearchTerm}
                         onChange={(e) => setClientSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
-                        style={{ color: '#000000' }}
-                      />
-                    </div>
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                style={{ color: '#000000' }}
+              />
+            </div>
                     
                     <div className="max-h-60 overflow-y-auto space-y-2">
                       {clients.length === 0 ? (
@@ -258,15 +258,15 @@ export default function NovaComandaPage() {
                           <Search className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                           <p>Nenhum cliente encontrado com &quot;{clientSearchTerm}&quot;</p>
                           <p className="text-sm">Tente outro termo de busca</p>
-                        </div>
+          </div>
                       ) : (
                         filteredClients.map((client) => (
                           <div 
                             key={client._id}
                             className="border border-gray-200 p-4 hover:border-black transition-colors cursor-pointer"
                             onClick={() => setSelectedClient(client)}
-                          >
-                            <div className="flex items-center justify-between">
+              >
+                <div className="flex items-center justify-between">
                               <div>
                                 <h4 className="font-medium text-gray-900">{client.name}</h4>
                                 <div className="text-sm text-gray-600 space-y-1">
@@ -349,12 +349,12 @@ export default function NovaComandaPage() {
                       <div>
                         <h4 className="font-medium text-gray-900">{selectedProfessional.name}</h4>
                       </div>
-                      <button
+                  <button
                         onClick={() => setSelectedProfessional(null)}
                         className="text-gray-500 hover:text-gray-700"
                       >
                         <X className="w-5 h-5" />
-                      </button>
+                  </button>
                     </div>
                   </div>
                 )}
@@ -407,10 +407,10 @@ export default function NovaComandaPage() {
                                   </div>
                                 </div>
                                 <Plus className="w-5 h-5 text-gray-400" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+                </div>
+              </div>
+            ))}
+          </div>
                       </div>
                     )}
                   </div>
@@ -446,7 +446,7 @@ export default function NovaComandaPage() {
                   <Play className="w-5 h-5 mr-2" />
                   {loading ? 'Criando Comanda...' : 'Criar Comanda'}
                 </button>
-              </div>
+            </div>
             </>
           )}
         </div>

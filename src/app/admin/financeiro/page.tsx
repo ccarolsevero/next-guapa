@@ -113,7 +113,7 @@ export default function FinanceiroPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Financeiro</h1>
         <p className="text-gray-600">Acompanhe o desempenho financeiro do seu negócio</p>
-      </div>
+        </div>
 
       {/* Seletor de Período */}
       <div className="mb-8">
@@ -135,20 +135,20 @@ export default function FinanceiroPage() {
 
       {financialData && !loading && (
         <>
-          {/* Resumo Financeiro */}
+      {/* Resumo Financeiro */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">Faturamento Total</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(getTotalRevenue())}
-                  </p>
-                </div>
+                {formatCurrency(getTotalRevenue())}
+              </p>
+            </div>
                 <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-green-600" />
-                </div>
-              </div>
+          </div>
+        </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -156,13 +156,13 @@ export default function FinanceiroPage() {
                 <div>
                   <p className="text-sm text-gray-600">Total de Comissões</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(getTotalExpenses())}
-                  </p>
-                </div>
+                {formatCurrency(getTotalExpenses())}
+              </p>
+            </div>
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
                   <TrendingDown className="w-6 h-6 text-red-600" />
-                </div>
-              </div>
+          </div>
+        </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -170,13 +170,13 @@ export default function FinanceiroPage() {
                 <div>
                   <p className="text-sm text-gray-600">Lucro Líquido</p>
                   <p className="text-2xl font-bold text-gray-900">
-                    {formatCurrency(getTotalProfit())}
-                  </p>
-                </div>
+                {formatCurrency(getTotalProfit())}
+              </p>
+            </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                   <DollarSign className="w-6 h-6 text-blue-600" />
-                </div>
-              </div>
+          </div>
+        </div>
             </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
@@ -209,8 +209,8 @@ export default function FinanceiroPage() {
                 ) : (
                   <p className="text-gray-500 text-center py-4">Nenhum dado de receita disponível</p>
                 )}
-              </div>
-            </div>
+        </div>
+      </div>
 
             <div className="bg-white rounded-lg shadow-sm p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissões Mensais</h3>
@@ -220,7 +220,7 @@ export default function FinanceiroPage() {
                     <div key={index} className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">{item.month}</span>
                       <span className="font-medium text-gray-900">{formatCurrency(item.amount)}</span>
-                    </div>
+                </div>
                   ))
                 ) : (
                   <p className="text-gray-500 text-center py-4">Nenhum dado de comissão disponível</p>
@@ -235,20 +235,20 @@ export default function FinanceiroPage() {
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Métodos de Pagamento</h3>
                 <p className="text-sm text-gray-700">Distribuição por forma de pagamento</p>
-              </div>
-            </div>
-            
+        </div>
+      </div>
+
             {financialData?.paymentMethods && financialData.paymentMethods.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {financialData.paymentMethods.map((method, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-100">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center">
+                  <div className="flex items-center">
                         {method._id === 'PIX' && <DollarSign className="w-5 h-5 text-green-600 mr-2" />}
                         {method._id === 'Cartão de Crédito' && <CreditCard className="w-5 h-5 text-blue-600 mr-2" />}
                         {method._id === 'Cartão de Débito' && <CreditCard className="w-5 h-5 text-green-600 mr-2" />}
                         {method._id === 'Dinheiro' && <Banknote className="w-5 h-5 text-green-600 mr-2" />}
-                        <div>
+                    <div>
                           <p className="font-medium text-gray-900">{method._id || 'Não especificado'}</p>
                           <p className="text-sm text-gray-600">{method.count} transações</p>
                         </div>
@@ -307,7 +307,7 @@ export default function FinanceiroPage() {
               <div className="text-center py-8">
                 <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-500">Nenhum pagamento encontrado para este período</p>
-              </div>
+                </div>
             )}
           </div>
 
@@ -319,11 +319,11 @@ export default function FinanceiroPage() {
                   Comissionamento por Profissional
                 </h3>
                 <p className="text-sm text-gray-700">Vendas e comissões do mês atual</p>
-              </div>
-            </div>
-            
+          </div>
+        </div>
+
             {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
-              <div className="space-y-4">
+          <div className="space-y-4">
                 {financialData.comissoesPorProfissional.map((comissao, index) => (
                   <div key={index} className="bg-gray-50 rounded-lg border border-gray-100">
                     {/* Header do Profissional */}
@@ -335,12 +335,12 @@ export default function FinanceiroPage() {
                         <div className="flex items-center">
                           <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
                             <Users className="w-6 h-6 text-[#D15556]" />
-                          </div>
+                  </div>
                           <div>
                             <h4 className="font-medium text-gray-900">{comissao.nome}</h4>
                             <p className="text-sm text-gray-700">Profissional</p>
-                          </div>
-                        </div>
+                  </div>
+                </div>
                         <div className="flex items-center space-x-6">
                           <div className="text-right">
                             <p className="text-sm text-gray-700">Comissão Total</p>
@@ -353,9 +353,9 @@ export default function FinanceiroPage() {
                           ) : (
                             <ChevronDown className="w-5 h-5 text-gray-500" />
                           )}
-                        </div>
-                      </div>
-                    </div>
+          </div>
+        </div>
+      </div>
 
                     {/* Detalhes das Comissões - Expandidos/Colapsados */}
                     {expandedProfessional === comissao._id.toString() && (
@@ -396,9 +396,9 @@ export default function FinanceiroPage() {
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
                               </span>
-                            </div>
-                          </div>
-
+          </div>
+        </div>
+        
                           {/* Produtos */}
                           <div className="bg-white p-4 rounded-lg border border-gray-100">
                             <div className="flex items-center justify-between mb-4">
@@ -433,7 +433,7 @@ export default function FinanceiroPage() {
                                   .filter(d => d.tipo === 'Produto' && d.profissionalId === comissao._id.toString())
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
-                              </span>
+                        </span>
                             </div>
                           </div>
                         </div>
@@ -472,9 +472,9 @@ export default function FinanceiroPage() {
               <div className="text-center py-8">
                 <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-600">Nenhuma comissão registrada para este período</p>
-              </div>
+        </div>
             )}
-          </div>
+      </div>
         </>
       )}
     </div>
