@@ -263,16 +263,23 @@ export default function ComandaDetalhesPage() {
       
       if (existingProduct) {
         console.log('📝 Atualizando quantidade do produto existente')
-        setComanda((prev: any) => ({
-          ...prev,
-          produtos: prev.produtos.map((p: any) => 
+        const updatedComanda = {
+          ...comanda,
+          produtos: comanda.produtos.map((p: any) => 
             p.id === product._id 
               ? { ...p, quantidade: p.quantidade + 1 }
               : p
           )
-        }))
-        // Atualizar total após adicionar produto
-        setTimeout(() => updateTotal(), 100)
+        }
+        
+        // Atualizar estado local
+        setComanda(updatedComanda)
+        
+        // Salvar no banco de dados
+        await saveComandaToDatabase(updatedComanda)
+        
+        // Atualizar total
+        updateTotal()
       } else {
         console.log('🆕 Adicionando novo produto')
         const newProduct = { 
@@ -285,40 +292,48 @@ export default function ComandaDetalhesPage() {
         }
         console.log('🆕 Novo produto:', newProduct)
         
-        setComanda((prev: any) => {
-          console.log('🔄 setComanda sendo executado com:', prev)
-          const newState = {
-            ...prev,
-            produtos: [...prev.produtos, newProduct]
-          }
-          console.log('🆕 Novo estado da comanda:', newState)
-          return newState
-        })
+        const updatedComanda = {
+          ...comanda,
+          produtos: [...comanda.produtos, newProduct]
+        }
         
-        // Log imediato após setComanda
-        console.log('📊 Estado da comanda imediatamente após setComanda:')
-        console.log('  - Comanda atual:', comanda)
+        // Atualizar estado local
+        setComanda(updatedComanda)
         
-        // Atualizar total após adicionar produto
-        setTimeout(() => {
-          console.log('⏰ Executando updateTotal após timeout...')
-          console.log('  - Estado da comanda antes de updateTotal:', comanda)
-          updateTotal()
-        }, 100)
+        // Salvar no banco de dados
+        await saveComandaToDatabase(updatedComanda)
         
-        // Log do estado atual da comanda
-        setTimeout(() => {
-          console.log('📊 Estado atual da comanda após adicionar produto:')
-          console.log('  - Total de produtos:', comanda?.produtos?.length || 0)
-          console.log('  - Produtos:', comanda?.produtos)
-          console.log('  - Valor total:', comanda?.valorTotal)
-        }, 200)
+        // Atualizar total
+        updateTotal()
       }
       setShowAddProduct(false)
-      console.log('✅ Produto adicionado com sucesso')
+      console.log('✅ Produto adicionado e salvo no banco com sucesso')
     } catch (error) {
-      console.error('❌ Erro ao verificar estoque:', error)
-      alert('Erro ao verificar estoque do produto')
+      console.error('❌ Erro ao adicionar produto:', error)
+      alert('Erro ao adicionar produto')
+    }
+  }
+
+  // Função para salvar comanda no banco de dados
+  const saveComandaToDatabase = async (comandaData: any) => {
+    try {
+      console.log('💾 Salvando comanda no banco:', comandaData.id)
+      
+      const response = await fetch(`/api/comandas/${comandaData.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(comandaData)
+      })
+      
+      if (response.ok) {
+        console.log('✅ Comanda salva no banco com sucesso')
+      } else {
+        console.error('❌ Erro ao salvar comanda no banco:', response.status)
+        const errorData = await response.json()
+        console.error('❌ Detalhes do erro:', errorData)
+      }
+    } catch (error) {
+      console.error('❌ Erro ao salvar comanda no banco:', error)
     }
   }
 
