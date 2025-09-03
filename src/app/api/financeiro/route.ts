@@ -23,7 +23,7 @@ interface Produto {
 interface Comanda {
   _id: string
   valorTotal: number
-  dataFinalizacao: Date
+  dataFim: Date
   createdAt: Date
   servicos: Servico[]
   produtos: Produto[]
@@ -110,11 +110,11 @@ export async function GET(request: NextRequest) {
     if (comandasFinalizadas.length === 0) {
       console.log('🔍 Tentando buscar comandas com outros critérios...')
       
-      // Buscar comandas com dataFinalizacao
-      const comandasComData = await db.collection('comandas').find({
-        dataFinalizacao: { $exists: true }
-      }).toArray()
-      console.log('📊 Comandas com dataFinalizacao:', comandasComData.length)
+          // Buscar comandas com dataFim
+    const comandasComData = await db.collection('comandas').find({
+      dataFim: { $exists: true }
+    }).toArray()
+    console.log('📊 Comandas com dataFim:', comandasComData.length)
       
       // Buscar comandas com valorTotal
       const comandasComValor = await db.collection('comandas').find({
@@ -168,8 +168,8 @@ export async function GET(request: NextRequest) {
         comanda.servicos.forEach((servico: Document) => {
           const servicoData = servico as any
           const comandaData = comanda as any
-          const profissionalId = comandaData.professionalId?._id || comandaData._id
-          const profissionalNome = comandaData.professionalId?.name || 'Profissional não definido'
+          const profissionalId = comandaData.profissionalId || comandaData._id
+          const profissionalNome = comandaData.profissionalNome || 'Profissional não definido'
           const comissao = (servicoData.preco || 0) * 0.10
           
           if (!comissoesPorProf.has(profissionalId)) {
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
             item: servicoData.nome || 'Serviço',
             valor: servicoData.preco || 0,
             comissao: comissao,
-            data: comandaData.dataFinalizacao || comandaData.createdAt
+            data: comandaData.dataFim || comandaData.createdAt
           })
         })
       }
@@ -220,7 +220,7 @@ export async function GET(request: NextRequest) {
             item: produtoData.nome || 'Produto',
             valor: produtoData.preco || 0,
             comissao: comissao,
-            data: comandaData.dataFinalizacao || comandaData.createdAt
+            data: comandaData.dataFim || comandaData.createdAt
           })
         })
       }
@@ -243,7 +243,7 @@ export async function GET(request: NextRequest) {
         $match: {
           status: 'finalizada',
           $or: [
-            { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
+            { dataFim: { $gte: dataInicio, $lte: hoje } },
             { updatedAt: { $gte: dataInicio, $lte: hoje } }
           ]
         }
@@ -268,7 +268,7 @@ export async function GET(request: NextRequest) {
       const comandasPeriodo = await db.collection('comandas').find({
         status: 'finalizada',
         $or: [
-          { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
+          { dataFim: { $gte: dataInicio, $lte: hoje } },
           { updatedAt: { $gte: dataInicio, $lte: hoje } }
         ]
       }).toArray()
@@ -312,10 +312,10 @@ export async function GET(request: NextRequest) {
       {
         $match: {
           status: 'finalizada',
-          $or: [
-            { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
-            { updatedAt: { $gte: dataInicio, $lte: hoje } }
-          ]
+                  $or: [
+          { dataFim: { $gte: dataInicio, $lte: hoje } },
+          { updatedAt: { $gte: dataInicio, $lte: hoje } }
+        ]
         }
       },
       {
@@ -336,7 +336,7 @@ export async function GET(request: NextRequest) {
           service: { $arrayElemAt: ['$servicos.nome', 0] },
           amount: '$valorTotal',
           method: '$metodoPagamento',
-          date: '$dataFinalizacao',
+          date: '$dataFim',
           status: 'PAID'
         }
       },
@@ -364,7 +364,7 @@ export async function GET(request: NextRequest) {
     const revenue = comandasFinalizadas.map((comanda: Document) => {
       const comandaData = comanda as Comanda
       return {
-        month: new Date(comandaData.dataFinalizacao || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
+        month: new Date(comandaData.dataFim || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
         amount: comandaData.valorTotal || 0
       }
     })
@@ -372,7 +372,7 @@ export async function GET(request: NextRequest) {
     const expenses = comandasFinalizadas.map((comanda: Document) => {
       const comandaData = comanda as Comanda
       return {
-        month: new Date(comandaData.dataFinalizacao || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
+        month: new Date(comandaData.dataFim || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
         amount: comandaData.valorTotal || 0 // Assuming valorTotal is the total amount for expenses
       }
     })
