@@ -98,28 +98,18 @@ export default function FinanceiroPage() {
 
     // Associar dados da API aos métodos
     if (financialData?.paymentMethods) {
-      console.log('🔍 paymentMethods da API:', financialData.paymentMethods)
       financialData.paymentMethods.forEach((apiMethod: unknown) => {
         const methodData = apiMethod as Record<string, unknown>
-        console.log('🔍 Processando método completo:', JSON.stringify(apiMethod, null, 2))
-        console.log('🔍 Chaves disponíveis:', Object.keys(methodData))
         
         // Tentar diferentes campos possíveis para o ID
         const methodId = methodData._id || methodData.id || methodData.method || methodData.paymentMethod
         const methodCount = methodData.count || methodData.total || methodData.transactions || 0
         const methodAmount = methodData.amount || methodData.value || methodData.total || 0
         
-        console.log('🔍 ID encontrado:', methodId)
-        console.log('🔍 Count encontrado:', methodCount)
-        console.log('🔍 Amount encontrado:', methodAmount)
-        
         const foundMethod = methods.find(m => m.id === methodId)
         if (foundMethod) {
           foundMethod.count = methodCount as number
           foundMethod.amount = methodAmount as number
-          console.log('✅ Método encontrado e atualizado:', foundMethod)
-        } else {
-          console.log('❌ Método não encontrado para ID:', methodId)
         }
       })
     }
