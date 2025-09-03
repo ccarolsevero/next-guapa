@@ -225,11 +225,16 @@ export default function ComandaDetalhesPage() {
 
   const addProduct = async (product: any, soldByProfessionalId?: string, soldByProfessionalName?: string) => {
     try {
+      console.log('🔄 Adicionando produto:', product)
+      console.log('👩‍💼 Vendedor ID:', soldByProfessionalId)
+      console.log('👩‍💼 Vendedor Nome:', soldByProfessionalName)
+      
       // Verificar estoque antes de adicionar
       const response = await fetch(`/api/products/update-stock?productIds=${product._id}`)
       if (response.ok) {
         const stockData = await response.json()
         const productStock = stockData.products[0]
+        console.log('📦 Dados do estoque:', stockData)
         
         if (!productStock || productStock.stock <= 0) {
           alert(`Produto ${product.name} está sem estoque!`)
@@ -243,8 +248,10 @@ export default function ComandaDetalhesPage() {
       }
 
       const existingProduct = comanda?.produtos.find(p => p.id === product._id)
+      console.log('🔍 Produto existente:', existingProduct)
       
       if (existingProduct) {
+        console.log('📝 Atualizando quantidade do produto existente')
         setComanda(prev => ({
           ...prev,
           produtos: prev.produtos.map(p => 
@@ -256,23 +263,28 @@ export default function ComandaDetalhesPage() {
         // Atualizar total após adicionar produto
         setTimeout(() => updateTotal(), 100)
       } else {
+        console.log('🆕 Adicionando novo produto')
+        const newProduct = { 
+          id: product._id,
+          nome: product.name, 
+          preco: product.price, 
+          quantidade: 1, 
+          vendidoPor: soldByProfessionalName || comanda?.profissionalVendedora,
+          vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
+        }
+        console.log('🆕 Novo produto:', newProduct)
+        
         setComanda(prev => ({
           ...prev,
-          produtos: [...prev.produtos, { 
-            id: product._id,
-            nome: product.name, 
-            preco: product.price, 
-            quantidade: 1, 
-            vendidoPor: soldByProfessionalName || comanda?.profissionalVendedora,
-            vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
-          }]
+          produtos: [...prev.produtos, newProduct]
         }))
         // Atualizar total após adicionar produto
         setTimeout(() => updateTotal(), 100)
       }
       setShowAddProduct(false)
+      console.log('✅ Produto adicionado com sucesso')
     } catch (error) {
-      console.error('Erro ao verificar estoque:', error)
+      console.error('❌ Erro ao verificar estoque:', error)
       alert('Erro ao verificar estoque do produto')
     }
   }
@@ -380,7 +392,7 @@ export default function ComandaDetalhesPage() {
     setEditingObservations(false)
   }
 
-  const updateProductVendor = async (productId: number, newVendorId: string) => {
+  const updateProductVendor = async (productId: number, newVendorId: string, newVendorName: string) => {
     try {
       const professional = availableProfessionals.find(p => p._id === newVendorId)
       if (professional) {
