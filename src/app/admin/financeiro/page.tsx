@@ -15,7 +15,8 @@ import {
   BarChart3,
   Users,
   Package,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react'
 
 interface FinancialData {
@@ -396,143 +397,132 @@ export default function FinanceiroPage() {
             </div>
           </div>
 
-          {/* Comissões por Profissional */}
-          <div className="bg-white rounded-lg shadow p-6 mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Comissionamento por Profissional</h3>
-            {comissoesPorProfissional.length > 0 ? (
+          {/* Comissionamento por Profissional */}
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Comissionamento por Profissional
+                </h3>
+                <p className="text-sm text-gray-500">Vendas e comissões do mês atual</p>
+              </div>
+            </div>
+            
+            {financialData?.comissoesPorProfissional && financialData.comissoesPorProfissional.length > 0 ? (
               <div className="space-y-4">
-                {comissoesPorProfissional.map((profissional, index) => (
-                  <div key={profissional._id} className="p-4 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center">
-                        <Users className="w-5 h-5 text-purple-600 mr-3" />
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{profissional.nome}</h4>
-                          <p className="text-sm text-gray-600">{profissional.quantidadeItens} itens vendidos</p>
+                {financialData.comissoesPorProfissional.map((comissao, index) => (
+                  <div key={index} className="bg-gray-50 rounded-lg border border-gray-100">
+                    {/* Header do Profissional */}
+                    <div className="p-4 cursor-pointer hover:bg-gray-100 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center">
+                          <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
+                            <Users className="w-6 h-6 text-[#D15556]" />
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-gray-900">{comissao.nome}</h4>
+                            <p className="text-sm text-gray-600">Profissional</p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-purple-600">
-                          {formatCurrency(profissional.totalComissao)}
+                        <div className="flex items-center space-x-6">
+                          <div className="text-right">
+                            <p className="text-sm text-gray-600">Comissão Total</p>
+                            <p className="text-lg font-medium text-[#D15556]">
+                              R$ {comissao.totalComissao.toFixed(2)}
+                            </p>
+                          </div>
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
                         </div>
-                        <div className="text-sm text-gray-600">Total de comissões</div>
                       </div>
                     </div>
-                    
-                    {/* Detalhes das comissões */}
-                    <div className="mt-3 space-y-2">
-                      {profissional.detalhes.slice(0, 3).map((detalhe, detIndex) => (
-                        <div key={detIndex} className="flex justify-between text-sm bg-white p-2 rounded border">
-                          <span className="text-gray-700">
-                            {detalhe.tipo === 'servico' ? '🪒' : '🧴'} {detalhe.item}
+
+                    {/* Detalhes das Comissões */}
+                    <div className="border-t border-gray-100 p-4 bg-white">
+                      <div className="space-y-3">
+                        {comissao.detalhes.map((detalhe, detIndex) => (
+                          <div key={detIndex} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-600">
+                                {detalhe.tipo === 'Serviço' ? '🪒' : '🧴'} {detalhe.item}
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-sm text-gray-600">
+                                R$ {detalhe.valor.toFixed(2)}
+                              </span>
+                              <span className="ml-2 text-sm font-medium text-[#D15556]">
+                                R$ {detalhe.comissao.toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {/* Resumo */}
+                      <div className="mt-4 pt-3 border-t border-gray-200">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">
+                            Total de itens: {comissao.quantidadeItens}
                           </span>
-                          <span className="text-gray-600">
-                            {formatCurrency(detalhe.comissao)} ({formatCurrency(detalhe.valor)})
+                          <span className="text-lg font-semibold text-[#D15556]">
+                            R$ {comissao.totalComissao.toFixed(2)}
                           </span>
                         </div>
-                      ))}
-                      {profissional.detalhes.length > 3 && (
-                        <div className="text-center text-sm text-gray-500 py-2">
-                          +{profissional.detalhes.length - 3} itens adicionais
-                        </div>
-                      )}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>Nenhuma comissão registrada para este período</p>
+              <div className="text-center py-8">
+                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Nenhuma comissão registrada para este período</p>
               </div>
             )}
           </div>
 
           {/* Pagamentos Recentes */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
                 <h3 className="text-lg font-semibold text-gray-900">Pagamentos Recentes</h3>
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  style={{ color: '#000000' }}
-                >
-                  {statusOptions.map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
+                <p className="text-sm text-gray-500">Últimas transações realizadas</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select className="text-sm border border-gray-300 rounded-md px-3 py-1 bg-white">
+                  <option>Todos</option>
+                  <option>Hoje</option>
+                  <option>Esta semana</option>
+                  <option>Este mês</option>
                 </select>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
               </div>
             </div>
             
-            {filteredPayments.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cliente
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Serviço
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Método
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredPayments.map((payment) => {
-                      const IconComponent = getPaymentMethodIcon(payment.method)
-                      return (
-                        <tr key={payment.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {payment.clientName}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {payment.service}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                            {formatCurrency(payment.amount)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <IconComponent className="w-4 h-4 text-gray-600 mr-2" />
-                              <span className="text-sm text-gray-900">
-                                {getPaymentMethodLabel(payment.method)}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {new Date(payment.date).toLocaleDateString('pt-BR')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(payment.status)}`}>
-                              {getStatusLabel(payment.status)}
-                            </span>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+            {financialData?.recentPayments && financialData.recentPayments.length > 0 ? (
+              <div className="space-y-3">
+                {financialData.recentPayments.map((payment, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Package className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-gray-900">{payment.clientName}</p>
+                        <p className="text-sm text-gray-500">{payment.service}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-gray-900">{formatCurrency(payment.amount)}</p>
+                      <p className="text-sm text-gray-500">{payment.method}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <CreditCard className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                <p>Nenhum pagamento encontrado para este período</p>
+              <div className="text-center py-8">
+                <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                <p className="text-gray-500">Nenhum pagamento encontrado para este período</p>
               </div>
             )}
           </div>
@@ -541,3 +531,4 @@ export default function FinanceiroPage() {
     </div>
   )
 }
+

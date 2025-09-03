@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
       {
         $project: {
           _id: 1,
-          clientName: '$cliente.nome',
+          clientName: '$cliente.name',
           service: { $arrayElemAt: ['$comanda.servicos.nome', 0] },
           amount: '$valorFinal',
           method: '$metodoPagamento',
