@@ -234,6 +234,10 @@ export default function FinalizarAtendimentoPage() {
       console.log('✅ Dados da finalização:', finalizacaoData)
       
       // Chamar API para finalizar comanda
+      console.log('🚀 Enviando dados para API de finalização...')
+      console.log('📦 Comanda ID:', comanda._id)
+      console.log('💰 Dados enviados:', finalizacaoData)
+      
       const response = await fetch('/api/comandas/finalizar', {
         method: 'POST',
         headers: {
@@ -245,13 +249,18 @@ export default function FinalizarAtendimentoPage() {
         })
       })
 
+      console.log('📡 Status da resposta:', response.status)
+      console.log('📡 Status OK:', response.ok)
+
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('❌ Erro na API:', errorData)
         throw new Error(errorData.error || 'Erro ao finalizar comanda')
       }
 
       const result = await response.json()
       console.log('✅ Resultado da finalização:', result)
+      console.log('💰 Faturamento atualizado:', result.faturamentoAtualizado)
       
       setMessage('✅ Atendimento finalizado com sucesso! Dados salvos no histórico da cliente e relatórios financeiros.')
       
@@ -726,9 +735,27 @@ export default function FinalizarAtendimentoPage() {
 
           {/* Botão de Finalização */}
           <div className="text-center">
-            <p className="text-sm text-gray-600 mb-4">
-              💡 Sistema atualizado: Finalização salva status, faturamento e comissões automaticamente
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-600">
+                💡 Sistema atualizado: Finalização salva status, faturamento e comissões automaticamente
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/faturamento')
+                    const data = await response.json()
+                    console.log('💰 Faturamento atual:', data)
+                    alert(`Faturamento do dia: R$ ${data.faturamento.valorTotal.toFixed(2)}\nComandas: ${data.comandasFinalizadas}`)
+                  } catch (error) {
+                    console.error('Erro ao consultar faturamento:', error)
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                📊 Ver Faturamento
+              </button>
+            </div>
             <button
               type="submit"
               disabled={isLoading || !finalizacao.paymentMethod || finalizacao.receivedAmount < valorFinal}
