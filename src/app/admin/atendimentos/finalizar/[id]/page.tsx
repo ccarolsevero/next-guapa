@@ -379,24 +379,24 @@ export default function FinalizarAtendimentoPage() {
             </div>
 
             {/* Resumo da comanda */}
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <h4 className="text-sm font-bold text-black mb-2">Resumo da comanda:</h4>
-              <div className="space-y-2">
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h4 className="text-base font-bold text-gray-900 mb-3">Resumo da comanda:</h4>
+              <div className="space-y-3">
                 {comanda.servicos.map((servico, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-black font-medium">{servico.nome} (x{servico.quantidade})</span>
-                    <span className="text-black font-semibold">R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
+                  <div key={index} className="flex justify-between items-center py-2 px-3 bg-white rounded-md border border-gray-100">
+                    <span className="text-gray-900 font-semibold text-base">{servico.nome} (x{servico.quantidade})</span>
+                    <span className="text-green-700 font-bold text-lg">R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
                   </div>
                 ))}
                 {comanda.produtos.map((produto, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-black font-medium">{produto.nome} (x{produto.quantidade})</span>
-                    <span className="text-black font-semibold">R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
+                  <div key={index} className="flex justify-between items-center py-2 px-3 bg-white rounded-md border border-gray-100">
+                    <span className="text-gray-900 font-semibold text-base">{produto.nome} (x{produto.quantidade})</span>
+                    <span className="text-green-700 font-bold text-lg">R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
                   </div>
                 ))}
-                <div className="border-t pt-2 flex justify-between font-bold">
-                  <span className="text-black">Total:</span>
-                  <span className="text-black">R$ {comanda.valorTotal.toFixed(2)}</span>
+                <div className="border-t-2 border-gray-300 pt-3 flex justify-between items-center bg-blue-50 p-3 rounded-md">
+                  <span className="text-gray-900 font-bold text-lg">Total:</span>
+                  <span className="text-blue-800 font-bold text-xl">R$ {comanda.valorTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -514,7 +514,7 @@ export default function FinalizarAtendimentoPage() {
               {/* Campo de Crédito (Sinal Pago) */}
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Crédito (Sinal Pago)
+                  Sinal (Reserva do Horário)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
@@ -541,11 +541,11 @@ export default function FinalizarAtendimentoPage() {
                 </div>
                 {finalizacao.creditAmount > 0 && (
                   <p className="text-xs text-blue-600 mt-1">
-                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago
+                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago para reserva
                   </p>
                 )}
                 <p className="text-xs text-gray-500 mt-1">
-                  💡 Futuramente: este valor será preenchido automaticamente com o sinal do agendamento
+                  💡 Valor pago antecipadamente para reservar o horário
                 </p>
               </div>
               
@@ -643,29 +643,7 @@ export default function FinalizarAtendimentoPage() {
                 )}
               </div>
               
-              <div>
-                <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Troco (R$)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                  <input
-                    type="number"
-                    value={finalizacao.change.toFixed(2)}
-                    disabled
-                    className={`w-full p-3 pl-10 border font-medium ${
-                      finalizacao.change > 0 
-                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
-                        : 'border-gray-300 bg-gray-100 text-gray-700'
-                    }`}
-                  />
-                </div>
-                {finalizacao.change > 0 && (
-                  <p className="text-xs text-blue-600 mt-1">
-                    Troco a devolver
-                  </p>
-                )}
-              </div>
+
             </div>
           </div>
 
@@ -748,6 +726,9 @@ export default function FinalizarAtendimentoPage() {
 
           {/* Botão de Finalização */}
           <div className="text-center">
+            <p className="text-sm text-gray-600 mb-4">
+              💡 Sistema atualizado: Finalização salva status, faturamento e comissões automaticamente
+            </p>
             <button
               type="submit"
               disabled={isLoading || !finalizacao.paymentMethod || finalizacao.receivedAmount < valorFinal}
