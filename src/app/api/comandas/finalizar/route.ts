@@ -119,17 +119,17 @@ export async function POST(request: NextRequest) {
     console.log('🔄 Atualizando faturamento do dia...')
     const hoje = new Date()
     const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
-    const dataFim = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59)
+    const dataFimFaturamento = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate(), 23, 59, 59)
     
     console.log('📅 Data início:', dataInicio.toISOString())
-    console.log('📅 Data fim:', dataFim.toISOString())
+    console.log('📅 Data fim:', dataFimFaturamento.toISOString())
     console.log('💰 Valor para somar:', finalizacaoData.valorFinal)
 
     const faturamentoResult = await db.collection('faturamento').updateOne(
       { 
         data: { 
           $gte: dataInicio, 
-          $lte: dataFim 
+          $lte: dataFimFaturamento 
         } 
       },
       { 
