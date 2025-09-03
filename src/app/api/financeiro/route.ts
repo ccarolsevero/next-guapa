@@ -159,9 +159,15 @@ export async function GET(request: NextRequest) {
         }
       },
       {
+        $addFields: {
+          clienteIdObjectId: { $toObjectId: '$clienteId' },
+          comandaIdObjectId: { $toObjectId: '$comandaId' }
+        }
+      },
+      {
         $lookup: {
           from: 'clients',
-          localField: 'clienteId',
+          localField: 'clienteIdObjectId',
           foreignField: '_id',
           as: 'cliente'
         }
@@ -172,7 +178,7 @@ export async function GET(request: NextRequest) {
       {
         $lookup: {
           from: 'comandas',
-          localField: 'comandaId',
+          localField: 'comandaIdObjectId',
           foreignField: '_id',
           as: 'comanda'
         }
