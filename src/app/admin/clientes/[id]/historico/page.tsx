@@ -87,6 +87,8 @@ export default function HistoricoClientePage() {
         if (comandasResponse.ok) {
           const comandasData = await comandasResponse.json()
           console.log('📦 Dados das comandas recebidos:', comandasData)
+          console.log('🔍 Query usada: clientId=${clientId}')
+          console.log('🔍 Total de comandas retornadas:', comandasData.comandas?.length || 0)
           
           // A API retorna { comandas: [...] }
           setComandas(comandasData.comandas || [])

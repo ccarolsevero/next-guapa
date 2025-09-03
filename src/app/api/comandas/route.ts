@@ -41,14 +41,42 @@ export async function GET(request: NextRequest) {
     // Buscar comandas sem populate primeiro para debug
     const comandasRaw = await comandasCollection.find(query).toArray()
     console.log('📊 Comandas encontradas (raw MongoDB):', comandasRaw.length)
+    console.log('🔍 Query MongoDB usada:', JSON.stringify(query, null, 2))
     
     if (comandasRaw.length > 0) {
       console.log('📋 Primeira comanda (raw MongoDB):', {
         id: comandasRaw[0]._id,
         clientId: comandasRaw[0].clientId,
         professionalId: comandasRaw[0].professionalId,
-        status: comandasRaw[0].status
+        status: comandasRaw[0].status,
+        dataInicio: comandasRaw[0].dataInicio
       })
+    } else {
+      console.log('⚠️ Nenhuma comanda encontrada com a query:', query)
+      // Verificar se existem comandas no banco
+      const totalComandas = await comandasCollection.countDocuments({})
+      console.log('📊 Total de comandas no banco:', totalComandas)
+      
+      if (totalComandas > 0) {
+        const amostra = await comandasCollection.find({}).limit(5).toArray()
+        console.log('📋 Amostra de comandas no banco:', amostra.map(c => ({
+          id: c._id,
+          clientId: c.clientId,
+          clientIdType: typeof c.clientId,
+          status: c.status,
+          dataInicio: c.dataInicio
+        })))
+        
+        // Verificar se há comandas com clientId similar
+        const comandasComClientId = await comandasCollection.find({
+          clientId: { $exists: true }
+        }).limit(5).toArray()
+        console.log('🔍 Comandas com clientId definido:', comandasComClientId.map(c => ({
+          id: c._id,
+          clientId: c.clientId,
+          clientIdType: typeof c.clientId
+        })))
+      }
     }
 
     // Agora buscar com populate usando MongoDB aggregation
