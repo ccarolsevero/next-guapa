@@ -19,11 +19,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { valor, categoria, observacao } = await request.json()
+    const { valor, categoria, observacao, tipo } = await request.json()
     
-    if (!valor || !categoria) {
+    if (!valor || !categoria || !tipo) {
       return NextResponse.json(
-        { success: false, error: 'Valor e categoria são obrigatórios' },
+        { success: false, error: 'Valor, categoria e tipo são obrigatórios' },
         { status: 400 }
       )
     }
@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
       valor: parseFloat(valor),
       categoria,
       observacao: observacao || '',
+      tipo: tipo as 'fixa' | 'variavel',
       data: new Date(),
       createdAt: new Date()
     }

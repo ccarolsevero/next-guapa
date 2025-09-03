@@ -7,8 +7,9 @@ interface Despesa {
   valor: number
   categoria: string
   observacao: string
-  data: string
-  createdAt: string
+  tipo: 'fixa' | 'variavel'
+  data: Date
+  createdAt: Date
 }
 
 interface Categoria {
@@ -57,7 +58,8 @@ export default function FinanceiroPage() {
   const [novaDespesa, setNovaDespesa] = useState({
     valor: '',
     categoria: '',
-    observacao: ''
+    observacao: '',
+    tipo: 'variavel' as 'fixa' | 'variavel'
   })
   const [novaCategoria, setNovaCategoria] = useState('')
   const [showCategoriaModal, setShowCategoriaModal] = useState(false)
@@ -213,7 +215,7 @@ export default function FinanceiroPage() {
         if (response.ok) {
           const result = await response.json()
           setDespesas([result.data, ...despesas])
-          setNovaDespesa({ valor: '', categoria: '', observacao: '' })
+          setNovaDespesa({ valor: '', categoria: '', observacao: '', tipo: 'variavel' })
           setShowDespesaModal(false)
           // Recarregar dados financeiros para atualizar totais
           loadFinancialData(selectedPeriod, customStartDate, customEndDate)

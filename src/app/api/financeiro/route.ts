@@ -210,7 +210,14 @@ export async function GET(request: NextRequest) {
     const totalComissoes = faturamentoPorMes.reduce((sum: number, item: Document) => sum + (item.totalComissoes || 0), 0)
     const totalComandas = faturamentoPorMes.reduce((sum: number, item: Document) => sum + (item.quantidadeComandas || 0), 0)
     
-    // 6. Formatar dados para o frontend
+    // 6. Calcular total de despesas
+    const despesas = await db.collection('despesas').find({
+      data: { $gte: dataInicio, $lte: hoje }
+    }).toArray()
+    
+    const totalDespesas = despesas.reduce((sum: number, despesa: Document) => sum + (despesa.valor || 0), 0)
+    
+    // 7. Formatar dados para o frontend
     const revenue = faturamentoPorMes.map((item: Document) => ({
       month: new Date((item._id as FaturamentoId).year, (item._id as FaturamentoId).month - 1).toLocaleDateString('pt-BR', { month: 'short' }),
       amount: item.valorTotal || 0
@@ -239,29 +246,31 @@ export async function GET(request: NextRequest) {
       status: 'PAID'
     }))
     
+    // Formatar comissões por profissional
+    const commissionsByProfessional = comissoesPorProfissional.map((item: Document) => ({
+      profissional: item.nome || 'Profissional não encontrado',
+      totalComissao: item.totalComissao || 0,
+      quantidadeItens: item.quantidadeItens || 0,
+      detalhes: item.detalhes || []
+    }))
+    
     console.log('✅ Dados financeiros carregados com sucesso')
     console.log('💰 Total faturamento:', totalFaturamento)
     console.log('💸 Total comissões:', totalComissoes)
     console.log('📊 Total comandas:', totalComandas)
+    console.log('💸 Total despesas:', totalDespesas)
     console.log('💳 Métodos de pagamento:', paymentMethods.length)
-    console.log('👥 Comissões por profissional:', comissoesPorProfissional.length)
+    console.log('👥 Comissões por profissional:', commissionsByProfessional.length)
     console.log('📋 Pagamentos recentes:', recentPayments.length)
     
     return NextResponse.json({
-      success: true,
-      data: {
-        revenue,
-        expenses,
-        recentPayments,
-        paymentMethods,
-        comissoesPorProfissional,
-        totals: {
-          revenue: totalFaturamento,
-          expenses: totalComissoes,
-          profit: totalFaturamento - totalComissoes,
-          comandas: totalComandas
-        }
-      }
+      totalRevenue: totalFaturamento,
+      totalCommissions: totalComissoes,
+      totalOrders: totalComandas,
+      totalExpenses: totalDespesas,
+      paymentMethods,
+      recentPayments,
+      commissionsByProfessional
     })
     
   } catch (error) {
