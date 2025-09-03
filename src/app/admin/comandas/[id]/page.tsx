@@ -298,14 +298,11 @@ export default function ComandaDetalhesPage() {
           )
         }
         
-        // Atualizar estado local
-        setComanda(updatedComanda)
-        
-        // Salvar no banco de dados
+        // Salvar no banco de dados (já calcula e salva o total)
         await saveComandaToDatabase(updatedComanda)
         
-        // Atualizar total
-        updateTotal()
+        // Atualizar estado local com o valor total calculado
+        setComanda(updatedComanda)
       } else {
         console.log('🆕 Adicionando novo produto')
         const newProduct = { 
@@ -323,14 +320,11 @@ export default function ComandaDetalhesPage() {
           produtos: [...comanda.produtos, newProduct]
         }
         
-        // Atualizar estado local
-        setComanda(updatedComanda)
-        
-        // Salvar no banco de dados
+        // Salvar no banco de dados (já calcula e salva o total)
         await saveComandaToDatabase(updatedComanda)
         
-        // Atualizar total
-        updateTotal()
+        // Atualizar estado local com o valor total calculado
+        setComanda(updatedComanda)
       }
       setShowAddProduct(false)
       console.log('✅ Produto adicionado e salvo no banco com sucesso')
@@ -386,13 +380,20 @@ export default function ComandaDetalhesPage() {
   const updateQuantity = async (type: 'service' | 'product', id: number, newQuantity: number) => {
     if (newQuantity <= 0) {
       if (type === 'service') {
-        setComanda(prev => ({
-          ...prev,
-          servicos: prev.servicos.filter(s => s.id !== id)
-        }))
+        // Remover serviço da comanda
+        const updatedComanda = {
+          ...comanda,
+          servicos: comanda.servicos.filter((s: any) => s.id !== id)
+        }
+        
+        // Salvar no banco de dados
+        await saveComandaToDatabase(updatedComanda)
+        
+        // Atualizar estado local
+        setComanda(updatedComanda)
       } else {
         // Remover produto da comanda
-        const productToRemove = comanda?.produtos.find(p => p.id === id)
+        const productToRemove = comanda?.produtos.find((p: any) => p.id === id)
         if (productToRemove) {
           // Restaurar estoque do produto removido
           try {
@@ -412,24 +413,35 @@ export default function ComandaDetalhesPage() {
           }
         }
         
-        setComanda(prev => ({
-          ...prev,
-          produtos: prev.produtos.filter(p => p.id !== id)
-        }))
-        // Atualizar total após remover produto
-        setTimeout(() => updateTotal(), 100)
+        const updatedComanda = {
+          ...comanda,
+          produtos: comanda.produtos.filter((p: any) => p.id !== id)
+        }
+        
+        // Salvar no banco de dados
+        await saveComandaToDatabase(updatedComanda)
+        
+        // Atualizar estado local
+        setComanda(updatedComanda)
       }
     } else {
       if (type === 'service') {
-        setComanda(prev => ({
-          ...prev,
-          servicos: prev.servicos.map(s => 
+        // Atualizar quantidade de serviço
+        const updatedComanda = {
+          ...comanda,
+          servicos: comanda.servicos.map((s: any) => 
             s.id === id ? { ...s, quantidade: newQuantity } : s
           )
-        }))
+        }
+        
+        // Salvar no banco de dados
+        await saveComandaToDatabase(updatedComanda)
+        
+        // Atualizar estado local
+        setComanda(updatedComanda)
       } else {
         // Atualizar quantidade de produto
-        const productToUpdate = comanda?.produtos.find(p => p.id === id)
+        const productToUpdate = comanda?.produtos.find((p: any) => p.id === id)
         if (productToUpdate) {
           const quantityDifference = newQuantity - productToUpdate.quantidade
           
@@ -463,15 +475,18 @@ export default function ComandaDetalhesPage() {
               })
               
               // Atualizar quantidade na comanda
-              setComanda(prev => ({
-                ...prev,
-                produtos: prev.produtos.map(p =>
+              const updatedComanda = {
+                ...comanda,
+                produtos: comanda.produtos.map((p: any) =>
                   p.id === id ? { ...p, quantidade: newQuantity } : p
                 )
-              }))
+              }
               
-              // Atualizar total após alterar quantidade
-              setTimeout(() => updateTotal(), 100)
+              // Salvar no banco de dados
+              await saveComandaToDatabase(updatedComanda)
+              
+              // Atualizar estado local
+              setComanda(updatedComanda)
             } catch (error) {
               console.error('Erro ao atualizar estoque:', error)
             }
