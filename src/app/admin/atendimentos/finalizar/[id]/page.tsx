@@ -481,7 +481,7 @@ export default function FinalizarAtendimentoPage() {
                     <span className="text-red-600">-R$ {totalComissao.toFixed(2)}</span>
                   </div>
                   <div className="border-t pt-2 flex justify-between font-bold text-lg">
-                    <span>Lucro Líquido:</span>
+                    <span className="text-black">Lucro Líquido:</span>
                     <span className="text-green-600">R$ {(valorFinal - totalComissao).toFixed(2)}</span>
                   </div>
                 </div>
