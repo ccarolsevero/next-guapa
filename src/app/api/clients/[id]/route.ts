@@ -7,22 +7,70 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await connectDB()
+    console.log('🔍 === API CLIENTES [ID] - GET ===')
+    console.log('🔍 Buscando cliente ID:', params.id)
     
-    const client = await Client.findById(params.id)
-
-    if (!client) {
+    // Conectar ao MongoDB diretamente
+    const { MongoClient } = await import('mongodb')
+    const uri = process.env.MONGODB_URI!
+    const client = new MongoClient(uri)
+    await client.connect()
+    const db = client.db(process.env.DB_NAME || 'guapa')
+    
+    console.log('✅ Conectado ao MongoDB')
+    
+    // Buscar cliente por ID
+    const clientData = await db.collection('clients').findOne({
+      _id: new (await import('mongodb')).ObjectId(params.id)
+    })
+    
+    console.log('🔍 Cliente encontrado:', clientData ? 'SIM' : 'NÃO')
+    
+    if (!clientData) {
+      await client.close()
+      console.log('❌ Cliente não encontrado')
       return NextResponse.json(
         { error: 'Cliente não encontrado' },
         { status: 404 }
       )
     }
 
-    // Remover senha do retorno
-    const { password: _, ...clientWithoutPassword } = client.toObject()
-    return NextResponse.json(clientWithoutPassword)
+    // Buscar comandas do cliente
+    const comandas = await db.collection('comandas').find({
+      clientId: new (await import('mongodb')).ObjectId(params.id)
+    }).toArray()
+    
+    console.log('📊 Comandas encontradas:', comandas.length)
+    
+    // Buscar finalizações do cliente
+    const finalizacoes = await db.collection('finalizacoes').find({
+      clienteId: params.id
+    }).toArray()
+    
+    console.log('📊 Finalizações encontradas:', finalizacoes.length)
+    
+    // Formatar dados do cliente
+    const clienteFormatado = {
+      _id: clientData._id,
+      name: clientData.name,
+      email: clientData.email,
+      phone: clientData.phone,
+      birthDate: clientData.birthDate,
+      address: clientData.address,
+      notes: clientData.notes,
+      totalGasto: clientData.totalGasto || 0,
+      quantidadeVisitas: clientData.quantidadeVisitas || 0,
+      historico: clientData.historico || [],
+      comandas: comandas.length,
+      finalizacoes: finalizacoes.length
+    }
+    
+    await client.close()
+    console.log('✅ Cliente retornado com sucesso')
+    
+    return NextResponse.json(clienteFormatado)
   } catch (error) {
-    console.error('Erro ao buscar cliente:', error)
+    console.error('❌ Erro ao buscar cliente:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
