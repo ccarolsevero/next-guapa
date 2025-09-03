@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       {
         $group: {
           _id: '$profissionalId',
-          nome: { $first: '$profissional.nome' },
+          nome: { $first: '$profissional.name' },
           totalComissao: { $sum: '$comissao' },
           quantidadeItens: { $sum: 1 },
           detalhes: {
@@ -96,7 +96,8 @@ export async function GET(request: NextRequest) {
               item: '$item',
               valor: '$valor',
               comissao: '$comissao',
-              data: '$data'
+              data: '$data',
+              profissionalId: '$profissionalId'
             }
           }
         }

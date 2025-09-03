@@ -16,7 +16,8 @@ import {
   Users,
   Package,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Scissors
 } from 'lucide-react'
 
 interface FinancialData {
@@ -438,35 +439,107 @@ export default function FinanceiroPage() {
 
                     {/* Detalhes das Comissões */}
                     <div className="border-t border-gray-100 p-4 bg-white">
-                      <div className="space-y-3">
-                        {comissao.detalhes.map((detalhe, detIndex) => (
-                          <div key={detIndex} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-gray-600">
-                                {detalhe.tipo === 'Serviço' ? '🪒' : '🧴'} {detalhe.item}
-                              </span>
-                            </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Serviços */}
+                        <div className="bg-white p-4 rounded-lg border border-gray-100">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium text-gray-900 flex items-center">
+                              <Scissors className="w-4 h-4 mr-2" />
+                              Serviços
+                            </h4>
                             <div className="text-right">
-                              <span className="text-sm text-gray-600">
-                                R$ {detalhe.valor.toFixed(2)}
-                              </span>
-                              <span className="ml-2 text-sm font-medium text-[#D15556]">
-                                R$ {detalhe.comissao.toFixed(2)}
-                              </span>
+                              <p className="text-sm text-gray-600">Total</p>
+                              <p className="font-medium text-[#D15556]">
+                                R$ {comissao.detalhes
+                                  .filter(d => d.tipo === 'Serviço')
+                                  .reduce((sum, d) => sum + d.valor, 0)
+                                  .toFixed(2)}
+                              </p>
                             </div>
                           </div>
-                        ))}
+                          <div className="space-y-2 mb-4">
+                            {comissao.detalhes
+                              .filter(d => d.tipo === 'Serviço')
+                              .map((detalhe, detIndex) => (
+                                <div key={detIndex} className="flex justify-between text-sm">
+                                  <span className="text-gray-600">{detalhe.item}</span>
+                                  <span className="font-medium">R$ {detalhe.valor.toFixed(2)}</span>
+                                </div>
+                              ))}
+                          </div>
+                          <div className="flex justify-between text-sm font-medium border-t pt-2">
+                            <span>Comissão (10%):</span>
+                            <span className="text-[#D15556]">
+                              R$ {comissao.detalhes
+                                .filter(d => d.tipo === 'Serviço')
+                                .reduce((sum, d) => sum + d.comissao, 0)
+                                .toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Produtos */}
+                        <div className="bg-white p-4 rounded-lg border border-gray-100">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium text-gray-900 flex items-center">
+                              <Package className="w-4 h-4 mr-2" />
+                              Produtos
+                            </h4>
+                            <div className="text-right">
+                              <p className="text-sm text-gray-600">Total</p>
+                              <p className="font-medium text-[#D15556]">
+                                R$ {comissao.detalhes
+                                  .filter(d => d.tipo === 'Produto')
+                                  .reduce((sum, d) => sum + d.valor, 0)
+                                  .toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="space-y-2 mb-4">
+                            {comissao.detalhes
+                              .filter(d => d.tipo === 'Produto')
+                              .map((detalhe, detIndex) => (
+                                <div key={detIndex} className="flex justify-between text-sm">
+                                  <span className="text-gray-600">{detalhe.item}</span>
+                                  <span className="font-medium">R$ {detalhe.valor.toFixed(2)}</span>
+                                </div>
+                              ))}
+                          </div>
+                          <div className="flex justify-between text-sm font-medium border-t pt-2">
+                            <span>Comissão (15%):</span>
+                            <span className="text-[#D15556]">
+                              R$ {comissao.detalhes
+                                .filter(d => d.tipo === 'Produto')
+                                .reduce((sum, d) => sum + d.comissao, 0)
+                                .toFixed(2)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       
-                      {/* Resumo */}
-                      <div className="mt-4 pt-3 border-t border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">
-                            Total de itens: {comissao.quantidadeItens}
-                          </span>
-                          <span className="text-lg font-semibold text-[#D15556]">
-                            R$ {comissao.totalComissao.toFixed(2)}
-                          </span>
+                      {/* Resumo Total */}
+                      <div className="mt-4 p-4 bg-[#EED7B6]/20 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                          <div>
+                            <p className="text-sm text-gray-600">Total de Vendas</p>
+                            <p className="text-lg font-medium text-gray-900">
+                              R$ {comissao.detalhes
+                                .reduce((sum, d) => sum + d.valor, 0)
+                                .toFixed(2)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Total de Itens</p>
+                            <p className="text-lg font-medium text-gray-900">
+                              {comissao.quantidadeItens}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Comissão Total</p>
+                            <p className="text-lg font-medium text-[#D15556]">
+                              R$ {comissao.totalComissao.toFixed(2)}
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
