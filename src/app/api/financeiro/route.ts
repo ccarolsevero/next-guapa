@@ -75,7 +75,7 @@ export async function GET(request: NextRequest) {
       },
       {
         $lookup: {
-          from: 'profissionais',
+          from: 'professionals',
           localField: 'profissionalId',
           foreignField: '_id',
           as: 'profissional'
@@ -134,7 +134,7 @@ export async function GET(request: NextRequest) {
       },
       {
         $lookup: {
-          from: 'clientes',
+          from: 'clients',
           localField: 'clienteId',
           foreignField: '_id',
           as: 'cliente'
