@@ -116,9 +116,8 @@ export default function ComandaDetalhesPage() {
     }
   }
 
-  useEffect(() => {
-    updateTotal()
-  }, [comanda?.servicos, comanda?.produtos])
+  // Removido useEffect que causava loop infinito
+  // updateTotal() será chamado manualmente quando necessário
 
   // Buscar dados da comanda específica
   useEffect(() => {
