@@ -14,12 +14,27 @@ export async function GET(request: NextRequest) {
     const period = searchParams.get('period') || '6months'
     
     console.log('🔄 API Financeiro chamada - Período:', period)
+    console.log('🔑 MONGODB_URI existe:', !!process.env.MONGODB_URI)
+    console.log('🔑 DB_NAME:', process.env.DB_NAME || 'guapa')
     
     // Conectar ao MongoDB
     const uri = process.env.MONGODB_URI!
+    if (!uri) {
+      console.error('❌ MONGODB_URI não configurada')
+      return NextResponse.json({ error: 'Configuração do banco não encontrada' }, { status: 500 })
+    }
+    
     client = new MongoClient(uri)
+    console.log('🔌 Tentando conectar ao MongoDB...')
     await client.connect()
+    console.log('✅ Conectado ao MongoDB com sucesso')
+    
     const db = client.db(process.env.DB_NAME || 'guapa')
+    console.log('🗄️ Banco selecionado:', db.databaseName)
+    
+    // Verificar se as coleções existem
+    const collections = await db.listCollections().toArray()
+    console.log('📚 Coleções disponíveis:', collections.map(c => c.name))
     
     // Calcular datas baseado no período
     const hoje = new Date()
@@ -42,6 +57,7 @@ export async function GET(request: NextRequest) {
     console.log('📅 Período:', { dataInicio: dataInicio.toISOString(), hoje: hoje.toISOString() })
     
     // 1. Buscar faturamento por mês
+    console.log('💰 Buscando faturamento por mês...')
     const faturamentoPorMes = await db.collection('faturamento').aggregate([
       {
         $match: {
@@ -64,9 +80,13 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
     
+    console.log('📊 Faturamento por mês encontrado:', faturamentoPorMes.length)
+    
     // 2. Buscar comissões por profissional (últimos 30 dias para mostrar dados atuais)
     const dataInicioComissoes = new Date(hoje.getTime() - 30 * 24 * 60 * 60 * 1000)
+    console.log('📅 Data início comissões (30 dias):', dataInicioComissoes.toISOString())
     
+    console.log('👥 Buscando comissões por profissional...')
     const comissoesPorProfissional = await db.collection('comissoes').aggregate([
       {
         $match: {
@@ -106,6 +126,11 @@ export async function GET(request: NextRequest) {
         $sort: { totalComissao: -1 }
       }
     ]).toArray()
+    
+    console.log('💰 Comissões por profissional encontradas:', comissoesPorProfissional.length)
+    comissoesPorProfissional.forEach((comissao, index) => {
+      console.log(`   ${index + 1}. ${comissao.nome}: R$ ${comissao.totalComissao.toFixed(2)}`)
+    })
     
     // 3. Buscar métodos de pagamento (últimos 30 dias)
     const metodosPagamento = await db.collection('finalizacoes').aggregate([
