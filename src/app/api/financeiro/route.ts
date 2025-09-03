@@ -141,14 +141,14 @@ export async function GET(request: NextRequest) {
       // Comissões de serviços (10%)
       if (comanda.servicos && Array.isArray(comanda.servicos)) {
         comanda.servicos.forEach((servico: Document) => {
-          comissaoTotal += (servico.valor || 0) * 0.10
+          comissaoTotal += (servico.preco || 0) * 0.10
         })
       }
       
       // Comissões de produtos (15%)
       if (comanda.produtos && Array.isArray(comanda.produtos)) {
         comanda.produtos.forEach((produto: Document) => {
-          comissaoTotal += (produto.valor || 0) * 0.15
+          comissaoTotal += (produto.preco || 0) * 0.15
         })
       }
       
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
           prof.detalhes.push({
             tipo: 'servico',
             item: servicoData.nome || 'Serviço',
-            valor: servicoData.valor || 0,
+            valor: servicoData.preco || 0,
             comissao: comissao,
             data: comandaData.dataFinalizacao || comandaData.createdAt
           })
@@ -218,7 +218,7 @@ export async function GET(request: NextRequest) {
           prof.detalhes.push({
             tipo: 'produto',
             item: produtoData.nome || 'Produto',
-            valor: produtoData.valor || 0,
+            valor: produtoData.preco || 0,
             comissao: comissao,
             data: comandaData.dataFinalizacao || comandaData.createdAt
           })
@@ -238,11 +238,14 @@ export async function GET(request: NextRequest) {
     })
     
     // 3. Buscar métodos de pagamento das comandas
-    const metodosPagamento = await db.collection('comandas').aggregate([
+    let metodosPagamento = await db.collection('comandas').aggregate([
       {
         $match: {
           status: 'finalizada',
-          dataFinalizacao: { $gte: dataInicio, $lte: hoje }
+          $or: [
+            { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
+            { updatedAt: { $gte: dataInicio, $lte: hoje } }
+          ]
         }
       },
       {
@@ -257,17 +260,7 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-    // Se não encontrar métodos de pagamento, criar um padrão baseado no valor total
-    if (metodosPagamento.length === 0) {
-      const totalValor = comandasFinalizadas.reduce((sum, comanda) => sum + (comanda.valorTotal || 0), 0)
-      if (totalValor > 0) {
-        metodosPagamento.push({
-          _id: 'dinheiro',
-          count: comandasFinalizadas.length,
-          amount: totalValor
-        })
-      }
-    }
+
 
     // Debug: verificar o que está sendo retornado
     console.log('💳 Métodos de pagamento encontrados:', metodosPagamento)
@@ -311,18 +304,7 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-    // Se não encontrar pagamentos recentes, criar baseado nas comandas
-    if (pagamentosRecentes.length === 0) {
-      pagamentosRecentes.push(...comandasFinalizadas.slice(0, 5).map((comanda: any) => ({
-        _id: comanda._id,
-        clientName: comanda.clienteNome || 'Cliente',
-        service: comanda.servicos?.[0]?.nome || 'Serviço',
-        amount: comanda.valorTotal || 0,
-        method: 'dinheiro',
-        date: comanda.dataFinalizacao || comanda.createdAt,
-        status: 'PAID'
-      })))
-    }
+
     
     // 5. Calcular totais
     const totalComandas = comandasFinalizadas.length
@@ -400,7 +382,8 @@ export async function GET(request: NextRequest) {
           profit: totalFaturamento - totalComissoes,
           comandas: totalComandas
         },
-        totalExpenses: totalDespesas
+        totalExpenses: totalDespesas,
+        totalComissoes: totalComissoes
       }
     })
     
