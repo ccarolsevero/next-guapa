@@ -238,7 +238,7 @@ export async function GET(request: NextRequest) {
     })
     
     // 3. Buscar métodos de pagamento das comandas
-    const metodosPagamento = await db.collection('comandas').aggregate([
+    let metodosPagamento = await db.collection('comandas').aggregate([
       {
         $match: {
           status: 'finalizada',
@@ -259,6 +259,47 @@ export async function GET(request: NextRequest) {
         $sort: { amount: -1 }
       }
     ]).toArray()
+
+    // Se não encontrar métodos de pagamento, criar baseado nos pagamentos recentes
+    if (metodosPagamento.length === 0) {
+      console.log('🔍 Buscando métodos de pagamento alternativos...')
+      
+      // Buscar todas as comandas finalizadas do período
+      const comandasPeriodo = await db.collection('comandas').find({
+        status: 'finalizada',
+        $or: [
+          { dataFinalizacao: { $gte: dataInicio, $lte: hoje } },
+          { updatedAt: { $gte: dataInicio, $lte: hoje } }
+        ]
+      }).toArray()
+
+      console.log('📊 Comandas do período encontradas:', comandasPeriodo.length)
+
+      // Agrupar por método de pagamento
+      const metodosMap = new Map()
+      
+      comandasPeriodo.forEach((comanda) => {
+        const metodo = comanda.metodoPagamento || 'dinheiro'
+        const valor = comanda.valorTotal || 0
+        
+        if (!metodosMap.has(metodo)) {
+          metodosMap.set(metodo, { count: 0, amount: 0 })
+        }
+        
+        const atual = metodosMap.get(metodo)
+        atual.count += 1
+        atual.amount += valor
+      })
+
+      // Converter para o formato esperado
+      metodosPagamento = Array.from(metodosMap.entries()).map(([metodo, dados]) => ({
+        _id: metodo,
+        count: dados.count,
+        amount: dados.amount
+      }))
+
+      console.log('💳 Métodos de pagamento criados:', metodosPagamento)
+    }
 
 
 
