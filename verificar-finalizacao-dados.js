@@ -1,104 +1,112 @@
-const { MongoClient, ObjectId } = require('mongodb')
-require('dotenv').config()
+const { MongoClient } = require('mongodb');
+require('dotenv').config();
 
 async function verificarFinalizacaoDados() {
-  let client
+  const client = new MongoClient(process.env.MONGODB_URI);
   
   try {
-    console.log('🔍 Verificando dados da finalização...')
+    await client.connect();
+    console.log('✅ Conectado ao MongoDB');
     
-    const uri = process.env.MONGODB_URI
-    client = new MongoClient(uri)
-    await client.connect()
+    const db = client.db(process.env.DB_NAME || 'guapa');
     
-    const db = client.db(process.env.DB_NAME || 'guapa')
+    // Verificar finalizações
+    console.log('\n🔍 === FINALIZAÇÕES ===');
+    const finalizacoes = await db.collection('finalizacoes').find({}).toArray();
     
-    // Verificar finalização específica
-    console.log('\n✅ Verificando finalização R$ 830.02:')
-    const finalizacao = await db.collection('finalizacoes').findOne({
-      valorFinal: 830.02
-    })
+    console.log(`📊 Total de finalizações: ${finalizacoes.length}`);
     
-    if (finalizacao) {
-      console.log(`   ID: ${finalizacao._id}`)
-      console.log(`   Comanda ID: ${finalizacao.comandaId}`)
-      console.log(`   Cliente ID: ${finalizacao.clienteId}`)
-      console.log(`   Profissional ID: ${finalizacao.profissionalId}`)
-      console.log(`   Valor Final: R$ ${finalizacao.valorFinal}`)
-      console.log(`   Data Criação: ${finalizacao.dataCriacao}`)
+    for (const finalizacao of finalizacoes) {
+      console.log(`\n📋 Finalização #${finalizacao._id}`);
+      console.log(`   Comanda ID: ${finalizacao.comandaId}`);
+      console.log(`   Profissional ID: ${finalizacao.profissionalId}`);
+      console.log(`   Valor Total: R$ ${finalizacao.valorTotal}`);
       
       if (finalizacao.detalhesComissao) {
-        console.log('\n   📊 Detalhes da Comissão:')
+        console.log(`   💰 Detalhes de Comissão (${finalizacao.detalhesComissao.length}):`);
         finalizacao.detalhesComissao.forEach((detalhe, index) => {
-          console.log(`     ${index + 1}. ${detalhe.tipo}: ${detalhe.item}`)
-          console.log(`        Valor: R$ ${detalhe.valor}`)
-          console.log(`        Comissão: R$ ${detalhe.comissao}`)
-          console.log(`        Vendido Por: ${detalhe.vendidoPor}`)
-          console.log(`        Tipo vendidoPor: ${typeof detalhe.vendidoPor}`)
-          console.log(`        É string válida: ${typeof detalhe.vendidoPor === 'string'}`)
-          console.log(`        É ObjectId válido: ${ObjectId.isValid(detalhe.vendidoPor)}`)
-          console.log('')
-        })
+          console.log(`      ${index + 1}. ${detalhe.tipo}: ${detalhe.item}`);
+          console.log(`         Valor: R$ ${detalhe.valor}`);
+          console.log(`         Comissão: R$ ${detalhe.comissao}`);
+          console.log(`         Vendido por: ${detalhe.vendidoPor || 'N/A'}`);
+        });
+      } else {
+        console.log(`   ⚠️ Nenhum detalhe de comissão encontrado`);
       }
+    }
+    
+    // Verificar comissões
+    console.log('\n🔍 === COMISSÕES ===');
+    const comissoes = await db.collection('comissoes').find({}).toArray();
+    
+    console.log(`📊 Total de comissões: ${comissoes.length}`);
+    
+    for (const comissao of comissoes) {
+      console.log(`\n💰 Comissão #${comissao._id}`);
+      console.log(`   Comanda ID: ${comissao.comandaId}`);
+      console.log(`   Profissional ID: ${comissao.profissionalId}`);
+      console.log(`   Tipo: ${comissao.tipo}`);
+      console.log(`   Item: ${comissao.item}`);
+      console.log(`   Valor: R$ ${comissao.valor}`);
+      console.log(`   Comissão: R$ ${comissao.comissao}`);
+      console.log(`   Vendido por: ${comissao.vendidoPor || 'N/A'}`);
       
-      // Verificar comanda relacionada
-      console.log('\n📋 Verificando comanda relacionada:')
-      const comanda = await db.collection('comandas').findOne({
-        _id: new ObjectId(finalizacao.comandaId)
-      })
-      
-      if (comanda) {
-        console.log(`   Comanda ID: ${comanda._id}`)
-        console.log(`   Status: ${comanda.status}`)
-        console.log(`   Valor Total: R$ ${comanda.valorTotal}`)
-        console.log(`   Profissional ID: ${comanda.professionalId}`)
+      // Verificar se o profissional existe
+      if (comissao.profissionalId) {
+        const profissional = await db.collection('professionals').findOne({
+          _id: new (require('mongodb')).ObjectId(comissao.profissionalId)
+        });
         
-        if (comanda.produtos && comanda.produtos.length > 0) {
-          console.log('\n   🛍️ Produtos na comanda:')
-          comanda.produtos.forEach((produto, index) => {
-            console.log(`     ${index + 1}. ${produto.nome}`)
-            console.log(`        Preço: R$ ${produto.preco}`)
-            console.log(`        Quantidade: ${produto.quantidade}`)
-            console.log(`        Vendido Por: ${produto.vendidoPor}`)
-            console.log(`        Tipo vendidoPor: ${typeof produto.vendidoPor}`)
-            console.log('')
-          })
-        }
-        
-        if (comanda.servicos && comanda.servicos.length > 0) {
-          console.log('\n   ✂️ Serviços na comanda:')
-          comanda.servicos.forEach((servico, index) => {
-            console.log(`     ${index + 1}. ${servico.nome}`)
-            console.log(`        Preço: R$ ${servico.preco}`)
-            console.log(`        Quantidade: ${servico.quantidade}`)
-            console.log('')
-          })
+        if (profissional) {
+          console.log(`   👩‍💼 Profissional: ${profissional.name}`);
+        } else {
+          console.log(`   ❌ Profissional não encontrado`);
         }
       }
     }
     
-    // Verificar comissões relacionadas
-    console.log('\n💰 Verificando comissões relacionadas:')
-    const comissoes = await db.collection('comissoes').find({
-      comandaId: new ObjectId(finalizacao.comandaId)
-    }).toArray()
+    // Verificar uma comanda específica
+    console.log('\n🔍 === VERIFICANDO COMANDA ESPECÍFICA ===');
+    const comandaId = '68b8658589a933c14c3fd3c0';
+    const comanda = await db.collection('comandas').findOne({
+      _id: new (require('mongodb')).ObjectId(comandaId)
+    });
     
-    comissoes.forEach((comissao, index) => {
-      console.log(`   ${index + 1}. ${comissao.tipo}: ${comissao.item}`)
-      console.log(`      Profissional ID: ${comissao.profissionalId}`)
-      console.log(`      Vendido Por: ${comissao.vendidoPor}`)
-      console.log(`      Valor: R$ ${comissao.valor}`)
-      console.log(`      Comissão: R$ ${comissao.comissao}`)
-      console.log('')
-    })
+    if (comanda) {
+      console.log(`📋 Comanda #${comanda._id}`);
+      console.log(`   Profissional ID: ${comanda.professionalId}`);
+      console.log(`   Status: ${comanda.status}`);
+      
+      if (comanda.produtos && comanda.produtos.length > 0) {
+        console.log(`   📦 Produtos:`);
+        comanda.produtos.forEach(produto => {
+          console.log(`      - ${produto.nome}: vendido por ${produto.vendidoPor} (ID: ${produto.vendidoPorId})`);
+        });
+      }
+      
+      // Verificar se tem finalização
+      const finalizacao = await db.collection('finalizacoes').findOne({
+        comandaId: comanda._id
+      });
+      
+      if (finalizacao) {
+        console.log(`   ✅ Tem finalização: #${finalizacao._id}`);
+        if (finalizacao.detalhesComissao) {
+          console.log(`   💰 Detalhes de comissão na finalização:`);
+          finalizacao.detalhesComissao.forEach(detalhe => {
+            console.log(`      - ${detalhe.tipo}: ${detalhe.item} - Vendido por: ${detalhe.vendidoPor || 'N/A'}`);
+          });
+        }
+      } else {
+        console.log(`   ❌ Não tem finalização`);
+      }
+    }
     
   } catch (error) {
-    console.error('❌ Erro:', error)
+    console.error('❌ Erro:', error);
   } finally {
-    if (client) {
-      await client.close()
-    }
+    await client.close();
   }
 }
 
-verificarFinalizacaoDados()
+verificarFinalizacaoDados();

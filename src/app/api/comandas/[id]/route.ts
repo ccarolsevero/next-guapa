@@ -82,8 +82,20 @@ export async function GET(
       profissionalNome: comanda.professionalId.name,
       status: comanda.status,
       inicioAt: comanda.dataInicio,
-      servicos: comanda.servicos || [],
-      produtos: comanda.produtos || [],
+      servicos: comanda.servicos ? comanda.servicos.map(servico => ({
+        id: servico.id || servico._id,
+        nome: servico.nome,
+        preco: servico.preco,
+        quantidade: servico.quantidade
+      })) : [],
+      produtos: comanda.produtos ? comanda.produtos.map(produto => ({
+        id: produto.id || produto._id,
+        nome: produto.nome,
+        preco: produto.preco,
+        quantidade: produto.quantidade,
+        vendidoPor: produto.vendidoPor,
+        vendidoPorId: produto.vendidoPorId
+      })) : [],
       observacoes: comanda.observacoes || '',
       valorTotal: comanda.valorTotal || 0,
       createdAt: comanda.createdAt,
