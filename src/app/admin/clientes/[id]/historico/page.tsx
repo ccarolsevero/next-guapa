@@ -65,18 +65,36 @@ export default function HistoricoClientePage() {
         
         // Buscar dados do cliente
         const clientResponse = await fetch(`/api/clients/${clientId}`)
+        console.log('📡 Resposta da API cliente:', clientResponse.status)
+        
         if (clientResponse.ok) {
           const clientData = await clientResponse.json()
-          setClient(clientData.client)
-          console.log('✅ Cliente carregado:', clientData.client.name)
+          console.log('📦 Dados do cliente recebidos:', clientData)
+          
+          // A API retorna o cliente diretamente, não dentro de clientData.client
+          setClient(clientData)
+          console.log('✅ Cliente carregado:', clientData.name)
+        } else {
+          console.error('❌ Erro ao buscar cliente:', clientResponse.status)
+          const errorData = await clientResponse.json()
+          console.error('❌ Detalhes do erro:', errorData)
         }
         
         // Buscar comandas do cliente
         const comandasResponse = await fetch(`/api/comandas?clientId=${clientId}`)
+        console.log('📡 Resposta da API comandas:', comandasResponse.status)
+        
         if (comandasResponse.ok) {
           const comandasData = await comandasResponse.json()
+          console.log('📦 Dados das comandas recebidos:', comandasData)
+          
+          // A API retorna { comandas: [...] }
           setComandas(comandasData.comandas || [])
           console.log('✅ Comandas carregadas:', comandasData.comandas?.length || 0)
+        } else {
+          console.error('❌ Erro ao buscar comandas:', comandasResponse.status)
+          const errorData = await comandasResponse.json()
+          console.error('❌ Detalhes do erro:', errorData)
         }
         
       } catch (error) {
@@ -93,18 +111,40 @@ export default function HistoricoClientePage() {
   const getTotalVisits = () => comandas.length
   const getLastVisit = () => {
     if (comandas.length === 0) return null
-    const sorted = [...comandas].sort((a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime())
+    const sorted = [...comandas].sort((a, b) => {
+      // Sempre usar dataInicio, que é o campo correto da comanda
+      const dateA = a.dataInicio
+      const dateB = b.dataInicio
+      if (!dateA || !dateB) {
+        console.warn('⚠️ Comanda sem dataInicio:', { a: a._id, b: b._id })
+        return 0
+      }
+      return new Date(dateB).getTime() - new Date(dateA).getTime()
+    })
     return sorted[0]
   }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR')
+    return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })
   }
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    return date.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' ' + 
+           date.toLocaleTimeString('pt-BR', { 
+             hour: '2-digit', 
+             minute: '2-digit',
+             timeZone: 'America/Sao_Paulo'
+           })
+  }
+
+  const getComandaDate = (comanda: Comanda) => {
+    // Sempre usar dataInicio, que é o campo correto
+    if (!comanda.dataInicio) {
+      console.warn('⚠️ Comanda sem dataInicio:', comanda._id)
+    }
+    return comanda.dataInicio || 'Data não definida'
   }
 
   if (loading) {

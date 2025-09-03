@@ -95,6 +95,10 @@ export default function FinalizarAtendimentoPage() {
           const data = await response.json()
           setComanda(data.comanda)
           console.log('✅ Comanda carregada:', data.comanda)
+          console.log('📊 Serviços na comanda:', data.comanda.servicos?.length || 0)
+          console.log('📦 Produtos na comanda:', data.comanda.produtos?.length || 0)
+          console.log('🔍 Detalhes dos produtos:', data.comanda.produtos)
+          console.log('🔍 Detalhes dos serviços:', data.comanda.servicos)
           
           // TODO: Futuramente implementar busca automática do sinal do agendamento
           // const sinal = await buscarSinalAgendamento(data.comanda.appointmentId)
@@ -158,7 +162,13 @@ export default function FinalizarAtendimentoPage() {
     if (!comanda) return { totalComissao: 0, detalhes: [] }
     
     let totalComissao = 0
-    const detalhes = []
+    const detalhes: Array<{
+      tipo: string
+      item: string
+      valor: number
+      comissao: number
+      vendidoPor?: string
+    }> = []
     
     // Comissão dos serviços (10% para o profissional)
     comanda.servicos.forEach(servico => {
@@ -288,9 +298,11 @@ export default function FinalizarAtendimentoPage() {
       }, 3000)
           } catch (error) {
         console.error('❌ Erro ao finalizar atendimento:', error)
-        console.error('❌ Detalhes do erro:', error.message)
-        console.error('❌ Stack trace:', error.stack)
-        setMessage(`❌ Erro ao finalizar atendimento: ${error.message}`)
+        if (error instanceof Error) {
+          console.error('❌ Mensagem de erro:', error.message)
+          console.error('❌ Stack trace:', error.stack)
+        }
+        setMessage('❌ Erro ao finalizar atendimento. Tente novamente.')
       } finally {
       setIsLoading(false)
     }
@@ -403,7 +415,16 @@ export default function FinalizarAtendimentoPage() {
               </div>
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Data e Hora</label>
-                <p className="text-gray-700">{new Date(comanda.inicioAt).toLocaleString('pt-BR')}</p>
+                <p className="text-gray-700">
+                  {new Date(comanda.inicioAt).toLocaleString('pt-BR', { 
+                    timeZone: 'America/Sao_Paulo',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
               </div>
             </div>
 
