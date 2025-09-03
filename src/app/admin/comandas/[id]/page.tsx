@@ -239,6 +239,8 @@ export default function ComandaDetalhesPage() {
               : p
           )
         }))
+        // Atualizar total após adicionar produto
+        setTimeout(() => updateTotal(), 100)
       } else {
         setComanda(prev => ({
           ...prev,
@@ -251,6 +253,8 @@ export default function ComandaDetalhesPage() {
             vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
           }]
         }))
+        // Atualizar total após adicionar produto
+        setTimeout(() => updateTotal(), 100)
       }
       setShowAddProduct(false)
     } catch (error) {
@@ -292,6 +296,8 @@ export default function ComandaDetalhesPage() {
           ...prev,
           produtos: prev.produtos.filter(p => p.id !== id)
         }))
+        // Atualizar total após remover produto
+        setTimeout(() => updateTotal(), 100)
       }
     } else {
       if (type === 'service') {
@@ -335,20 +341,22 @@ export default function ComandaDetalhesPage() {
                   }]
                 })
               })
+              
+              // Atualizar quantidade na comanda
+              setComanda(prev => ({
+                ...prev,
+                produtos: prev.produtos.map(p =>
+                  p.id === id ? { ...p, quantidade: newQuantity } : p
+                )
+              }))
+              
+              // Atualizar total após alterar quantidade
+              setTimeout(() => updateTotal(), 100)
             } catch (error) {
               console.error('Erro ao atualizar estoque:', error)
-              alert('Erro ao atualizar estoque do produto')
-              return
             }
           }
         }
-        
-        setComanda(prev => ({
-          ...prev,
-          produtos: prev.produtos.map(p => 
-            p.id === id ? { ...p, quantidade: newQuantity } : p
-          )
-        }))
       }
     }
   }
