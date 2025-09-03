@@ -810,7 +810,7 @@ export default function ComandaDetalhesPage() {
                 </h2>
                 <div className="flex space-x-2">
                   <Link
-                    href={`/admin/clientes/${comanda?.clienteNome}/historico`}
+                    href={`/admin/clientes/${comanda?.clienteId}/historico`}
                     className="text-blue-600 hover:text-blue-800 transition-colors text-sm font-medium"
                   >
                     Ver Histórico Completo

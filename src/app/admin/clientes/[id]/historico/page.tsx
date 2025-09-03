@@ -14,93 +14,130 @@ import {
   ShoppingBag
 } from 'lucide-react'
 
-// Mock data para histórico de atendimentos
-const mockHistory = [
-  {
-    id: 1,
-    date: '2024-01-15',
-    time: '14:00',
-    professionalName: 'Ana Carolina',
-    services: [
-      { name: 'Corte Feminino', price: 45.00, quantity: 1 },
-      { name: 'Hidratação', price: 50.00, quantity: 1 }
-    ],
-    products: [
-      { name: 'Shampoo Profissional', price: 35.00, quantity: 1 },
-      { name: 'Máscara Hidratante', price: 28.00, quantity: 1 }
-    ],
-    total: 158.00,
-    paymentMethod: 'PIX',
-    satisfaction: 5,
-    observations: 'Cliente solicitou corte longo com camadas. Ficou muito satisfeita com o resultado.',
-    nextAppointment: '2024-02-15 14:00'
-  },
-  {
-    id: 2,
-    date: '2023-12-15',
-    time: '14:00',
-    professionalName: 'Ana Carolina',
-    services: [
-      { name: 'Coloração', price: 80.00, quantity: 1 }
-    ],
-    products: [
-      { name: 'Óleo Capilar', price: 45.00, quantity: 1 }
-    ],
-    total: 125.00,
-    paymentMethod: 'Cartão de Crédito',
-    satisfaction: 4,
-    observations: 'Coloração castanha com mechas. Cliente gostou do resultado.',
-    nextAppointment: '2024-01-15 14:00'
-  },
-  {
-    id: 3,
-    date: '2023-11-15',
-    time: '15:00',
-    professionalName: 'Mariana Silva',
-    services: [
-      { name: 'Corte Feminino', price: 45.00, quantity: 1 },
-      { name: 'Botox Capilar', price: 120.00, quantity: 1 }
-    ],
-    products: [],
-    total: 165.00,
-    paymentMethod: 'Dinheiro',
-    satisfaction: 5,
-    observations: 'Tratamento para cabelo danificado. Excelente resultado.',
-    nextAppointment: '2023-12-15 14:00'
+interface Cliente {
+  _id: string
+  name: string
+  phone: string
+  email: string
+  address?: string
+}
+
+interface Comanda {
+  _id: string
+  dataInicio: string
+  professionalId: {
+    _id: string
+    name: string
   }
-]
+  servicos: Array<{
+    nome: string
+    preco: number
+    quantidade: number
+  }>
+  produtos: Array<{
+    nome: string
+    preco: number
+    quantidade: number
+  }>
+  valorTotal: number
+  status: string
+  observacoes?: string
+}
 
 export default function HistoricoClientePage() {
   const router = useRouter()
   const params = useParams()
   const clientId = params.id
 
-  const [client, setClient] = useState({
-    id: clientId,
-    name: 'Maria Silva',
-    phone: '(11) 99999-1234',
-    email: 'maria@email.com',
-    address: 'Rua das Flores, 123 - Centro',
-    totalVisits: 12,
-    totalSpent: 2450.00,
-    lastVisit: '2024-01-15'
-  })
+  const [client, setClient] = useState<Cliente | null>(null)
+  const [comandas, setComandas] = useState<Comanda[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedVisit, setSelectedVisit] = useState<Comanda | null>(null)
 
-  const [history, setHistory] = useState(mockHistory)
-  const [selectedVisit, setSelectedVisit] = useState<any>(null)
+  // Buscar dados do cliente e suas comandas
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!clientId) return
+      
+      try {
+        setLoading(true)
+        console.log('🔄 Buscando dados do cliente:', clientId)
+        
+        // Buscar dados do cliente
+        const clientResponse = await fetch(`/api/clients/${clientId}`)
+        if (clientResponse.ok) {
+          const clientData = await clientResponse.json()
+          setClient(clientData.client)
+          console.log('✅ Cliente carregado:', clientData.client.name)
+        }
+        
+        // Buscar comandas do cliente
+        const comandasResponse = await fetch(`/api/comandas?clientId=${clientId}`)
+        if (comandasResponse.ok) {
+          const comandasData = await comandasResponse.json()
+          setComandas(comandasData.comandas || [])
+          console.log('✅ Comandas carregadas:', comandasData.comandas?.length || 0)
+        }
+        
+      } catch (error) {
+        console.error('❌ Erro ao buscar dados:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
 
-  const getTotalRevenue = () => history.reduce((sum, visit) => sum + visit.total, 0)
-  const getAverageSatisfaction = () => {
-    const total = history.reduce((sum, visit) => sum + visit.satisfaction, 0)
-    return total / history.length
+    fetchData()
+  }, [clientId])
+
+  const getTotalRevenue = () => comandas.reduce((sum, comanda) => sum + comanda.valorTotal, 0)
+  const getTotalVisits = () => comandas.length
+  const getLastVisit = () => {
+    if (comandas.length === 0) return null
+    const sorted = [...comandas].sort((a, b) => new Date(b.dataInicio).getTime() - new Date(a.dataInicio).getTime())
+    return sorted[0]
   }
 
-  const getPaymentMethodStats = () => {
-    const stats: { [key: string]: number } = {}
-    history.forEach(visit => {
-      stats[visit.paymentMethod] = (stats[visit.paymentMethod] || 0) + 1
-    })
-    return stats
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('pt-BR')
+  }
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando histórico...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!client) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Cliente não encontrado</h2>
+            <p className="text-gray-600 mb-6">O cliente que você está procurando não existe ou foi removido.</p>
+            <Link
+              href="/admin/clientes"
+              className="bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+            >
+              Voltar para Clientes
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -136,7 +173,7 @@ export default function HistoricoClientePage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total de Visitas</p>
-                <p className="text-2xl font-light text-gray-900">{client.totalVisits}</p>
+                <p className="text-2xl font-light text-gray-900">{getTotalVisits()}</p>
               </div>
             </div>
           </div>
@@ -148,7 +185,7 @@ export default function HistoricoClientePage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Gasto</p>
-                <p className="text-2xl font-light text-gray-900">R$ {client.totalSpent.toFixed(2)}</p>
+                <p className="text-2xl font-light text-gray-900">R$ {getTotalRevenue().toFixed(2)}</p>
               </div>
             </div>
           </div>
@@ -156,11 +193,13 @@ export default function HistoricoClientePage() {
           <div className="bg-white p-6 border border-gray-100">
             <div className="flex items-center">
               <div className="p-3 bg-blue-50 border border-blue-100">
-                <Star className="w-6 h-6 text-blue-600" />
+                <User className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avaliação Média</p>
-                <p className="text-2xl font-light text-gray-900">{getAverageSatisfaction().toFixed(1)}</p>
+                <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
+                <p className="text-2xl font-light text-gray-900">
+                  R$ {getTotalVisits() > 0 ? (getTotalRevenue() / getTotalVisits()).toFixed(2) : '0.00'}
+                </p>
               </div>
             </div>
           </div>
@@ -172,7 +211,9 @@ export default function HistoricoClientePage() {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Última Visita</p>
-                <p className="text-2xl font-light text-gray-900">{new Date(client.lastVisit).toLocaleDateString('pt-BR')}</p>
+                <p className="text-2xl font-light text-gray-900">
+                  {getLastVisit() ? formatDate(getLastVisit()!.dataInicio) : 'Nunca'}
+                </p>
               </div>
             </div>
           </div>
@@ -184,174 +225,100 @@ export default function HistoricoClientePage() {
             <h2 className="text-xl font-medium text-gray-900">Histórico de Atendimentos</h2>
           </div>
           
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Data
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Profissional
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Serviços/Produtos
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Pagamento
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Satisfação
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {history.map((visit) => (
-                  <tr key={visit.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {new Date(visit.date).toLocaleDateString('pt-BR')}
-                        </div>
-                        <div className="text-sm text-gray-500">{visit.time}</div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{visit.professionalName}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
-                      <div className="space-y-1">
-                        <div className="flex items-center text-xs text-gray-500">
-                          <Scissors className="w-3 h-3 mr-1" />
-                          {visit.services.length} serviço(s)
-                        </div>
-                        <div className="flex items-center text-xs text-gray-500">
-                          <ShoppingBag className="w-3 h-3 mr-1" />
-                          {visit.products.length} produto(s)
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      R$ {visit.total.toFixed(2)}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">{visit.paymentMethod}</td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="ml-1 text-sm text-gray-900">{visit.satisfaction}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedVisit(visit)}
-                        className="text-black hover:text-gray-600 transition-colors"
-                      >
-                        Ver Detalhes
-                      </button>
-                    </td>
+          {comandas.length === 0 ? (
+            <div className="p-6 text-center">
+              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum atendimento encontrado</h3>
+              <p className="text-gray-600">Esta cliente ainda não possui histórico de atendimentos.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Data
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Profissional
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Serviços/Produtos
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Total
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Ações
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {comandas.map((comanda) => (
+                    <tr key={comanda._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">{formatDateTime(comanda.dataInicio)}</div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{comanda.professionalId.name}</td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          <div className="flex items-center mb-1">
+                            <Scissors className="w-4 h-4 mr-2 text-blue-600" />
+                            <span className="font-medium">Serviços:</span>
+                          </div>
+                          {comanda.servicos.map((servico, index) => (
+                            <div key={index} className="ml-6 text-sm text-gray-700">
+                              • {servico.nome} (R$ {servico.preco.toFixed(2)} x {servico.quantidade})
+                            </div>
+                          ))}
+                          
+                          {comanda.produtos.length > 0 && (
+                            <>
+                              <div className="flex items-center mb-1 mt-2">
+                                <ShoppingBag className="w-4 h-4 mr-2 text-green-600" />
+                                <span className="font-medium">Produtos:</span>
+                              </div>
+                              {comanda.produtos.map((produto, index) => (
+                                <div key={index} className="ml-6 text-sm text-gray-700">
+                                  • {produto.nome} (R$ {produto.preco.toFixed(2)} x {produto.quantidade})
+                                </div>
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        R$ {comanda.valorTotal.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          comanda.status === 'em_atendimento' ? 'bg-blue-100 text-blue-800' :
+                          comanda.status === 'finalizada' ? 'bg-green-100 text-green-800' :
+                          'bg-red-100 text-red-800'
+                        }`}>
+                          {comanda.status === 'em_atendimento' ? 'Em Atendimento' :
+                           comanda.status === 'finalizada' ? 'Finalizada' : 'Cancelada'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium">
+                        <Link
+                          href={`/admin/comandas/${comanda._id}`}
+                          className="text-blue-600 hover:text-blue-800 transition-colors"
+                        >
+                          Ver Detalhes
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Modal de Detalhes */}
-      {selectedVisit && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium text-gray-900">Detalhes do Atendimento</h3>
-                <button
-                  onClick={() => setSelectedVisit(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-2">Informações Gerais</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">Data:</span>
-                    <p className="font-medium">{new Date(selectedVisit.date).toLocaleDateString('pt-BR')} às {selectedVisit.time}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Profissional:</span>
-                    <p className="font-medium">{selectedVisit.professionalName}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Pagamento:</span>
-                    <p className="font-medium">{selectedVisit.paymentMethod}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-600">Satisfação:</span>
-                    <p className="font-medium">{selectedVisit.satisfaction}/5</p>
-                  </div>
-                </div>
-              </div>
-
-              {selectedVisit.services.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Serviços Realizados</h4>
-                  <div className="space-y-2">
-                    {selectedVisit.services.map((service: any, index: number) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{service.name} (x{service.quantity})</span>
-                        <span>R$ {(service.price * service.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {selectedVisit.products.length > 0 && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Produtos Vendidos</h4>
-                  <div className="space-y-2">
-                    {selectedVisit.products.map((product: any, index: number) => (
-                      <div key={index} className="flex justify-between text-sm">
-                        <span>{product.name} (x{product.quantity})</span>
-                        <span>R$ {(product.price * product.quantity).toFixed(2)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-lg font-medium">
-                  <span>Total:</span>
-                  <span>R$ {selectedVisit.total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {selectedVisit.observations && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Observações</h4>
-                  <p className="text-sm text-gray-700">{selectedVisit.observations}</p>
-                </div>
-              )}
-
-              {selectedVisit.nextAppointment && (
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Próximo Agendamento</h4>
-                  <p className="text-sm text-gray-700">{new Date(selectedVisit.nextAppointment).toLocaleString('pt-BR')}</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

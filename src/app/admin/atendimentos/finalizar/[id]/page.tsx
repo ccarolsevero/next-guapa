@@ -14,7 +14,41 @@ import {
   Star
 } from 'lucide-react'
 
-// Mock data
+interface Comanda {
+  _id: string
+  clienteId: string
+  clienteNome: string
+  clienteTelefone: string
+  profissionalId: string
+  profissionalNome: string
+  dataInicio: string
+  servicos: Array<{
+    nome: string
+    preco: number
+    quantidade: number
+  }>
+  produtos: Array<{
+    nome: string
+    preco: number
+    quantidade: number
+    vendidoPor?: string
+  }>
+  valorTotal: number
+  status: string
+  observacoes?: string
+}
+
+interface Finalizacao {
+  paymentMethod: string
+  receivedAmount: number
+  change: number
+  observations: string
+  nextAppointment: string
+  recommendedProducts: string
+  completedAt: string
+  discount: number
+}
+
 const paymentMethods = [
   { id: 'pix', name: 'PIX', icon: '💳' },
   { id: 'credit', name: 'Cartão de Crédito', icon: '💳' },
@@ -23,74 +57,57 @@ const paymentMethods = [
   { id: 'transfer', name: 'Transferência', icon: '🏦' }
 ]
 
-
-
 export default function FinalizarAtendimentoPage() {
   const router = useRouter()
   const params = useParams()
-  const appointmentId = params.id
+  const comandaId = params.id
 
-  const [appointment, setAppointment] = useState({
-    id: '',
-    clientName: '',
-    clientPhone: '',
-    serviceName: '',
-    professionalName: '',
-    date: '',
-    time: '',
-    duration: 0,
-    originalPrice: 0,
-    finalPrice: 0,
-    discount: 0,
-    status: 'em_andamento'
-  })
-
-  const [finalization, setFinalization] = useState({
+  const [comanda, setComanda] = useState<Comanda | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [finalizacao, setFinalizacao] = useState<Finalizacao>({
     paymentMethod: '',
     receivedAmount: 0,
     change: 0,
     observations: '',
     nextAppointment: '',
     recommendedProducts: '',
-    completedAt: new Date().toISOString().slice(0, 16)
+    completedAt: new Date().toISOString().slice(0, 16),
+    discount: 0
   })
 
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
 
+  // Buscar dados da comanda
   useEffect(() => {
-    // Simular carregamento da comanda/agendamento
-    // Em produção, isso viria da API com os dados da comanda
-    const comandaData = {
-      id: appointmentId as string,
-      clientName: 'Maria Silva',
-      clientPhone: '(11) 99999-1234',
-      serviceName: 'Corte Feminino + Hidratação + Shampoo + Máscara',
-      professionalName: 'Ana Carolina',
-      date: '2024-01-15',
-      time: '14:00',
-      duration: 120,
-      originalPrice: 158.00, // Total da comanda
-      finalPrice: 158.00,
-      discount: 0,
-      status: 'em_andamento',
-      services: [
-        { name: 'Corte Feminino', price: 45.00, quantity: 1 },
-        { name: 'Hidratação', price: 50.00, quantity: 1 }
-      ],
-      products: [
-        { name: 'Shampoo Profissional', price: 35.00, quantity: 1 },
-        { name: 'Máscara Hidratante', price: 28.00, quantity: 1 }
-      ],
-      observations: 'Cliente solicitou corte longo com camadas'
+    const fetchComanda = async () => {
+      if (!comandaId) return
+      
+      try {
+        setLoading(true)
+        console.log('🔄 Buscando comanda:', comandaId)
+        
+        const response = await fetch(`/api/comandas/${comandaId}`)
+        if (response.ok) {
+          const data = await response.json()
+          setComanda(data.comanda)
+          console.log('✅ Comanda carregada:', data.comanda)
+        } else {
+          console.error('❌ Erro ao carregar comanda:', response.status)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao buscar comanda:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    setAppointment(comandaData)
-  }, [appointmentId])
+
+    fetchComanda()
+  }, [comandaId])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
-    setFinalization(prev => ({
+    setFinalizacao(prev => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
     }))
@@ -98,8 +115,9 @@ export default function FinalizarAtendimentoPage() {
     // Calcular troco
     if (name === 'receivedAmount') {
       const amount = parseFloat(value) || 0
-      const change = amount - appointment.finalPrice
-      setFinalization(prev => ({
+      const valorFinal = (comanda?.valorTotal || 0) - finalizacao.discount
+      const change = amount - valorFinal
+      setFinalizacao(prev => ({
         ...prev,
         change: Math.max(0, change)
       }))
@@ -108,65 +126,91 @@ export default function FinalizarAtendimentoPage() {
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const discount = parseFloat(e.target.value) || 0
-    const finalPrice = Math.max(0, appointment.originalPrice - discount)
+    const valorFinal = Math.max(0, (comanda?.valorTotal || 0) - discount)
     
-    setAppointment(prev => ({
+    setFinalizacao(prev => ({
       ...prev,
       discount,
-      finalPrice
+      change: Math.max(0, finalizacao.receivedAmount - valorFinal)
     }))
+  }
 
-    // Recalcular troco
-    const change = finalization.receivedAmount - finalPrice
-    setFinalization(prev => ({
-      ...prev,
-      change: Math.max(0, change)
-    }))
+  const calcularComissoes = () => {
+    if (!comanda) return { totalComissao: 0, detalhes: [] }
+    
+    let totalComissao = 0
+    const detalhes = []
+    
+    // Comissão dos serviços (10% para o profissional)
+    comanda.servicos.forEach(servico => {
+      const comissao = servico.preco * servico.quantidade * 0.10
+      totalComissao += comissao
+      detalhes.push({
+        tipo: 'Serviço',
+        item: servico.nome,
+        valor: servico.preco * servico.quantidade,
+        comissao: comissao
+      })
+    })
+    
+    // Comissão dos produtos (15% para quem vendeu)
+    comanda.produtos.forEach(produto => {
+      const comissao = produto.preco * produto.quantidade * 0.15
+      totalComissao += comissao
+      detalhes.push({
+        tipo: 'Produto',
+        item: produto.nome,
+        valor: produto.preco * produto.quantidade,
+        comissao: comissao,
+        vendidoPor: produto.vendidoPor || 'Não definido'
+      })
+    })
+    
+    return { totalComissao, detalhes }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!comanda) return
+    
     setIsLoading(true)
     setMessage('')
 
     try {
-      // Simular processamento completo
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const valorFinal = comanda.valorTotal - finalizacao.discount
+      const { totalComissao, detalhes } = calcularComissoes()
       
       // Dados da finalização para salvar
-      const finalizationData = {
-        appointmentId: appointment.id,
-        clientName: appointment.clientName,
-        clientPhone: appointment.clientPhone,
-        professionalName: appointment.professionalName,
-        date: appointment.date,
-        time: appointment.time,
-        duration: appointment.duration,
-        originalPrice: appointment.originalPrice,
-        finalPrice: appointment.finalPrice,
-        discount: appointment.discount,
-        paymentMethod: finalization.paymentMethod,
-        receivedAmount: finalization.receivedAmount,
-        change: finalization.change,
-        // satisfaction: será coletada pela cliente separadamente
-        observations: finalization.observations,
-        nextAppointment: finalization.nextAppointment,
-        recommendedProducts: finalization.recommendedProducts,
-        completedAt: finalization.completedAt,
-        services: (appointment as any).services || [],
-        products: (appointment as any).products || [],
-        totalRevenue: appointment.finalPrice,
-        profitMargin: appointment.finalPrice * 0.6 // Estimativa de margem de 60%
+      const finalizacaoData = {
+        comandaId: comanda._id,
+        clienteId: comanda.clienteId,
+        profissionalId: comanda.profissionalId,
+        dataInicio: comanda.dataInicio,
+        dataFim: finalizacao.completedAt,
+        valorOriginal: comanda.valorTotal,
+        valorFinal: valorFinal,
+        desconto: finalizacao.discount,
+        metodoPagamento: finalizacao.paymentMethod,
+        valorRecebido: finalizacao.receivedAmount,
+        troco: finalizacao.change,
+        observacoes: finalizacao.observations,
+        proximoAgendamento: finalizacao.nextAppointment,
+        produtosRecomendados: finalizacao.recommendedProducts,
+        servicos: comanda.servicos,
+        produtos: comanda.produtos,
+        totalComissao: totalComissao,
+        detalhesComissao: detalhes,
+        faturamento: valorFinal
       }
 
-      // Em produção, aqui seria feita a chamada para a API para salvar:
-      // 1. Histórico da cliente
-      // 2. Dados financeiros
-      // 3. Estatísticas do profissional
-      // 4. Relatórios de vendas
-      // 5. Atualizar status da comanda
+      console.log('Dados da finalização:', finalizacaoData)
       
-      console.log('Dados salvos:', finalizationData)
+      // TODO: Implementar API para salvar finalização
+      // 1. Atualizar status da comanda para 'finalizada'
+      // 2. Salvar dados financeiros
+      // 3. Calcular e salvar comissões
+      // 4. Atualizar faturamento
+      // 5. Salvar no histórico do cliente
       
       setMessage('Atendimento finalizado com sucesso! Dados salvos no histórico da cliente e relatórios financeiros.')
       
@@ -181,6 +225,42 @@ export default function FinalizarAtendimentoPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <p className="text-gray-600">Carregando comanda...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!comanda) {
+    return (
+      <div className="bg-gray-50 min-h-screen">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Comanda não encontrada</h2>
+            <p className="text-gray-600 mb-6">A comanda que você está procurando não existe ou foi removida.</p>
+            <Link
+              href="/admin/comandas"
+              className="bg-black text-white px-6 py-3 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+            >
+              Voltar para Comandas
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const valorFinal = comanda.valorTotal - finalizacao.discount
+  const { totalComissao, detalhes } = calcularComissoes()
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
@@ -189,13 +269,13 @@ export default function FinalizarAtendimentoPage() {
           <div className="flex items-center justify-between py-6">
             <div className="flex items-center">
               <Link 
-                href="/admin/agendamentos" 
+                href="/admin/comandas" 
                 className="flex items-center text-gray-600 hover:text-black mr-4"
               >
                 <ArrowLeft className="w-5 h-5 mr-2" />
                 Voltar
               </Link>
-              <h1 className="text-2xl font-light text-gray-900">
+              <h1 className="text-2xl font-bold text-black">
                 Finalizar Atendimento
               </h1>
             </div>
@@ -203,128 +283,123 @@ export default function FinalizarAtendimentoPage() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <form onSubmit={handleSubmit} className="space-y-8">
           {/* Informações do Atendimento */}
-          <div className="bg-white p-8 border border-gray-100">
+          <div className="bg-white p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-black mb-6 flex items-center">
-              <User className="w-5 h-5 mr-2" />
+              <CheckCircle className="w-6 h-6 mr-3 text-green-600" />
               Informações do Atendimento
             </h2>
             
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Cliente</label>
-                <div className="p-3 bg-gray-50 border border-gray-200">
-                  <p className="font-medium">{appointment.clientName}</p>
-                  <p className="text-sm text-gray-600">{appointment.clientPhone}</p>
-                </div>
+                <p className="text-gray-700">{comanda.clienteNome}</p>
               </div>
-
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Profissional</label>
-                <div className="p-3 bg-gray-50 border border-gray-200">
-                  <p className="font-medium">{appointment.professionalName}</p>
-                </div>
+                <p className="text-gray-700">{comanda.profissionalNome}</p>
               </div>
-
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">Serviço</label>
-                <div className="p-3 bg-gray-50 border border-gray-200">
-                  <p className="font-medium">{appointment.serviceName}</p>
-                  <p className="text-sm text-gray-600">
-                    {appointment.date} às {appointment.time} ({appointment.duration} min)
-                  </p>
-                  
-                  {/* Detalhes da comanda */}
-                  {(appointment as any).services && (appointment as any).services.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">Serviços Realizados:</h4>
-                      <div className="space-y-1">
-                        {(appointment as any).services.map((service: any, index: number) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{service.name} (x{service.quantity})</span>
-                            <span>R$ {(service.price * service.quantity).toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {(appointment as any).products && (appointment as any).products.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-gray-200">
-                      <h4 className="text-sm font-bold text-gray-900 mb-2">Produtos Vendidos:</h4>
-                      <div className="space-y-1">
-                        {(appointment as any).products.map((product: any, index: number) => (
-                          <div key={index} className="flex justify-between text-sm">
-                            <span>{product.name} (x{product.quantity})</span>
-                            <span>R$ {(product.price * product.quantity).toFixed(2)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <p className="text-gray-700">
+                  {comanda.servicos.map(s => s.nome).join(' + ')}
+                  {comanda.produtos.length > 0 && ' + ' + comanda.produtos.map(p => p.nome).join(' + ')}
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">Data e Hora</label>
+                <p className="text-gray-700">{new Date(comanda.dataInicio).toLocaleString('pt-BR')}</p>
+              </div>
+            </div>
+
+            {/* Resumo da comanda */}
+            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+              <h4 className="text-sm font-bold text-gray-900 mb-2">Resumo da comanda:</h4>
+              <div className="space-y-2">
+                {comanda.servicos.map((servico, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{servico.nome} (x{servico.quantidade})</span>
+                    <span>R$ {(servico.preco * servico.quantidade).toFixed(2)}</span>
+                  </div>
+                ))}
+                {comanda.produtos.map((produto, index) => (
+                  <div key={index} className="flex justify-between text-sm">
+                    <span>{produto.nome} (x{produto.quantidade})</span>
+                    <span>R$ {(produto.preco * produto.quantidade).toFixed(2)}</span>
+                  </div>
+                ))}
+                <div className="border-t pt-2 flex justify-between font-bold">
+                  <span>Total:</span>
+                  <span>R$ {comanda.valorTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Valor e Pagamento */}
-          <div className="bg-white p-8 border border-gray-100">
+          <div className="bg-white p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-black mb-6 flex items-center">
-              <DollarSign className="w-5 h-5 mr-2" />
+              <DollarSign className="w-6 h-6 mr-3 text-green-600" />
               Valor e Pagamento
             </h2>
             
-            <div className="grid md:grid-cols-3 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Original (R$)
                 </label>
-                <div className="p-3 bg-gray-50 border border-gray-200">
-                  <p className="font-medium text-lg">R$ {appointment.originalPrice.toFixed(2)}</p>
-                </div>
+                <input
+                  type="number"
+                  value={comanda.valorTotal.toFixed(2)}
+                  disabled
+                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700"
+                />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Desconto (R$)
                 </label>
                 <input
                   type="number"
-                  value={appointment.discount}
+                  name="discount"
+                  value={finalizacao.discount}
                   onChange={handleDiscountChange}
                   min="0"
-                  max={appointment.originalPrice}
+                  max={comanda.valorTotal}
                   step="0.01"
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
-                  placeholder="0.00"
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 />
               </div>
-
+              
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Final (R$)
                 </label>
-                <div className="p-3 bg-black text-white">
-                  <p className="font-medium text-lg">R$ {appointment.finalPrice.toFixed(2)}</p>
-                </div>
+                <input
+                  type="number"
+                  value={valorFinal.toFixed(2)}
+                  disabled
+                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700 font-bold"
+                />
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Forma de Pagamento *
                 </label>
                 <select
                   name="paymentMethod"
-                  value={finalization.paymentMethod}
+                  value={finalizacao.paymentMethod}
                   onChange={handleInputChange}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 >
-                  <option value="">Selecione a forma de pagamento</option>
+                  <option value="">Selecione...</option>
                   {paymentMethods.map(method => (
                     <option key={method.id} value={method.id}>
                       {method.icon} {method.name}
@@ -332,7 +407,7 @@ export default function FinalizarAtendimentoPage() {
                   ))}
                 </select>
               </div>
-
+              
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
                   Valor Recebido (R$)
@@ -340,131 +415,176 @@ export default function FinalizarAtendimentoPage() {
                 <input
                   type="number"
                   name="receivedAmount"
-                  value={finalization.receivedAmount}
+                  value={finalizacao.receivedAmount}
                   onChange={handleInputChange}
-                  min={appointment.finalPrice}
+                  min={valorFinal}
                   step="0.01"
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
-                  placeholder={appointment.finalPrice.toFixed(2)}
+                  required
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 />
               </div>
-
-              {finalization.change > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Troco (R$)
-                  </label>
-                  <div className="p-3 bg-green-50 border border-green-200">
-                    <p className="font-medium text-green-700">R$ {finalization.change.toFixed(2)}</p>
-                  </div>
-                </div>
-              )}
+              
+              <div>
+                <label className="block text-sm font-bold text-gray-900 mb-2">
+                  Troco (R$)
+                </label>
+                <input
+                  type="number"
+                  value={finalizacao.change.toFixed(2)}
+                  disabled
+                  className="w-full p-3 border border-gray-300 bg-gray-100 text-gray-700"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Observações */}
-          <div className="bg-white p-8 border border-gray-100">
+          {/* Comissões e Faturamento */}
+          <div className="bg-white p-6 border border-gray-100">
             <h2 className="text-xl font-bold text-black mb-6 flex items-center">
-              <FileText className="w-5 h-5 mr-2" />
+              <Star className="w-6 h-6 mr-3 text-yellow-600" />
+              Comissões e Faturamento
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 mb-3">Detalhes das Comissões:</h4>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {detalhes.map((item, index) => (
+                    <div key={index} className="text-sm p-2 bg-gray-50 rounded">
+                      <div className="flex justify-between">
+                        <span className="font-medium">{item.tipo}: {item.item}</span>
+                        <span className="text-green-600">R$ {item.comissao.toFixed(2)}</span>
+                      </div>
+                      {item.vendidoPor && (
+                        <div className="text-xs text-gray-600">Vendido por: {item.vendidoPor}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <div className="flex justify-between font-bold text-green-800">
+                    <span>Total de Comissões:</span>
+                    <span>R$ {totalComissao.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-bold text-gray-900 mb-3">Resumo Financeiro:</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between">
+                    <span>Valor Final:</span>
+                    <span className="font-bold">R$ {valorFinal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Comissões:</span>
+                    <span className="text-red-600">-R$ {totalComissao.toFixed(2)}</span>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between font-bold text-lg">
+                    <span>Lucro Líquido:</span>
+                    <span className="text-green-600">R$ {(valorFinal - totalComissao).toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Observações do Atendimento */}
+          <div className="bg-white p-6 border border-gray-100">
+            <h2 className="text-xl font-bold text-black mb-6 flex items-center">
+              <FileText className="w-6 h-6 mr-3 text-blue-600" />
               Observações do Atendimento
             </h2>
             
-            <div className="space-y-6">
-
+            <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Observações do Atendimento
                 </label>
                 <textarea
                   name="observations"
-                  value={finalization.observations}
+                  value={finalizacao.observations}
                   onChange={handleInputChange}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
-                  placeholder="Observações sobre o atendimento, produtos utilizados, etc..."
+                  rows={3}
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
+                  placeholder="Observações sobre o atendimento..."
                 />
               </div>
-
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Produtos Recomendados
                 </label>
                 <textarea
                   name="recommendedProducts"
-                  value={finalization.recommendedProducts}
+                  value={finalizacao.recommendedProducts}
                   onChange={handleInputChange}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
+                  rows={2}
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                   placeholder="Produtos recomendados para a cliente..."
                 />
               </div>
-
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Próximo Agendamento Sugerido
                 </label>
                 <input
                   type="datetime-local"
                   name="nextAppointment"
-                  value={finalization.nextAppointment}
+                  value={finalizacao.nextAppointment}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 />
               </div>
-
+              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-900 mb-2">
                   Horário de Conclusão
                 </label>
                 <input
                   type="datetime-local"
                   name="completedAt"
-                  value={finalization.completedAt}
+                  value={finalizacao.completedAt}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-3 border border-gray-300 focus:ring-0 focus:border-black transition-colors"
+                  required
+                  className="w-full p-3 border border-gray-300 bg-white text-black focus:ring-0 focus:border-black transition-colors"
                 />
               </div>
             </div>
           </div>
 
-          {/* Mensagem de feedback */}
-          {message && (
-            <div className={`p-4 rounded-lg ${
-              message.includes('sucesso') 
-                ? 'bg-green-50 border border-green-200 text-green-600' 
-                : 'bg-red-50 border border-red-200 text-red-600'
-            }`}>
-              {message}
-            </div>
-          )}
-
-          {/* Botões */}
-          <div className="flex justify-end space-x-4">
-            <button
-              type="button"
-              onClick={() => router.push('/admin/agendamentos')}
-              className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Cancelar
-            </button>
+          {/* Botão de Finalização */}
+          <div className="text-center">
             <button
               type="submit"
-              disabled={isLoading || !finalization.paymentMethod}
-              className="px-8 py-3 bg-black text-white font-medium hover:bg-gray-800 transition-colors disabled:bg-gray-400 tracking-wide flex items-center"
+              disabled={isLoading || !finalizacao.paymentMethod || finalizacao.receivedAmount < valorFinal}
+              className="bg-green-600 text-white px-8 py-4 hover:bg-green-700 transition-colors font-medium tracking-wide text-lg disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center mx-auto"
             >
               {isLoading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                   Finalizando...
                 </>
               ) : (
                 <>
-                  <CheckCircle className="w-4 h-4 mr-2" />
+                  <CheckCircle className="w-5 h-5 mr-2" />
                   Finalizar Atendimento
                 </>
               )}
             </button>
           </div>
+
+          {/* Mensagem de Status */}
+          {message && (
+            <div className={`text-center p-4 rounded-lg ${
+              message.includes('sucesso') 
+                ? 'bg-green-100 text-green-800 border border-green-200' 
+                : 'bg-red-100 text-red-800 border border-red-200'
+            }`}>
+              {message}
+            </div>
+          )}
         </form>
       </div>
     </div>
