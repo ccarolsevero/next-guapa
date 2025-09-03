@@ -148,6 +148,9 @@ export default function ComandaDetalhesPage() {
   // Flag para controlar se já carregamos a comanda inicial
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   
+  // Forçar re-renderização quando valorTotal mudar
+  const [forceUpdate, setForceUpdate] = useState(0)
+  
   // Buscar dados da comanda específica
   useEffect(() => {
     const fetchComanda = async () => {
@@ -371,6 +374,9 @@ export default function ComandaDetalhesPage() {
           console.log('🔄 Estado local atualizado com novo valor total:', updatedComanda.valorTotal)
           return updatedComanda
         })
+        
+        // Forçar re-renderização para atualizar o resumo
+        setForceUpdate(prev => prev + 1)
       } else {
         console.error('❌ Erro ao salvar comanda no banco:', response.status)
         const errorData = await response.json()
