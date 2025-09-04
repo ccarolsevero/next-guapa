@@ -126,6 +126,10 @@ export default function AgendamentosPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [hoveredAppointment, setHoveredAppointment] = useState<Appointment | null>(null)
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [activeTab, setActiveTab] = useState<'reserva' | 'informacoes'>('reserva')
+  const [editingAppointment, setEditingAppointment] = useState<Partial<Appointment>>({})
 
   // Buscar dados da API
   useEffect(() => {
@@ -287,6 +291,22 @@ export default function AgendamentosPage() {
     setAppointmentToDelete(null)
   }
 
+  const handleEditAppointment = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    setEditingAppointment({
+      ...appointment,
+      date: appointment.date.split('T')[0], // Converter para formato de input date
+    })
+    setShowEditModal(true)
+    setActiveTab('reserva')
+  }
+
+  const closeEditModal = () => {
+    setShowEditModal(false)
+    setSelectedAppointment(null)
+    setActiveTab('reserva')
+  }
+
   const renderDayView = () => {
     const dayAppointments = getAppointmentsForDate(selectedDate)
     
@@ -428,6 +448,7 @@ export default function AgendamentosPage() {
                     gridRow: `${startIndex + 2} / span ${durationSlots}`, // +2 porque row 1 é o header
                     gridColumn: professionalIndex + 2
                   }}
+                  onClick={() => handleEditAppointment(appointment)}
                   onMouseEnter={(e) => {
                     setHoveredAppointment(appointment)
                     setTooltipPosition({ x: e.clientX, y: e.clientY })
@@ -454,50 +475,57 @@ export default function AgendamentosPage() {
         {/* Tooltip */}
         {hoveredAppointment && (
           <div
-            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs"
+            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-sm"
             style={{
               left: `${tooltipPosition.x + 10}px`,
               top: `${tooltipPosition.y - 10}px`,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              transform: 'translateY(-100%)'
             }}
           >
-            <div className="space-y-2">
+            {/* Cabeçalho com data/hora e nome */}
+            <div className="mb-3">
+              <div className="text-sm font-medium text-gray-900">
+                {showEditModal && editingAppointment.date 
+                  ? new Date(editingAppointment.date).toLocaleDateString('pt-BR') 
+                  : new Date(hoveredAppointment.date).toLocaleDateString('pt-BR')
+                } às {showEditModal && editingAppointment.startTime 
+                  ? editingAppointment.startTime 
+                  : hoveredAppointment.startTime
+                }
+              </div>
+              <div className="text-lg font-semibold text-gray-900 mt-1">
+                {hoveredAppointment.clientName}
+              </div>
+            </div>
+
+            {/* Informações do agendamento */}
+            <div className="space-y-2 text-sm text-gray-600">
               <div>
-                <span className="text-sm font-medium text-gray-600">Serviço:</span>
-                <p className="text-sm text-gray-900">{hoveredAppointment.service}</p>
+                <span className="font-medium">Profissional:</span> {hoveredAppointment.professional}
               </div>
               <div>
-                <span className="text-sm font-medium text-gray-600">Status:</span>
-                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${statusColors[hoveredAppointment.status]}`}>
+                <span className="font-medium">Serviço:</span> {hoveredAppointment.service}
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="font-medium">Status:</span>
+                <span className={`px-2 py-1 rounded text-xs font-medium ${statusColors[hoveredAppointment.status]}`}>
                   {getStatusText(hoveredAppointment.status)}
                 </span>
               </div>
               {hoveredAppointment.notes && (
                 <div>
-                  <span className="text-sm font-medium text-gray-600">Obs:</span>
-                  <p className="text-sm text-gray-900">{hoveredAppointment.notes}</p>
+                  <span className="font-medium">Obs:</span>
+                  <div className="mt-1 text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                    {hoveredAppointment.notes}
+                  </div>
                 </div>
               )}
-              <div className="flex space-x-2 pt-2">
-                <Link
-                  href={`/admin/agendamentos/${hoveredAppointment._id}`}
-                  className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                  Ver detalhes
-                </Link>
-                <Link
-                  href={`/admin/agendamentos/${hoveredAppointment._id}/editar`}
-                  className="text-xs text-green-600 hover:text-green-800 transition-colors"
-                >
-                  Editar
-                </Link>
-                <button 
-                  onClick={() => handleDeleteAppointment(hoveredAppointment._id)}
-                  className="text-xs text-red-600 hover:text-red-800 transition-colors"
-                >
-                  Excluir
-                </button>
-              </div>
+            </div>
+
+            {/* Seta apontando para baixo */}
+            <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-full">
+              <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-200"></div>
             </div>
           </div>
         )}
@@ -1006,6 +1034,231 @@ export default function AgendamentosPage() {
                     Excluir
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Edição de Agendamento */}
+        {showEditModal && selectedAppointment && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+              {/* Header do Modal */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex space-x-1">
+                  <button
+                    onClick={() => setActiveTab('reserva')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'reserva'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Reserva
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('informacoes')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      activeTab === 'informacoes'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Informações
+                  </button>
+                </div>
+                <button
+                  onClick={closeEditModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Conteúdo do Modal */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                {activeTab === 'reserva' ? (
+                  <div className="space-y-6">
+                    {/* Informações do Cliente */}
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <div className="text-sm text-gray-600 mb-2">
+                        <span className="font-medium">Cliente:</span>{' '}
+                        <span className="text-blue-600 underline">{selectedAppointment.clientName}</span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Celular:</span>{' '}
+                        <span className="text-blue-600 underline">{selectedAppointment.clientPhone}</span>
+                      </div>
+                    </div>
+
+                    {/* Data */}
+                    <div className="flex items-center space-x-4">
+                      <label className="text-sm font-medium text-gray-700">Data:</label>
+                      <input
+                        type="date"
+                        value={editingAppointment.date || selectedAppointment.date.split('T')[0]}
+                        onChange={(e) => setEditingAppointment({...editingAppointment, date: e.target.value})}
+                        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      />
+                      <button className="text-blue-600 underline text-sm">Recorrência...</button>
+                      <button className="bg-green-500 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"/>
+                        </svg>
+                        <span>Enviar WhatsApp</span>
+                      </button>
+                    </div>
+
+                    {/* Tabela de Serviços */}
+                    <div className="border border-gray-200 rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profissional</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tempo</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Início</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fim</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor (R$)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="px-4 py-3">
+                              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option>{selectedAppointment.service}</option>
+                              </select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <option>{selectedAppointment.professional}</option>
+                              </select>
+                              <div className="mt-2">
+                                <label className="flex items-center text-sm text-gray-600">
+                                  <input type="checkbox" className="mr-2" />
+                                  Sem Preferência
+                                </label>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                value={selectedAppointment.duration}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="time"
+                                value={editingAppointment.startTime || selectedAppointment.startTime}
+                                onChange={(e) => setEditingAppointment({...editingAppointment, startTime: e.target.value})}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="time"
+                                value={selectedAppointment.endTime}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              />
+                            </td>
+                            <td className="px-4 py-3">
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={selectedAppointment.price}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                              />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2">
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>Adicionar serviço</span>
+                      </button>
+                      <label className="flex items-center text-sm text-gray-600">
+                        <input type="checkbox" className="mr-2" />
+                        Forçar Encaixe
+                      </label>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">Status:</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[
+                          { label: 'Agendado', color: 'bg-teal-100 text-teal-800', selected: selectedAppointment.status === 'SCHEDULED' },
+                          { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', selected: selectedAppointment.status === 'CONFIRMED' },
+                          { label: 'Aguardando', color: 'bg-yellow-100 text-yellow-800', selected: false },
+                          { label: 'Em Atendimento', color: 'bg-green-100 text-green-800', selected: false },
+                          { label: 'Finalizado', color: 'bg-purple-100 text-purple-800', selected: selectedAppointment.status === 'COMPLETED' },
+                          { label: 'Pago', color: 'bg-red-100 text-red-800', selected: false },
+                          { label: 'Cancelado', color: 'bg-gray-100 text-gray-800', selected: selectedAppointment.status === 'CANCELLED' },
+                          { label: 'Faltou', color: 'bg-gray-200 text-gray-900', selected: selectedAppointment.status === 'NO_SHOW' }
+                        ].map((status) => (
+                          <button
+                            key={status.label}
+                            className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${status.color} ${
+                              status.selected ? 'ring-2 ring-gray-400' : ''
+                            }`}
+                          >
+                            {status.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Auditoria */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Auditoria</h3>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <div>
+                          <span className="font-medium">Data de Criação:</span> {new Date(selectedAppointment.createdAt).toLocaleString('pt-BR')}
+                        </div>
+                        <div>
+                          <span className="font-medium">Última Atualização:</span> {new Date(selectedAppointment.updatedAt).toLocaleString('pt-BR')}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Observações */}
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-4">Observações</h3>
+                      <textarea
+                        rows={6}
+                        placeholder="Adicione observações sobre este agendamento..."
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                        defaultValue={selectedAppointment.notes || ''}
+                      />
+                      <div className="text-right text-sm text-gray-500 mt-1">
+                        {selectedAppointment.notes?.length || 0}/255
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer do Modal */}
+              <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+                <button
+                  onClick={closeEditModal}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                  Salvar
+                </button>
               </div>
             </div>
           </div>
