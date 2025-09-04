@@ -14,8 +14,7 @@ import {
   StarOff,
   Image,
   Phone,
-  Mail,
-  MapPin
+  Mail
 } from 'lucide-react'
 
 interface Professional {
@@ -135,9 +134,17 @@ export default function ProfissionaisPage() {
     }
   }
 
+  // Função para normalizar texto removendo acentos
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  }
+
   const filteredProfessionals = professionals.filter(professional =>
-    professional.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    professional.title.toLowerCase().includes(searchTerm.toLowerCase())
+    normalizeText(professional.name).includes(normalizeText(searchTerm)) ||
+    normalizeText(professional.title).includes(normalizeText(searchTerm))
   )
 
   if (loading) {
@@ -153,13 +160,13 @@ export default function ProfissionaisPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-8 pb-12">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">Gerenciar Profissionais</h1>
+          <h1 className="text-3xl font-light text-[#006D5B]">Gerenciar Profissionais</h1>
           <Link
             href="/admin/profissionais/novo"
-            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center"
+            className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium flex items-center"
           >
             <Plus className="w-5 h-5 mr-2" />
             Novo Profissional
@@ -167,17 +174,17 @@ export default function ProfissionaisPage() {
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="Buscar profissionais..."
+                  placeholder="Buscar profissionais (ex: iris, cicera)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                 />
               </div>
             </div>

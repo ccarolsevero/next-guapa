@@ -72,11 +72,19 @@ export default function ClientesPage() {
     loadClients()
   }, [])
 
+  // Função para normalizar texto removendo acentos
+  const normalizeText = (text: string) => {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+  }
+
   const filteredAndSortedClients = clients
     .filter(client => {
-      // Filtro de busca por texto
-      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      // Filtro de busca por texto (com suporte a acentos)
+      const matchesSearch = normalizeText(client.name).includes(normalizeText(searchTerm)) ||
+        (client.email && normalizeText(client.email).includes(normalizeText(searchTerm))) ||
         client.phone.includes(searchTerm)
       
       // Filtro por perfil completo
@@ -171,11 +179,11 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       {/* Header */}
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
+          <h1 className="text-3xl font-light text-[#006D5B]">Clientes</h1>
           <p className="mt-2 text-sm text-gray-700">
             Gerencie todos os clientes do salão ({totalClients} clientes)
           </p>
@@ -183,21 +191,21 @@ export default function ClientesPage() {
         <div className="mt-4 sm:mt-0 flex space-x-3">
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
+            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             {showAnalytics ? 'Ocultar' : 'Mostrar'} Análises
           </button>
           <Link
             href="/admin/clientes/importar-flexivel"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center"
           >
             <Upload className="w-4 h-4 mr-2" />
             Importar Clientes
           </Link>
           <Link
             href="/admin/clientes/novo"
-            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
+            className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-colors flex items-center"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Cliente
@@ -273,10 +281,10 @@ export default function ClientesPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Buscar por nome, email ou telefone..."
+                  placeholder="Buscar por nome, email ou telefone (ex: iris, ana)..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                 />
               </div>
             </div>
@@ -284,7 +292,7 @@ export default function ClientesPage() {
               <select
                 value={filterComplete}
                 onChange={(e) => setFilterComplete(e.target.value as 'all' | 'complete' | 'incomplete')}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
               >
                 <option value="all">Todos os Clientes</option>
                 <option value="complete">Perfil Completo</option>
@@ -293,7 +301,7 @@ export default function ClientesPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
               >
                 <option value="name">Ordenar por Nome</option>
                 <option value="createdAt">Ordenar por Data de Cadastro</option>
@@ -301,7 +309,7 @@ export default function ClientesPage() {
               </select>
               <button
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
               </button>
@@ -323,9 +331,6 @@ export default function ClientesPage() {
                   Contato
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Endereço
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Data de Cadastro
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -339,7 +344,7 @@ export default function ClientesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAndSortedClients.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm ? 'Nenhum cliente encontrado com esses critérios.' : 'Nenhum cliente cadastrado ainda.'}
                   </td>
                 </tr>
@@ -375,9 +380,6 @@ export default function ClientesPage() {
                           {client.phone}
                         </div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {client.address || 'Endereço não informado'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatDate(client.createdAt)}
