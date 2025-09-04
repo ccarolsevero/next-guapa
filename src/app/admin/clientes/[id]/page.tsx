@@ -310,7 +310,7 @@ export default function ClienteDetalhesPage() {
                   <textarea
                     value={notesText}
                     onChange={(e) => setNotesText(e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent resize-none"
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent resize-none text-gray-900 placeholder-gray-500"
                     rows={4}
                     placeholder="Digite suas observações sobre o cliente..."
                   />
