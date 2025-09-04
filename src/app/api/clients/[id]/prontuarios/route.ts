@@ -20,11 +20,14 @@ export async function GET(
     
     console.log('✅ Conectado ao MongoDB')
     
-    // Buscar prontuários do cliente
+    // Buscar prontuários do cliente (lidar com ambos os tipos: string e ObjectId)
     const prontuarios = await db.collection('prontuarios').aggregate([
       {
         $match: {
-          clientId: id
+          $or: [
+            { clientId: id },
+            { clientId: new ObjectId(id) }
+          ]
         }
       },
       {

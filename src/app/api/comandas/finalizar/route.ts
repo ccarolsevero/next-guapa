@@ -282,44 +282,55 @@ export async function POST(request: NextRequest) {
     console.log('📋 Verificando se deve salvar prontuário...')
     
     if (finalizacaoData.historicoProcedimentos || finalizacaoData.observacoes || finalizacaoData.recomendacoes) {
-      console.log('📋 Salvando prontuário...')
+      console.log('📋 Verificando se já existe prontuário para esta comanda...')
       
-      const prontuarioData = {
-        clientId: comanda.clienteId,
-        comandaId: new ObjectId(comandaId),
-        professionalId: comanda.profissionalId,
-        dataAtendimento: new Date(),
-        historicoProcedimentos: finalizacaoData.historicoProcedimentos || finalizacaoData.observacoes || 'Procedimentos realizados conforme comanda',
-        reacoesEfeitos: finalizacaoData.reacoesEfeitos || '',
-        recomendacoes: finalizacaoData.recomendacoes || '',
-        proximaSessao: finalizacaoData.proximaSessao ? new Date(finalizacaoData.proximaSessao) : null,
-        observacoesAdicionais: finalizacaoData.observacoesAdicionais || '',
-        servicosRealizados: comanda.servicos?.map((servico: any) => ({
-          servicoId: servico.servicoId || servico.id,
-          nome: servico.nome || servico.name,
-          preco: servico.preco || servico.price || 0,
-          quantidade: servico.quantidade || 1
-        })) || [],
-        produtosVendidos: comanda.produtos?.map((produto: any) => ({
-          produtoId: produto.produtoId || produto.id,
-          nome: produto.nome || produto.name,
-          preco: produto.preco || produto.price || 0,
-          quantidade: produto.quantidade || 1,
-          vendidoPor: produto.vendidoPor || produto.vendidoPorId
-        })) || [],
-        valorTotal: dadosFinalizacao.valorFinal,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
+      // Verificar se já existe prontuário para esta comanda
+      const prontuarioExistente = await db.collection('prontuarios').findOne({
+        comandaId: new ObjectId(comandaId)
+      })
       
-      console.log('📋 Dados do prontuário:', prontuarioData)
-      
-      try {
-        const prontuarioResult = await db.collection('prontuarios').insertOne(prontuarioData)
-        console.log('✅ Prontuário salvo com sucesso:', prontuarioResult.insertedId)
-      } catch (prontuarioError) {
-        console.error('❌ Erro ao salvar prontuário:', prontuarioError)
-        // Não falhar a finalização por causa do prontuário
+      if (prontuarioExistente) {
+        console.log('ℹ️ Prontuário já existe para esta comanda, pulando criação')
+      } else {
+        console.log('📋 Salvando prontuário...')
+        
+        const prontuarioData = {
+          clientId: comanda.clienteId.toString(), // Garantir que seja string
+          comandaId: new ObjectId(comandaId),
+          professionalId: comanda.profissionalId.toString(), // Garantir que seja string
+          dataAtendimento: new Date(),
+          historicoProcedimentos: finalizacaoData.historicoProcedimentos || finalizacaoData.observacoes || 'Procedimentos realizados conforme comanda',
+          reacoesEfeitos: finalizacaoData.reacoesEfeitos || '',
+          recomendacoes: finalizacaoData.recomendacoes || '',
+          proximaSessao: finalizacaoData.proximaSessao ? new Date(finalizacaoData.proximaSessao) : null,
+          observacoesAdicionais: finalizacaoData.observacoesAdicionais || '',
+          servicosRealizados: comanda.servicos?.map((servico: any) => ({
+            servicoId: servico.servicoId || servico.id,
+            nome: servico.nome || servico.name,
+            preco: servico.preco || servico.price || 0,
+            quantidade: servico.quantidade || 1
+          })) || [],
+          produtosVendidos: comanda.produtos?.map((produto: any) => ({
+            produtoId: produto.produtoId || produto.id,
+            nome: produto.nome || produto.name,
+            preco: produto.preco || produto.price || 0,
+            quantidade: produto.quantidade || 1,
+            vendidoPor: produto.vendidoPor || produto.vendidoPorId
+          })) || [],
+          valorTotal: dadosFinalizacao.valorFinal,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+        
+        console.log('📋 Dados do prontuário:', prontuarioData)
+        
+        try {
+          const prontuarioResult = await db.collection('prontuarios').insertOne(prontuarioData)
+          console.log('✅ Prontuário salvo com sucesso:', prontuarioResult.insertedId)
+        } catch (prontuarioError) {
+          console.error('❌ Erro ao salvar prontuário:', prontuarioError)
+          // Não falhar a finalização por causa do prontuário
+        }
       }
     } else {
       console.log('ℹ️ Nenhum dado de prontuário fornecido, pulando criação do prontuário')
