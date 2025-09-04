@@ -359,11 +359,15 @@ export default function AgendamentosPage() {
 
     try {
       const selectedLabels = customLabels.filter(label => label.selected)
+      console.log('🏷️ Etiquetas selecionadas:', selectedLabels)
+      
       const updatedData = {
         ...editingAppointment,
         date: editingAppointment.date ? new Date(editingAppointment.date).toISOString() : selectedAppointment.date,
         customLabels: selectedLabels
       }
+      
+      console.log('💾 Dados para salvar:', updatedData)
 
       const response = await fetch(`/api/appointments/${selectedAppointment._id}`, {
         method: 'PUT',
@@ -374,12 +378,16 @@ export default function AgendamentosPage() {
       })
 
       if (response.ok) {
+        const updatedAppointment = await response.json()
+        console.log('✅ Agendamento atualizado:', updatedAppointment)
+        
         // Atualizar a lista de agendamentos
         await fetchAppointments()
         closeEditModal()
         console.log('Agendamento atualizado com sucesso!')
       } else {
-        console.error('Erro ao atualizar agendamento')
+        const error = await response.json()
+        console.error('❌ Erro ao atualizar agendamento:', error)
       }
     } catch (error) {
       console.error('Erro ao salvar agendamento:', error)
@@ -1434,10 +1442,11 @@ export default function AgendamentosPage() {
                         rows={6}
                         placeholder="Adicione observações sobre este agendamento..."
                         className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium resize-none"
-                        defaultValue={selectedAppointment.notes || ''}
+                        value={editingAppointment.notes || selectedAppointment.notes || ''}
+                        onChange={(e) => setEditingAppointment(prev => ({ ...prev, notes: e.target.value }))}
                       />
                       <div className="text-right text-sm text-gray-500 mt-1">
-                        {selectedAppointment.notes?.length || 0}/255
+                        {(editingAppointment.notes || selectedAppointment.notes || '').length}/255
                       </div>
                     </div>
                   </div>

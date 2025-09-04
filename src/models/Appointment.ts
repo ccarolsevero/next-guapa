@@ -15,6 +15,11 @@ export interface IAppointment extends Document {
   status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   price: number
   notes?: string
+  customLabels?: Array<{
+    id: number
+    name: string
+    color: string
+  }>
   createdAt: Date
   updatedAt: Date
 }
@@ -87,7 +92,23 @@ const appointmentSchema = new Schema<IAppointment>({
   notes: {
     type: String,
     trim: true
-  }
+  },
+  customLabels: [{
+    id: {
+      type: Number,
+      required: true
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    color: {
+      type: String,
+      required: true,
+      trim: true
+    }
+  }]
 }, {
   timestamps: true
 })
