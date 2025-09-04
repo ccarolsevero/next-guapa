@@ -54,12 +54,12 @@ const isLunchTime = (time: string) => {
 // Cores para cada profissional
 const getProfessionalColor = (professionalName: string) => {
   const colors: Record<string, string> = {
-    'Bruna Canovas': 'bg-gradient-to-br from-purple-200 to-purple-300 text-purple-900 border-purple-400',
-    'Vitória Uliani': 'bg-gradient-to-br from-orange-200 to-orange-300 text-orange-900 border-orange-400', 
-    'Cicera Canovas': 'bg-gradient-to-br from-green-200 to-green-300 text-green-900 border-green-400',
-    'Ellen Souza': 'bg-gradient-to-br from-blue-200 to-blue-300 text-blue-900 border-blue-400'
+    'Bruna Canovas': 'bg-[#d34d4c] text-white border-[#d34d4c]', // Vermelho terracota
+    'Vitória Uliani': 'bg-[#f2dcbc] text-[#022b28] border-[#f2dcbc]', // Bege claro
+    'Cicera Canovas': 'bg-[#022b28] text-white border-[#022b28]', // Verde escuro
+    'Ellen Souza': 'bg-[#8c5459] text-white border-[#8c5459]' // Rosa acinzentado
   }
-  return colors[professionalName] || 'bg-gradient-to-br from-gray-200 to-gray-300 text-gray-900 border-gray-400'
+  return colors[professionalName] || 'bg-gray-200 text-gray-900 border-gray-400'
 }
 
 // Calcular duração em intervalos de 15 minutos
@@ -346,12 +346,12 @@ export default function AgendamentosPage() {
             <div className="text-sm font-medium text-gray-900 p-2 flex items-center justify-center">Horário</div>
             {professionals.map((professional) => (
               <div key={professional._id} className="text-center p-2">
-                <div className={`flex flex-col items-center p-3 rounded-lg text-white shadow-sm ${
-                  professional.name === 'Bruna Canovas' ? 'bg-gradient-to-br from-purple-600 to-purple-700' :
-                  professional.name === 'Vitória Uliani' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
-                  professional.name === 'Cicera Canovas' ? 'bg-gradient-to-br from-green-600 to-green-700' :
-                  professional.name === 'Ellen Souza' ? 'bg-gradient-to-br from-blue-600 to-blue-700' :
-                  'bg-gradient-to-br from-gray-600 to-gray-700'
+                <div className={`flex flex-col items-center p-3 rounded-lg shadow-sm ${
+                  professional.name === 'Bruna Canovas' ? 'bg-[#d34d4c] text-white' :
+                  professional.name === 'Vitória Uliani' ? 'bg-[#f2dcbc] text-[#022b28]' :
+                  professional.name === 'Cicera Canovas' ? 'bg-[#022b28] text-white' :
+                  professional.name === 'Ellen Souza' ? 'bg-[#8c5459] text-white' :
+                  'bg-gray-600 text-white'
                 }`}>
                   {/* Foto do profissional */}
                   <div className="w-8 h-8 rounded-full bg-white/20 mb-2 flex items-center justify-center overflow-hidden">
@@ -1196,23 +1196,31 @@ export default function AgendamentosPage() {
                       <label className="text-sm font-medium text-gray-700 mb-3 block">Status:</label>
                       <div className="flex flex-wrap gap-2">
                         {[
-                          { label: 'Agendado', color: 'bg-teal-100 text-teal-800', selected: selectedAppointment.status === 'SCHEDULED' },
-                          { label: 'Confirmado', color: 'bg-blue-100 text-blue-800', selected: selectedAppointment.status === 'CONFIRMED' },
-                          { label: 'Aguardando', color: 'bg-yellow-100 text-yellow-800', selected: false },
-                          { label: 'Em Atendimento', color: 'bg-green-100 text-green-800', selected: false },
-                          { label: 'Finalizado', color: 'bg-purple-100 text-purple-800', selected: selectedAppointment.status === 'COMPLETED' },
-                          { label: 'Pago', color: 'bg-red-100 text-red-800', selected: false },
-                          { label: 'Cancelado', color: 'bg-gray-100 text-gray-800', selected: selectedAppointment.status === 'CANCELLED' },
-                          { label: 'Faltou', color: 'bg-gray-200 text-gray-900', selected: selectedAppointment.status === 'NO_SHOW' }
+                          { label: 'Agendado', value: 'SCHEDULED', color: 'bg-teal-100 text-teal-800' },
+                          { label: 'Confirmado', value: 'CONFIRMED', color: 'bg-blue-100 text-blue-800' },
+                          { label: 'Aguardando', value: 'PENDING', color: 'bg-yellow-100 text-yellow-800' },
+                          { label: 'Em Atendimento', value: 'IN_PROGRESS', color: 'bg-green-100 text-green-800' },
+                          { label: 'Finalizado', value: 'COMPLETED', color: 'bg-purple-100 text-purple-800' },
+                          { label: 'Pago', value: 'PAID', color: 'bg-red-100 text-red-800' },
+                          { label: 'Cancelado', value: 'CANCELLED', color: 'bg-gray-100 text-gray-800' },
+                          { label: 'Faltou', value: 'NO_SHOW', color: 'bg-gray-200 text-gray-900' }
                         ].map((status) => (
-                          <button
-                            key={status.label}
-                            className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${status.color} ${
-                              status.selected ? 'ring-2 ring-gray-400' : ''
+                          <label
+                            key={status.value}
+                            className={`px-3 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${status.color} ${
+                              (editingAppointment.status || selectedAppointment.status) === status.value ? 'ring-2 ring-gray-400' : ''
                             }`}
                           >
+                            <input
+                              type="radio"
+                              name="status"
+                              value={status.value}
+                              checked={(editingAppointment.status || selectedAppointment.status) === status.value}
+                              onChange={(e) => setEditingAppointment({...editingAppointment, status: e.target.value})}
+                              className="sr-only"
+                            />
                             {status.label}
-                          </button>
+                          </label>
                         ))}
                       </div>
                     </div>
@@ -1238,7 +1246,7 @@ export default function AgendamentosPage() {
                       <textarea
                         rows={6}
                         placeholder="Adicione observações sobre este agendamento..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                        className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium resize-none"
                         defaultValue={selectedAppointment.notes || ''}
                       />
                       <div className="text-right text-sm text-gray-500 mt-1">
