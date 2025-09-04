@@ -40,7 +40,7 @@ interface Appointment {
   professional: string
   date: string
   time: string
-  status: 'confirmed' | 'pending' | 'completed' | 'cancelled'
+  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' | 'confirmed' | 'pending' | 'completed' | 'cancelled'
   price: number
   rating?: number
   review?: string
@@ -385,19 +385,15 @@ function PainelClienteContent() {
   const getStatusText = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'Confirmado'
-      case 'pending':
-        return 'Pendente'
-      case 'completed':
-        return 'Concluído'
-      case 'cancelled':
-        return 'Cancelado'
-      case 'SCHEDULED':
-        return 'Agendado'
       case 'CONFIRMED':
         return 'Confirmado'
+      case 'pending':
+      case 'SCHEDULED':
+        return 'Agendado'
+      case 'completed':
       case 'COMPLETED':
         return 'Concluído'
+      case 'cancelled':
       case 'CANCELLED':
         return 'Cancelado'
       case 'NO_SHOW':
