@@ -6,7 +6,6 @@ import {
   User, 
   Building, 
   Clock, 
-  Shield, 
   Save,
   Eye,
   EyeOff,
@@ -41,6 +40,10 @@ interface Configuracao {
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [showPassword, setShowPassword] = useState(false)
+  const [senhaAtual, setSenhaAtual] = useState('')
+  const [novaSenha, setNovaSenha] = useState('')
+  const [confirmarSenha, setConfirmarSenha] = useState('')
+  const [salvandoSenha, setSalvandoSenha] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [loading, setLoading] = useState(true)
   const [configuracao, setConfiguracao] = useState<Configuracao | null>(null)
@@ -49,8 +52,7 @@ export default function ConfiguracoesPage() {
   const tabs = [
     { id: 'general', name: 'Geral', icon: Settings },
     { id: 'business', name: 'Negócio', icon: Building },
-    { id: 'schedule', name: 'Horários', icon: Clock },
-    { id: 'security', name: 'Segurança', icon: Shield }
+    { id: 'schedule', name: 'Horários', icon: Clock }
   ]
 
   useEffect(() => {
@@ -121,6 +123,56 @@ export default function ConfiguracoesPage() {
     novosHorarios[index] = { ...novosHorarios[index], [field]: value }
     
     setConfiguracao(prev => prev ? { ...prev, horariosFuncionamento: novosHorarios } : null)
+  }
+
+  const handleChangePassword = async () => {
+    if (!senhaAtual || !novaSenha || !confirmarSenha) {
+      alert('Por favor, preencha todos os campos de senha')
+      return
+    }
+
+    if (novaSenha !== confirmarSenha) {
+      alert('A nova senha e a confirmação não coincidem')
+      return
+    }
+
+    if (novaSenha.length < 6) {
+      alert('A nova senha deve ter pelo menos 6 caracteres')
+      return
+    }
+
+    try {
+      setSalvandoSenha(true)
+      
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          senhaAtual,
+          novaSenha
+        }),
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao alterar senha')
+      }
+      
+      // Limpar campos
+      setSenhaAtual('')
+      setNovaSenha('')
+      setConfirmarSenha('')
+      
+      alert('Senha alterada com sucesso!')
+      
+    } catch (error) {
+      console.error('Erro ao alterar senha:', error)
+      alert(error instanceof Error ? error.message : 'Erro ao alterar senha')
+    } finally {
+      setSalvandoSenha(false)
+    }
   }
 
   if (loading) {
@@ -242,6 +294,81 @@ export default function ConfiguracoesPage() {
                     className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Alterar Senha</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Senha Atual
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={senhaAtual}
+                      onChange={(e) => setSenhaAtual(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent pr-10"
+                      style={{ color: '#000000' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <Eye className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={novaSenha}
+                    onChange={(e) => setNovaSenha(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    style={{ color: '#000000' }}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Confirmar Nova Senha
+                  </label>
+                  <input
+                    type="password"
+                    value={confirmarSenha}
+                    onChange={(e) => setConfirmarSenha(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    style={{ color: '#000000' }}
+                  />
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleChangePassword}
+                    disabled={salvandoSenha}
+                    className="bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {salvandoSenha ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Alterando...
+                      </>
+                    ) : (
+                      'Alterar Senha'
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -413,92 +540,6 @@ export default function ConfiguracoesPage() {
         )}
 
 
-        {/* Configurações de Segurança */}
-        {activeTab === 'security' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Alterar Senha</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Senha Atual
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent pr-10"
-                      style={{ color: '#000000' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-5 w-5 text-gray-400" />
-                      ) : (
-                        <Eye className="h-5 w-5 text-gray-400" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nova Senha
-                  </label>
-                  <input
-                    type="password"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    style={{ color: '#000000' }}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Confirmar Nova Senha
-                  </label>
-                  <input
-                    type="password"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    style={{ color: '#000000' }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações de Segurança</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Autenticação em Duas Etapas</div>
-                    <div className="text-sm text-gray-600">Requer código adicional para login</div>
-                  </div>
-                  <input type="checkbox" className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Sessão Automática</div>
-                    <div className="text-sm text-gray-600">Manter logado por 30 dias</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Log de Atividades</div>
-                    <div className="text-sm text-gray-600">Registrar todas as atividades do sistema</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Botão Salvar */}
