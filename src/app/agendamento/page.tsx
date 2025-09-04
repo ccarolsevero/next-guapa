@@ -29,6 +29,7 @@ export default function AgendamentoPage() {
   const [services, setServices] = useState<any[]>([])
   const [availableTimes, setAvailableTimes] = useState<string[]>(timeSlots)
   const [loading, setLoading] = useState(false)
+  const [showDateTimeModal, setShowDateTimeModal] = useState(false)
 
   // Carregar profissionais do banco
   useEffect(() => {
@@ -157,9 +158,10 @@ export default function AgendamentoPage() {
         clientName: formData.name,
         clientPhone: formData.phone,
         clientEmail: formData.email,
+        clientId: isLoggedIn && client ? client._id : null, // Adicionar clientId se logado
         service: formData.service,
         professional: formData.professional,
-        professionalId: selectedProfessional?.id?.toString() || '',
+        professionalId: selectedProfessional?._id?.toString() || '',
         date: formData.date,
         startTime: formData.time,
         endTime: endTime,
@@ -178,6 +180,7 @@ export default function AgendamentoPage() {
       })
       
       if (response.ok) {
+        setShowDateTimeModal(false) // Fechar modal
         setStep(3) // Mostrar confirmação
       } else {
         const errorData = await response.json()
@@ -273,26 +276,19 @@ export default function AgendamentoPage() {
       {/* Progress Bar */}
       <div className="bg-white border-b">
         <div className="max-w-3xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className={`flex items-center ${step >= 1 ? 'text-[#D15556]' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
                 1
               </div>
               <span className="ml-2 font-semibold">Profissional</span>
             </div>
-            <div className={`flex-1 h-1 mx-2 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
+            <div className={`flex-1 h-1 mx-4 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
             <div className={`flex items-center ${step >= 2 ? 'text-[#D15556]' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
                 2
               </div>
               <span className="ml-2 font-semibold">Serviço</span>
-            </div>
-            <div className={`flex-1 h-1 mx-2 ${step >= 3 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
-            <div className={`flex items-center ${step >= 3 ? 'text-[#D15556]' : 'text-gray-400'}`}>
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
-                3
-              </div>
-              <span className="ml-2 font-semibold">Data/Horário</span>
             </div>
           </div>
         </div>
@@ -477,34 +473,63 @@ export default function AgendamentoPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      console.log('🔍 Botão Próximo clicado - isLoggedIn:', isLoggedIn, 'selectedService:', selectedService)
-                      setStep(isLoggedIn ? 3 : 4)
-                    }}
+                    onClick={() => setShowDateTimeModal(true)}
                     disabled={!selectedService}
                     className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
                   >
-                    Próximo
+                    Escolher Data e Horário
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Etapa 3: Data e Horário (para logados) ou Etapa 4 (para não logados) */}
-            {console.log('🔍 Debug - step:', step, 'isLoggedIn:', isLoggedIn, 'condition:', (step === 3 && isLoggedIn) || (step === 4 && !isLoggedIn))}
-            {((step === 3 && isLoggedIn) || (step === 4 && !isLoggedIn)) && (
-              <div>
-                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Data e Horário</h2>
-                
-                <div className="mb-4 p-3 bg-[#F5F0E8] rounded-lg">
-                  <p className="text-sm text-[#006D5B] font-medium">
-                    <strong>Profissional:</strong> {selectedProfessional?.name} | 
-                    <strong> Serviço:</strong> {selectedService?.name} - R$ {selectedService?.price?.toFixed(2)}
-                  </p>
-                </div>
+          </form>
+        </div>
+      </div>
 
-                {/* Data e Horário */}
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+      {/* Modal de Data e Horário */}
+      {showDateTimeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-semibold text-[#006D5B]">Escolher Data e Horário</h3>
+                <button 
+                  onClick={() => setShowDateTimeModal(false)}
+                  className="text-gray-600 hover:text-gray-900 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Resumo da Seleção */}
+              <div className="mb-6 p-4 bg-[#F5F0E8] rounded-lg">
+                <h4 className="font-semibold text-[#006D5B] mb-2">Resumo do Agendamento</h4>
+                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Profissional:</span>
+                    <p className="text-gray-700">{selectedProfessional?.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Serviço:</span>
+                    <p className="text-gray-700">{selectedService?.name}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Duração:</span>
+                    <p className="text-gray-700">{selectedService?.duration} minutos</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Valor:</span>
+                    <p className="text-[#D15556] font-semibold">R$ {selectedService?.price?.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulário de Data e Horário */}
+              <form onSubmit={handleSubmit}>
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       <Calendar className="w-4 h-4 inline mr-2" />
@@ -517,7 +542,7 @@ export default function AgendamentoPage() {
                       onChange={handleInputChange}
                       min={getNextAvailableDate()}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
                       style={{ color: '#000000' }}
                     />
                   </div>
@@ -532,7 +557,7 @@ export default function AgendamentoPage() {
                       value={formData.time}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
                       style={{ color: '#000000' }}
                     >
                       <option value="">Selecione um horário</option>
@@ -553,42 +578,43 @@ export default function AgendamentoPage() {
                 </div>
 
                 {/* Observações */}
-                <div className="mb-8">
+                <div className="mb-6">
                   <label className="block text-sm font-bold text-gray-700 mb-2">
-                    Observações
+                    Observações (opcional)
                   </label>
                   <textarea
                     name="notes"
                     value={formData.notes}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-black font-medium"
                     style={{ color: '#000000' }}
                     placeholder="Alguma observação especial ou preferência..."
                   />
                 </div>
 
+                {/* Botões */}
                 <div className="flex justify-between">
                   <button
                     type="button"
-                    onClick={() => setStep(isLoggedIn ? 2 : 3)}
-                    className="text-gray-600 hover:text-gray-800 transition-colors font-semibold"
+                    onClick={() => setShowDateTimeModal(false)}
+                    className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-semibold"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit"
                     disabled={!formData.date || !formData.time}
-                    className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
+                    className="bg-[#D15556] text-white px-8 py-3 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
                   >
                     Confirmar Agendamento
                   </button>
                 </div>
-              </div>
-            )}
-          </form>
+              </form>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Footer */}
       <footer className="text-gray-900 py-16 border-t border-[#D15556] relative" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>

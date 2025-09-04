@@ -4,6 +4,7 @@ export interface IAppointment extends Document {
   clientName: string
   clientPhone: string
   clientEmail?: string
+  clientId?: string // ID do cliente se estiver logado
   service: string
   professional: string
   professionalId: string
