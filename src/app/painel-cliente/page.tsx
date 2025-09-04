@@ -75,72 +75,60 @@ function PainelClienteContent() {
     confirmPassword: ''
   })
   const [passwordLoading, setPasswordLoading] = useState(false)
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: 1,
-      service: 'Corte e Tratamento Keune',
-      professional: 'Bruna',
-      date: '2024-01-15',
-      time: '14:00',
-      status: 'confirmed',
-      price: 198.00
-    },
-    {
-      id: 2,
-      service: 'Tratamento Keune SPA',
-      professional: 'Cicera',
-      date: '2024-01-20',
-      time: '10:00',
-      status: 'pending',
-      price: 120.00
-    },
-    {
-      id: 3,
-      service: 'Avaliação Capilar + Corte',
-      professional: 'Bruna',
-      date: '2024-01-10',
-      time: '15:30',
-      status: 'completed',
-      price: 132.00,
-      rating: 5,
-      review: 'Excelente atendimento! A Bruna é muito profissional e atenciosa.',
-      reviewed: true
-    },
-    {
-      id: 4,
-      service: 'Tratamento Natural So Pure',
-      professional: 'Cicera',
-      date: '2024-01-05',
-      time: '11:00',
-      status: 'completed',
-      price: 140.00,
-      reviewed: false
-    }
-  ])
-  const [orders, setOrders] = useState<Order[]>([
-    {
-      id: 1,
-      items: [
-        { name: 'Shampoo Keune', quantity: 2, price: 45.00 },
-        { name: 'Condicionador Keune', quantity: 1, price: 42.00 }
-      ],
-      total: 132.00,
-      status: 'pending',
-      createdAt: '2024-01-10'
-    }
-  ])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Verificar se o cliente está logado
-    const isLoggedIn = localStorage.getItem('isClientLoggedIn')
-    const loggedInClient = localStorage.getItem('loggedInClient')
-    
-    if (!isLoggedIn || !loggedInClient) {
-      window.location.href = '/login-cliente'
-      return
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true)
+        
+        // Verificar se o cliente está logado
+        const isLoggedIn = localStorage.getItem('isClientLoggedIn')
+        const loggedInClient = localStorage.getItem('loggedInClient')
+        
+        if (!isLoggedIn || !loggedInClient) {
+          window.location.href = '/login-cliente'
+          return
+        }
+
+        const clientInfo = JSON.parse(loggedInClient)
+        setClientData(clientInfo)
+        
+        // Buscar dados do dashboard do banco
+        const response = await fetch(`/api/clients/dashboard?clientId=${clientInfo.id}`)
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados do dashboard')
+        }
+        
+        const data = await response.json()
+        
+        // Atualizar dados do cliente com informações do banco
+        setClientData(data.client)
+        setAppointments(data.appointments)
+        setOrders(data.orders)
+        
+        console.log('📊 Dashboard data loaded:', {
+          appointments: data.appointments.length,
+          orders: data.orders.length,
+          stats: data.stats
+        })
+        
+      } catch (error) {
+        console.error('❌ Erro ao carregar dados do dashboard:', error)
+        // Em caso de erro, manter dados básicos do localStorage
+        const loggedInClient = localStorage.getItem('loggedInClient')
+        if (loggedInClient) {
+          setClientData(JSON.parse(loggedInClient))
+        }
+      } finally {
+        setLoading(false)
+      }
     }
 
-    setClientData(JSON.parse(loggedInClient))
+    fetchDashboardData()
   }, [])
 
   // Função para abrir modal de avaliação
@@ -320,12 +308,12 @@ function PainelClienteContent() {
     return timeString
   }
 
-  if (!clientData) {
+  if (loading || !clientData) {
     return (
       <div className="min-h-screen bg-[#F5F0E8] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D15556] mx-auto mb-4"></div>
-          <p className="text-[#006D5B]">Carregando...</p>
+          <p className="text-[#006D5B]">Carregando dados do painel...</p>
         </div>
       </div>
     )
@@ -767,7 +755,7 @@ function PainelClienteContent() {
             {activeTab === 'recommendations' && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-light text-[#006D5B] mb-6">
-                  Minhas Recomendações
+                  Orientações e Cuidados
                 </h2>
 
                 <div className="bg-white rounded-lg shadow-lg p-6">
@@ -776,7 +764,7 @@ function PainelClienteContent() {
                     <div>
                       <h3 className="text-lg font-medium text-[#006D5B] mb-4 flex items-center">
                         <Star className="w-5 h-5 mr-2" />
-                        Recomendações dos Atendimentos
+                        Orientações dos Atendimentos
                       </h3>
                       
                       {appointments.filter(apt => apt.status === 'completed').length > 0 ? (
@@ -805,7 +793,7 @@ function PainelClienteContent() {
                                 {/* Aqui viriam as recomendações reais do banco */}
                                 <div className="bg-blue-50 border border-blue-200 rounded p-3">
                                   <p className="text-sm text-blue-800">
-                                    <strong>Recomendações:</strong> Produtos específicos para seu tipo de cabelo, 
+                                    <strong>Orientações:</strong> Produtos específicos para seu tipo de cabelo, 
                                     cuidados diários e próximos passos para manutenção dos resultados.
                                   </p>
                                 </div>
@@ -816,49 +804,24 @@ function PainelClienteContent() {
                         <div className="text-center py-8">
                           <Star className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                           <h3 className="text-lg font-medium text-gray-500 mb-2">
-                            Nenhuma recomendação ainda
+                            Nenhuma orientação ainda
                           </h3>
                           <p className="text-gray-400">
-                            Suas recomendações aparecerão aqui após completar atendimentos.
+                            Suas orientações aparecerão aqui após completar atendimentos.
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Recomendações gerais */}
-                    <div>
-                      <h3 className="text-lg font-medium text-[#006D5B] mb-4 flex items-center">
-                        <Package className="w-5 h-5 mr-2" />
-                        Produtos Recomendados
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="border border-gray-200 rounded-lg p-4">
-                          <h4 className="font-medium text-[#006D5B] mb-2">Shampoo Profissional</h4>
-                          <p className="text-sm text-gray-600 mb-3">
-                            Ideal para seu tipo de cabelo, com ingredientes naturais.
-                          </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-[#D15556]">R$ 45,00</span>
-                            <button className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors">
-                              Comprar
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="border border-gray-200 rounded-lg p-4">
-                          <h4 className="text-lg font-medium text-[#006D5B] mb-2">Máscara Hidratante</h4>
-                          <p className="text-sm text-gray-600 mb-3">
-                            Tratamento intensivo para cabelos danificados.
-                          </p>
-                          <div className="flex justify-between items-center">
-                            <span className="text-lg font-bold text-[#D15556]">R$ 38,00</span>
-                            <button className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors">
-                              Comprar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                    {/* Link para recomendações detalhadas */}
+                    <div className="text-center">
+                      <Link
+                        href="/painel-cliente/recomendacoes"
+                        className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium inline-flex items-center"
+                      >
+                        <Star className="w-5 h-5 mr-2" />
+                        Ver Todas as Orientações
+                      </Link>
                     </div>
                   </div>
                 </div>
