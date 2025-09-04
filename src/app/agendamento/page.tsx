@@ -3,39 +3,15 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Calendar, Clock, User, Phone, Mail, CheckCircle } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
-const services = [
-  { id: 1, name: "Avaliação", price: 60.00, duration: 30 },
-  { id: 2, name: "Back To Natural - g", price: 385.00, duration: 120 },
-  { id: 3, name: "Back To Natural - m", price: 319.00, duration: 120 },
-  { id: 4, name: "Back To Natural - p", price: 231.00, duration: 120 },
-  { id: 5, name: "Cobertura de Brancos (Tinta Color Keune)", price: 121.00, duration: 90 },
-  { id: 6, name: "Cobertura de Brancos (Tinta So Pure - Keune)", price: 143.00, duration: 90 },
-  { id: 7, name: "Combo Consultoria, Corte e Tratamento Keune", price: 264.00, duration: 120 },
-  { id: 8, name: "Consultoria/Corte", price: 198.00, duration: 90 },
-  { id: 9, name: "Corte", price: 132.00, duration: 60 },
-  { id: 10, name: "Corte e Tratamento Keune", price: 198.00, duration: 90 },
-  { id: 11, name: "Corte Infantil", price: 66.00, duration: 45 },
-  { id: 12, name: "Finalização", price: 77.00, duration: 30 },
-  { id: 13, name: "Iluminado g (Cabelo Longo)", price: 715.00, duration: 150 },
-  { id: 14, name: "Iluminado m (Abaixo do Ombro)", price: 605.00, duration: 120 },
-  { id: 15, name: "Iluminado p (Até o Ombro)", price: 500.00, duration: 90 },
-  { id: 16, name: "Iluminado Pp (Cabelos Curtinhos)", price: 390.00, duration: 60 },
-  { id: 17, name: "Mechas Coloridas", price: 250.00, duration: 120 },
-  { id: 18, name: "Mechas Invertidas", price: 220.00, duration: 90 },
-  { id: 19, name: "Retoque de Corte", price: 66.00, duration: 30 },
-]
-
-const professionals = [
-  { id: 1, name: "Bruna", specialties: "Cabeleireira Visagista" },
-  { id: 2, name: "Cicera Canovas", specialties: "Tricoterapeuta" },
-]
 
 const timeSlots = [
   "09:00", "10:00", "11:00", "12:00", "14:00", "15:00", "16:00", "17:00", "18:00"
 ]
 
 export default function AgendamentoPage() {
+  const { isLoggedIn, client } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -49,29 +25,122 @@ export default function AgendamentoPage() {
   const [step, setStep] = useState(1)
   const [selectedService, setSelectedService] = useState<any>(null)
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null)
+  const [professionals, setProfessionals] = useState<any[]>([])
+  const [services, setServices] = useState<any[]>([])
+  const [availableTimes, setAvailableTimes] = useState<string[]>(timeSlots)
+  const [loading, setLoading] = useState(false)
+
+  // Carregar profissionais do banco
+  useEffect(() => {
+    const loadProfessionals = async () => {
+      try {
+        console.log('👥 Carregando profissionais...')
+        const response = await fetch('/api/professionals')
+        console.log('👥 Response status:', response.status)
+        
+        if (response.ok) {
+          const data = await response.json()
+          console.log('👥 Profissionais carregados:', data.length, data)
+          setProfessionals(data)
+        } else {
+          console.error('👥 Erro ao carregar profissionais:', response.status)
+        }
+      } catch (error) {
+        console.error('👥 Erro ao carregar profissionais:', error)
+      }
+    }
+    loadProfessionals()
+  }, [])
+
+  // Carregar serviços quando um profissional for selecionado
+  useEffect(() => {
+    if (selectedProfessional) {
+      const loadServices = async () => {
+        try {
+          console.log('🔧 Carregando serviços para profissional:', selectedProfessional._id)
+          const response = await fetch(`/api/services?professionalId=${selectedProfessional._id}`)
+          console.log('🔧 Response status:', response.status)
+          
+          if (response.ok) {
+            const data = await response.json()
+            console.log('🔧 Serviços carregados:', data.length, data)
+            setServices(data)
+          } else {
+            console.error('🔧 Erro ao carregar serviços:', response.status)
+          }
+        } catch (error) {
+          console.error('🔧 Erro ao carregar serviços:', error)
+        }
+      }
+      loadServices()
+    }
+  }, [selectedProfessional])
+
+  // Carregar horários disponíveis quando data e profissional forem selecionados
+  useEffect(() => {
+    console.log('🕐 useEffect horários - date:', formData.date, 'professional:', selectedProfessional?._id)
+    
+    if (formData.date && selectedProfessional) {
+      const loadAvailableTimes = async () => {
+        try {
+          console.log('🕐 Carregando horários para:', formData.date, selectedProfessional._id)
+          const response = await fetch(`/api/appointments/available-times?date=${formData.date}&professionalId=${selectedProfessional._id}`)
+          console.log('🕐 Response status:', response.status)
+          
+          if (response.ok) {
+            const data = await response.json()
+            console.log('🕐 Horários disponíveis:', data.availableTimes)
+            setAvailableTimes(data.availableTimes || [])
+          } else {
+            console.log('🕐 Erro na resposta, usando horários padrão')
+            setAvailableTimes(timeSlots)
+          }
+        } catch (error) {
+          console.error('🕐 Erro ao carregar horários disponíveis:', error)
+          setAvailableTimes(timeSlots)
+        }
+      }
+      loadAvailableTimes()
+    } else {
+      console.log('🕐 Sem data ou profissional, usando horários padrão')
+      setAvailableTimes(timeSlots)
+    }
+  }, [formData.date, selectedProfessional])
 
   useEffect(() => {
+    // Se o cliente estiver logado, preencher dados automaticamente
+    if (isLoggedIn && client) {
+      setFormData(prev => ({
+        ...prev,
+        name: client.name,
+        email: client.email || '',
+        phone: client.phone
+      }))
+      // Clientes logados começam na etapa 1 (escolha do profissional)
+      setStep(1)
+    }
+
     // Pegar parâmetros da URL
     const urlParams = new URLSearchParams(window.location.search)
     const serviceParam = urlParams.get('service')
     const professionalParam = urlParams.get('professional')
     
-    if (serviceParam) {
-      const service = services.find(s => s.name === serviceParam)
-      if (service) {
-        setFormData(prev => ({ ...prev, service: service.name }))
-        setSelectedService(service)
-      }
-    }
-    
-    if (professionalParam) {
+    if (professionalParam && professionals.length > 0) {
       const professional = professionals.find(p => p.name === professionalParam)
       if (professional) {
         setFormData(prev => ({ ...prev, professional: professional.name }))
         setSelectedProfessional(professional)
       }
     }
-  }, [])
+    
+    if (serviceParam && services.length > 0) {
+      const service = services.find(s => s.name === serviceParam)
+      if (service) {
+        setFormData(prev => ({ ...prev, service: service.name }))
+        setSelectedService(service)
+      }
+    }
+  }, [isLoggedIn, client, professionals, services])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -86,13 +155,58 @@ export default function AgendamentoPage() {
   const handleProfessionalSelect = (professional: any) => {
     setSelectedProfessional(professional)
     setFormData(prev => ({ ...prev, professional: professional.name }))
+    // Limpar serviço selecionado quando trocar de profissional
+    setSelectedService(null)
+    setFormData(prev => ({ ...prev, service: '' }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Aqui você faria a chamada para a API
-    console.log('Dados do agendamento:', formData)
-    setStep(3) // Mostrar confirmação
+    
+    try {
+      // Calcular horário de fim baseado na duração do serviço
+      const startTime = formData.time
+      const duration = selectedService?.duration || 60
+      const [hours, minutes] = startTime.split(':').map(Number)
+      const startDate = new Date()
+      startDate.setHours(hours, minutes, 0, 0)
+      const endDate = new Date(startDate.getTime() + duration * 60000)
+      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+      
+      const appointmentData = {
+        clientName: formData.name,
+        clientPhone: formData.phone,
+        clientEmail: formData.email,
+        service: formData.service,
+        professional: formData.professional,
+        professionalId: selectedProfessional?.id?.toString() || '',
+        date: formData.date,
+        startTime: formData.time,
+        endTime: endTime,
+        duration: duration,
+        price: selectedService?.price || 0,
+        notes: formData.notes,
+        status: 'SCHEDULED'
+      }
+      
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(appointmentData),
+      })
+      
+      if (response.ok) {
+        setStep(3) // Mostrar confirmação
+      } else {
+        const errorData = await response.json()
+        alert(`Erro ao agendar: ${errorData.error || 'Erro desconhecido'}`)
+      }
+    } catch (error) {
+      console.error('Erro ao agendar:', error)
+      alert('Erro ao processar agendamento. Tente novamente.')
+    }
   }
 
   const getNextAvailableDate = () => {
@@ -184,14 +298,21 @@ export default function AgendamentoPage() {
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
                 1
               </div>
-              <span className="ml-2 font-semibold">Dados Pessoais</span>
+              <span className="ml-2 font-semibold">Profissional</span>
             </div>
-            <div className={`flex-1 h-1 mx-4 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
+            <div className={`flex-1 h-1 mx-2 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
             <div className={`flex items-center ${step >= 2 ? 'text-[#D15556]' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
                 2
               </div>
-              <span className="ml-2 font-semibold">Agendamento</span>
+              <span className="ml-2 font-semibold">Serviço</span>
+            </div>
+            <div className={`flex-1 h-1 mx-2 ${step >= 3 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center ${step >= 3 ? 'text-[#D15556]' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
+                3
+              </div>
+              <span className="ml-2 font-semibold">Data/Horário</span>
             </div>
           </div>
         </div>
@@ -202,15 +323,23 @@ export default function AgendamentoPage() {
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
             <h1 className="text-4xl font-bold text-[#006D5B] mb-4">
-              Agende seu <span className="text-[#D15556]">Horário</span>
+              {isLoggedIn ? (
+                <>Olá, {client?.name}! <span className="text-[#D15556]">Agende seu Horário</span></>
+              ) : (
+                <>Agende seu <span className="text-[#D15556]">Horário</span></>
+              )}
             </h1>
             <p className="text-xl text-gray-700 font-medium">
-              Preencha os dados abaixo para agendar seu horário
+              {isLoggedIn 
+                ? "Escolha seu profissional, serviço e horário preferido"
+                : "Preencha os dados abaixo para agendar seu horário"
+              }
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8">
-            {step === 1 && (
+            {/* Etapa 1: Dados Pessoais (apenas para não logados) */}
+            {step === 1 && !isLoggedIn && (
               <div>
                 <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Dados Pessoais</h2>
                 
@@ -279,55 +408,115 @@ export default function AgendamentoPage() {
               </div>
             )}
 
-            {step === 2 && (
+            {/* Etapa 1: Escolha do Profissional (para logados) ou Etapa 2 (para não logados) */}
+            {((step === 1 && isLoggedIn) || (step === 2 && !isLoggedIn)) && (
               <div>
-                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Escolha seu Serviço e Horário</h2>
+                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Escolha o Profissional</h2>
                 
-                {/* Serviços */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-[#006D5B] mb-4">Serviços Disponíveis</h3>
-                  <div className="grid md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                    {services.map((service) => (
-                      <div
-                        key={service.id}
-                        onClick={() => handleServiceSelect(service)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedService?.id === service.id
-                            ? 'border-[#D15556] bg-[#F5F0E8]'
-                            : 'border-gray-200 hover:border-[#D15556]'
-                        }`}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h4 className="font-bold text-[#006D5B]">{service.name}</h4>
-                            <p className="text-sm text-gray-600 font-medium">{service.duration} min</p>
-                          </div>
-                          <span className="text-[#D15556] font-bold">R$ {service.price.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                  {professionals.map((professional) => (
+                    <div
+                      key={professional._id}
+                      onClick={() => handleProfessionalSelect(professional)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedProfessional?._id === professional._id
+                          ? 'border-[#D15556] bg-[#F5F0E8]'
+                          : 'border-gray-200 hover:border-[#D15556]'
+                      }`}
+                    >
+                      <h4 className="font-bold text-[#006D5B]">{professional.name}</h4>
+                      <p className="text-sm text-gray-600 font-medium">{professional.title}</p>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Profissionais */}
-                <div className="mb-8">
-                  <h3 className="text-lg font-bold text-[#006D5B] mb-4">Escolha o Profissional</h3>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {professionals.map((professional) => (
-                      <div
-                        key={professional.id}
-                        onClick={() => handleProfessionalSelect(professional)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                          selectedProfessional?.id === professional.id
-                            ? 'border-[#D15556] bg-[#F5F0E8]'
-                            : 'border-gray-200 hover:border-[#D15556]'
-                        }`}
-                      >
-                        <h4 className="font-bold text-[#006D5B]">{professional.name}</h4>
-                        <p className="text-sm text-gray-600 font-medium">{professional.specialties}</p>
-                      </div>
-                    ))}
+                <div className="flex justify-between">
+                  {!isLoggedIn && (
+                    <button
+                      type="button"
+                      onClick={() => setStep(1)}
+                      className="text-gray-600 hover:text-gray-800 transition-colors font-semibold"
+                    >
+                      Voltar
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setStep(isLoggedIn ? 2 : 3)}
+                    disabled={!selectedProfessional}
+                    className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Etapa 2: Escolha do Serviço (para logados) ou Etapa 3 (para não logados) */}
+            {((step === 2 && isLoggedIn) || (step === 3 && !isLoggedIn)) && (
+              <div>
+                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Escolha o Serviço</h2>
+                
+                {selectedProfessional && (
+                  <div className="mb-4 p-3 bg-[#F5F0E8] rounded-lg">
+                    <p className="text-sm text-[#006D5B] font-medium">
+                      Profissional selecionado: <strong>{selectedProfessional.name}</strong>
+                    </p>
                   </div>
+                )}
+                
+                <div className="grid md:grid-cols-2 gap-4 max-h-96 overflow-y-auto mb-8">
+                  {services.map((service) => (
+                    <div
+                      key={service._id}
+                      onClick={() => handleServiceSelect(service)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                        selectedService?._id === service._id
+                          ? 'border-[#D15556] bg-[#F5F0E8]'
+                          : 'border-gray-200 hover:border-[#D15556]'
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h4 className="font-bold text-[#006D5B]">{service.name}</h4>
+                          <p className="text-sm text-gray-600 font-medium">{service.duration} min</p>
+                        </div>
+                        <span className="text-[#D15556] font-bold">R$ {service.price.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setStep(isLoggedIn ? 1 : 2)}
+                    className="text-gray-600 hover:text-gray-800 transition-colors font-semibold"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(isLoggedIn ? 3 : 4)}
+                    disabled={!selectedService}
+                    className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
+                  >
+                    Próximo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Etapa 3: Data e Horário (para logados) ou Etapa 4 (para não logados) */}
+            {((step === 3 && isLoggedIn) || (step === 4 && !isLoggedIn)) && (
+              <div>
+                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Data e Horário</h2>
+                
+                <div className="mb-4 p-3 bg-[#F5F0E8] rounded-lg">
+                  <p className="text-sm text-[#006D5B] font-medium">
+                    <strong>Profissional:</strong> {selectedProfessional?.name} | 
+                    <strong> Serviço:</strong> {selectedService?.name} - R$ {selectedService?.price?.toFixed(2)}
+                  </p>
                 </div>
 
                 {/* Data e Horário */}
@@ -363,10 +552,20 @@ export default function AgendamentoPage() {
                       style={{ color: '#000000' }}
                     >
                       <option value="">Selecione um horário</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>{time}</option>
-                      ))}
+                      {console.log('🕐 Renderizando select - availableTimes:', availableTimes, 'length:', availableTimes.length)}
+                      {availableTimes.length > 0 ? (
+                        availableTimes.map((time) => (
+                          <option key={time} value={time}>{time}</option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Nenhum horário disponível para esta data</option>
+                      )}
                     </select>
+                    {formData.date && availableTimes.length === 0 && (
+                      <p className="text-sm text-red-600 mt-1">
+                        Não há horários disponíveis para esta data. Tente outra data.
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -389,14 +588,14 @@ export default function AgendamentoPage() {
                 <div className="flex justify-between">
                   <button
                     type="button"
-                    onClick={() => setStep(1)}
+                    onClick={() => setStep(isLoggedIn ? 2 : 3)}
                     className="text-gray-600 hover:text-gray-800 transition-colors font-semibold"
                   >
                     Voltar
                   </button>
                   <button
                     type="submit"
-                    disabled={!selectedService || !selectedProfessional || !formData.date || !formData.time}
+                    disabled={!formData.date || !formData.time}
                     className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
                   >
                     Confirmar Agendamento

@@ -2,32 +2,54 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Service from '@/models/Service'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const professionalId = searchParams.get('professionalId')
+    
     console.log('🔍 Buscando serviços do MongoDB...')
     console.log('📡 MONGODB_URI:', process.env.MONGODB_URI ? 'Configurada' : 'NÃO CONFIGURADA')
+    console.log('👤 ProfessionalId:', professionalId || 'Nenhum (todos os serviços)')
     
     await connectDB()
     console.log('✅ Conectado ao banco de dados')
     
-    // Buscar todos os serviços primeiro para debug
-    const allServices = await Service.find({})
-    console.log('📊 Total de serviços no banco (sem filtro):', allServices.length)
+    let services
     
-    if (allServices.length > 0) {
-      console.log('📋 Primeiros 3 serviços encontrados:')
-      allServices.slice(0, 3).forEach((service, index) => {
-        console.log(`  ${index + 1}. ${service.name} - Ativo: ${service.isActive}`)
-      })
+    if (professionalId) {
+      // Buscar serviços específicos do profissional
+      const Professional = (await import('@/models/Professional')).default
+      const professional = await Professional.findById(professionalId)
+      
+      if (!professional) {
+        console.log('❌ Profissional não encontrado:', professionalId)
+        return NextResponse.json({ error: 'Profissional não encontrado' }, { status: 404 })
+      }
+      
+      console.log('👤 Profissional encontrado:', professional.name)
+      console.log('📋 Serviços do profissional:', professional.services)
+      
+      if (!professional.services || professional.services.length === 0) {
+        console.log('❌ Profissional não tem serviços cadastrados')
+        return NextResponse.json({ error: 'Profissional não tem serviços cadastrados' }, { status: 404 })
+      }
+      
+      // Buscar serviços que correspondem aos nomes do profissional
+      services = await Service.find({ 
+        isActive: true,
+        name: { $in: professional.services }
+      }).sort({ category: 1, order: 1 })
+      
+      console.log('✅ Serviços do profissional encontrados:', services.length)
+    } else {
+      // Buscar todos os serviços ativos
+      services = await Service.find({ isActive: true }).sort({ category: 1, order: 1 })
+      console.log('✅ Todos os serviços ativos encontrados:', services.length)
     }
     
-    // Agora buscar apenas os ativos
-    const services = await Service.find({ isActive: true }).sort({ category: 1, order: 1 })
-    console.log('✅ Serviços ativos encontrados:', services.length)
-    
     if (services.length === 0) {
-      console.log('❌ Nenhum serviço ativo encontrado no banco')
-      return NextResponse.json({ error: 'Nenhum serviço ativo encontrado' }, { status: 404 })
+      console.log('❌ Nenhum serviço encontrado')
+      return NextResponse.json({ error: 'Nenhum serviço encontrado' }, { status: 404 })
     }
     
     console.log('📦 Retornando serviços do banco:', services.length)

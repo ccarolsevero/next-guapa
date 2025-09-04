@@ -22,6 +22,13 @@ const serviceSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  duration: {
+    type: Number,
+    required: true,
+    min: 15,
+    max: 480, // máximo 8 horas
+    default: 60
+  },
   isActive: {
     type: Boolean,
     default: true
