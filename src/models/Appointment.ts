@@ -96,16 +96,16 @@ const appointmentSchema = new Schema<IAppointment>({
   customLabels: [{
     id: {
       type: Number,
-      required: true
+      required: false
     },
     name: {
       type: String,
-      required: true,
+      required: false,
       trim: true
     },
     color: {
       type: String,
-      required: true,
+      required: false,
       trim: true
     }
   }]
