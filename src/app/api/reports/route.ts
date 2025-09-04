@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     const startDateParam = searchParams.get('startDate')
     const endDateParam = searchParams.get('endDate')
 
-    console.log('📊 Relatório solicitado:', { reportType, period, startDateParam, endDateParam })
+    console.log('Relatório solicitado:', { reportType, period, startDateParam, endDateParam })
 
     await connectDB()
     const db = (await import('@/lib/mongodb')).default.db
@@ -817,8 +817,9 @@ export async function GET(request: NextRequest) {
         total: totalAppointments
       }
     }
+    }
 
-    console.log('📊 Dados retornados:', { reportType, dataKeys: Object.keys(reportData) })
+    console.log('Dados retornados:', { reportType, dataKeys: Object.keys(reportData) })
     return NextResponse.json(reportData)
   } catch (error) {
     console.error('Erro ao buscar dados dos relatórios:', error)
