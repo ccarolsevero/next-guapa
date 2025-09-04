@@ -359,6 +359,13 @@ export default function AgendamentosPage() {
                       apt.startTime === time
                     )
                     
+                    // Verificar se este horário está ocupado por um agendamento em andamento
+                    const ongoingAppointment = dayAppointments.find(apt => 
+                      apt.professionalId === professional._id && 
+                      isTimeInAppointment(time, apt) &&
+                      apt.startTime !== time // Não é o início do agendamento
+                    )
+                    
                     // Verificar se é horário de almoço (13:00-13:45)
                     const isLunchPeriod = time >= '13:00' && time <= '13:45'
                     
@@ -402,6 +409,9 @@ export default function AgendamentosPage() {
                               </div>
                             </div>
                           </div>
+                        ) : ongoingAppointment ? (
+                          // Horário ocupado por agendamento em andamento (não é o início)
+                          <div className="h-full"></div>
                         ) : (
                           // Espaço vazio disponível
                           <div className="h-full border border-transparent hover:border-gray-200 rounded transition-colors"></div>
