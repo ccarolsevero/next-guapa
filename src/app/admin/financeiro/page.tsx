@@ -249,26 +249,79 @@ export default function FinanceiroPage() {
     const editarDespesa = async () => {
       if (!editingDespesa) return
       
+      console.log('🔍 Editando despesa:', editingDespesa)
+      console.log('🔍 ID da despesa:', editingDespesa._id)
+      console.log('🔍 Dados para enviar:', JSON.stringify(editingDespesa))
+      
       try {
-        const response = await fetch(`/api/despesas/${editingDespesa._id}`, {
+        const url = `/api/despesas/${editingDespesa._id}`
+        console.log('🔍 URL da requisição:', url)
+        
+        const response = await fetch(url, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(editingDespesa)
         })
         
+        console.log('🔍 Response status:', response.status)
+        console.log('🔍 Response headers:', response.headers)
+        
         if (response.ok) {
           const result = await response.json()
+          console.log('✅ Despesa editada com sucesso:', result)
+          console.log('🔍 Dados retornados:', result.data)
+          
           // Atualizar a despesa na lista local
-          setDespesas(despesas.map(d => 
+          const novasDespesas = despesas.map(d => 
             d._id === editingDespesa._id ? result.data : d
-          ))
+          )
+          console.log('🔍 Lista atualizada:', novasDespesas)
+          
+          setDespesas(novasDespesas)
           setShowEditDespesaModal(false)
           setEditingDespesa(null)
+          
           // Recarregar dados financeiros para atualizar totais
           loadFinancialData(selectedPeriod, customStartDate, customEndDate)
+          
+          console.log('✅ Modal fechado e estado atualizado')
+        } else {
+          const errorData = await response.json()
+          console.error('❌ Erro na API:', errorData)
+          alert(`Erro ao editar despesa: ${errorData.error || 'Erro desconhecido'}`)
         }
       } catch (error) {
-        console.error('Erro ao editar despesa:', error)
+        console.error('❌ Erro ao editar despesa:', error)
+        alert('Erro ao editar despesa. Verifique o console para mais detalhes.')
+      }
+    }
+
+    const excluirDespesa = async (despesaId: string) => {
+      if (!confirm('Tem certeza que deseja excluir esta despesa?')) return
+      
+      console.log('🗑️ Excluindo despesa:', despesaId)
+      
+      try {
+        const response = await fetch(`/api/despesas/${despesaId}`, {
+          method: 'DELETE'
+        })
+        
+        console.log('🔍 Response status:', response.status)
+        
+        if (response.ok) {
+          console.log('✅ Despesa excluída com sucesso')
+          // Remover a despesa da lista local
+          setDespesas(despesas.filter(d => d._id !== despesaId))
+          // Recarregar dados financeiros para atualizar totais
+          loadFinancialData(selectedPeriod, customStartDate, customEndDate)
+        } else {
+          const errorData = await response.json()
+          console.error('❌ Erro na API:', errorData)
+          alert(`Erro ao excluir despesa: ${errorData.error || 'Erro desconhecido'}`)
+        }
+      } catch (error) {
+        console.error('❌ Erro ao excluir despesa:', error)
+        alert('Erro ao excluir despesa. Verifique o console para mais detalhes.')
       }
     }
 
@@ -501,6 +554,15 @@ export default function FinanceiroPage() {
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => excluirDespesa(despesa._id)}
+                          className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                          title="Excluir despesa"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>
                         <div>
