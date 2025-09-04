@@ -111,6 +111,11 @@ export async function GET(request: NextRequest) {
           const profissionalNome = comandaData.profissionalNome || 'Profissional não definido'
           const comissao = (servicoData.preco || 0) * 0.10
           
+          console.log('🔍 Serviço - Comanda ID:', comandaData._id)
+          console.log('   Profissional ID:', profissionalId)
+          console.log('   Profissional Nome:', profissionalNome)
+          console.log('   Serviço:', servicoData.nome, 'Valor:', servicoData.preco)
+          
           if (!comissoesPorProf.has(profissionalId)) {
             comissoesPorProf.set(profissionalId, {
               profissional: profissionalNome,
@@ -141,6 +146,11 @@ export async function GET(request: NextRequest) {
           const profissionalId = produtoData.vendidoPorId || 'vendedor'
           const profissionalNome = produtoData.vendidoPor || 'Vendedor'
           const comissao = (produtoData.preco || 0) * 0.15
+          
+          console.log('🔍 Produto - Comanda ID:', comandaData._id)
+          console.log('   Vendedor ID:', profissionalId)
+          console.log('   Vendedor Nome:', profissionalNome)
+          console.log('   Produto:', produtoData.nome, 'Valor:', produtoData.preco)
           
           if (!comissoesPorProf.has(profissionalId)) {
             comissoesPorProf.set(profissionalId, {
