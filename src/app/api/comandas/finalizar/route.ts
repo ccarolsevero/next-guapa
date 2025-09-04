@@ -95,13 +95,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Salvar dados da finalização em uma nova coleção
+    // 3. Buscar dados do cliente
+    console.log('👤 Buscando dados do cliente...')
+    let clienteNome = 'Cliente não encontrado'
+    if (comanda.clienteId) {
+      try {
+        const cliente = await db.collection('clients').findOne({ _id: new ObjectId(comanda.clienteId) })
+        if (cliente) {
+          clienteNome = cliente.name || 'Nome não definido'
+          console.log('✅ Cliente encontrado:', clienteNome)
+        } else {
+          console.log('⚠️ Cliente não encontrado no banco')
+        }
+      } catch (error) {
+        console.log('⚠️ Erro ao buscar cliente:', error)
+      }
+    }
+
+    // 4. Salvar dados da finalização em uma nova coleção
     console.log('💳 Salvando dados da finalização...')
     
     // Preparar dados da finalização
     const dadosFinalizacao = {
       comandaId: new ObjectId(comandaId),
       clienteId: finalizacaoData.clienteId || comanda.clienteId,
+      clienteNome: clienteNome,
       profissionalId: finalizacaoData.profissionalId || comanda.profissionalId,
       valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
       metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'Não definido',
