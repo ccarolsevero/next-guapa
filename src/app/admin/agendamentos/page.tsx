@@ -1192,13 +1192,23 @@ export default function AgendamentosPage() {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="text-sm text-gray-600 mb-2">
                         <span className="font-medium">Cliente:</span>{' '}
-                        <span className="text-blue-600 underline">
+                        <Link 
+                          href={`/admin/clientes/${clientData?._id || 'novo'}`}
+                          className="text-blue-600 underline hover:text-blue-800 transition-colors"
+                        >
                           {clientData?.name || selectedAppointment.clientName}
-                        </span>
+                        </Link>
                       </div>
                       <div className="text-sm text-gray-600 mb-2">
                         <span className="font-medium">Celular:</span>{' '}
-                        <span className="text-blue-600 underline">{selectedAppointment.clientPhone}</span>
+                        <a 
+                          href={`https://wa.me/55${selectedAppointment.clientPhone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline hover:text-blue-800 transition-colors"
+                        >
+                          {selectedAppointment.clientPhone}
+                        </a>
                       </div>
                       {clientData?.birthDate && (
                         <div className="text-sm text-gray-600 mb-2">
