@@ -95,7 +95,15 @@ export async function GET(request: NextRequest) {
       return sum + (comanda.valorTotal || 0)
     }, 0)
     
-    // 2. Calcular comissões por profissional
+    // 2. Buscar profissionais para mapear IDs para nomes
+    const profissionais = await db.collection('professionals').find({}).toArray()
+    const profissionalMap = new Map()
+    profissionais.forEach(prof => {
+      profissionalMap.set(prof._id.toString(), prof.name)
+    })
+    console.log('👥 Profissionais mapeados:', Array.from(profissionalMap.entries()))
+    
+    // 3. Calcular comissões por profissional
     console.log('👥 Buscando comissões por profissional...')
     
     const comissoesPorProfissional: any[] = []
@@ -108,7 +116,7 @@ export async function GET(request: NextRequest) {
           const servicoData = servico as any
           const comandaData = comanda as any
           const profissionalId = comandaData.profissionalId || 'profissional'
-          const profissionalNome = comandaData.profissionalNome || 'Profissional não definido'
+          const profissionalNome = comandaData.profissionalNome || profissionalMap.get(profissionalId) || 'Profissional não definido'
           const comissao = (servicoData.preco || 0) * 0.10
           
           console.log('🔍 Serviço - Comanda ID:', comandaData._id)
