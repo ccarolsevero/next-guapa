@@ -18,89 +18,45 @@ import {
   Plus,
   Scissors,
   Palette,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react'
 
-// Dados mockados para demonstração
-const mockClientData = {
-  id: 1,
-  name: "Maria Silva",
-  email: "maria.silva@email.com",
-  phone: "(11) 99999-0001",
-  birthDate: "1985-03-15",
-      address: "Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP",
-  notes: "Cliente fiel, sempre pontual. Prefere horários da tarde. Alérgica a alguns produtos.",
-  totalAppointments: 12,
-  totalSpent: 850.00,
-  averageTicket: 70.83,
-  lastVisit: "2024-01-10",
-  firstVisit: "2023-03-15",
-  favoriteServices: [
-    { name: "Corte Feminino", count: 5, totalSpent: 225.00 },
-    { name: "Coloração", count: 3, totalSpent: 240.00 },
-    { name: "Hidratação", count: 4, totalSpent: 200.00 }
-  ],
-  appointments: [
-    {
-      id: 1,
-      date: "2024-01-10",
-      service: "Corte Feminino",
-      professional: "Ana Carolina",
-      status: "COMPLETED",
-      price: 45.00,
-      notes: "Corte com franja"
-    },
-    {
-      id: 2,
-      date: "2023-12-20",
-      service: "Coloração",
-      professional: "Mariana Silva",
-      status: "COMPLETED",
-      price: 80.00,
-      notes: "Retoque de raiz"
-    },
-    {
-      id: 3,
-      date: "2023-12-05",
-      service: "Hidratação",
-      professional: "Fernanda Santos",
-      status: "COMPLETED",
-      price: 50.00,
-      notes: "Tratamento profundo"
-    },
-    {
-      id: 4,
-      date: "2023-11-15",
-      service: "Corte Feminino",
-      professional: "Ana Carolina",
-      status: "COMPLETED",
-      price: 45.00,
-      notes: "Manutenção do corte"
-    }
-  ],
-  payments: [
-    {
-      id: 1,
-      date: "2024-01-10",
-      amount: 45.00,
-      method: "PIX",
-      status: "PAID"
-    },
-    {
-      id: 2,
-      date: "2023-12-20",
-      amount: 80.00,
-      method: "CREDIT_CARD",
-      status: "PAID"
-    },
-    {
-      id: 3,
-      date: "2023-12-05",
-      amount: 50.00,
-      method: "CASH",
-      status: "PAID"
-    }
-  ]
+interface ClienteData {
+  _id: string
+  name: string
+  email: string
+  phone: string
+  birthDate?: string
+  address?: string
+  notes?: string
+  idade?: number
+  totalAppointments: number
+  totalSpent: number
+  averageTicket: number
+  firstVisit?: string
+  lastVisit?: string
+  favoriteServices: Array<{
+    name: string
+    count: number
+    totalSpent: number
+  }>
+  appointments: Array<{
+    id: string
+    date: string
+    service: string
+    professional: string
+    status: string
+    price: number
+    notes?: string
+  }>
+  payments: Array<{
+    id: string
+    date: string
+    amount: number
+    method: string
+    status: string
+  }>
 }
 
 const serviceIcons = {
@@ -114,21 +70,37 @@ const serviceIcons = {
 
 export default function ClienteDetalhesPage() {
   const params = useParams()
-  const [client, setClient] = useState(mockClientData)
+  const [client, setClient] = useState<ClienteData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
 
-  const getAge = (birthDate: string) => {
-    const today = new Date()
-    const birth = new Date(birthDate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
+  useEffect(() => {
+    const fetchClientData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const response = await fetch(`/api/clients/${params.id}/detalhes`)
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar dados do cliente')
+        }
+        
+        const data = await response.json()
+        setClient(data)
+      } catch (err) {
+        console.error('Erro ao buscar dados do cliente:', err)
+        setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      } finally {
+        setLoading(false)
+      }
     }
-    
-    return age
-  }
+
+    if (params.id) {
+      fetchClientData()
+    }
+  }, [params.id])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -150,13 +122,47 @@ export default function ClienteDetalhesPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="w-6 h-6 animate-spin text-[#D15556]" />
+            <span className="text-gray-600">Carregando dados do cliente...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !client) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <User className="w-16 h-16 mx-auto mb-2" />
+            <h2 className="text-xl font-semibold">Erro ao carregar cliente</h2>
+            <p className="text-gray-600">{error || 'Cliente não encontrado'}</p>
+          </div>
+          <Link 
+            href="/admin/clientes"
+            className="inline-flex items-center text-[#D15556] hover:text-[#B84444]"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar para Clientes
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
         <Link 
           href="/admin/clientes"
-          className="flex items-center text-pink-600 hover:text-pink-700 mb-4"
+          className="flex items-center text-[#D15556] hover:text-[#B84444] mb-4 transition-colors"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
           Voltar para Clientes
@@ -169,21 +175,21 @@ export default function ClienteDetalhesPage() {
           </div>
           <div className="flex space-x-3">
             <Link
-              href={`/admin/clientes/${client.id}/historico`}
+              href={`/admin/clientes/${client._id}/historico`}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
             >
               <Calendar className="w-4 h-4 mr-2" />
               Histórico
             </Link>
             <Link
-              href={`/admin/clientes/${client.id}/editar`}
-              className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
+              href={`/admin/clientes/${client._id}/editar`}
+              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#B84444] transition-colors flex items-center"
             >
               <Edit className="w-4 h-4 mr-2" />
               Editar Cliente
             </Link>
             <Link
-              href={`/admin/agendamentos/novo?client=${client.id}`}
+              href={`/admin/agendamentos/novo?client=${client._id}`}
               className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -197,40 +203,51 @@ export default function ClienteDetalhesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Card Principal */}
         <div className="lg:col-span-2">
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
             <div className="flex items-start space-x-6">
-              <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl font-bold text-pink-600">
-                  {client.name.split(' ').map(n => n[0]).join('')}
+              <div className="w-20 h-20 bg-gradient-to-br from-[#D15556] to-[#B84444] rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-2xl font-bold text-white">
+                  {client.name.split(' ').map(n => n[0]).join('').toUpperCase()}
                 </span>
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">{client.name}</h2>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 text-gray-400 mr-2" />
-                    <span>{client.email}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Phone className="w-4 h-4 text-gray-400 mr-2" />
-                    <span>{client.phone}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="w-4 h-4 text-gray-400 mr-2" />
-                    <span>{client.address}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="w-4 h-4 text-gray-400 mr-2" />
-                    <span>{getAge(client.birthDate)} anos</span>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  {client.email && (
+                    <div className="flex items-center">
+                      <Mail className="w-4 h-4 text-[#D15556] mr-2" />
+                      <span className="text-gray-700">{client.email}</span>
+                    </div>
+                  )}
+                  {client.phone && (
+                    <div className="flex items-center">
+                      <Phone className="w-4 h-4 text-[#D15556] mr-2" />
+                      <span className="text-gray-700">{client.phone}</span>
+                    </div>
+                  )}
+                  {client.address && (
+                    <div className="flex items-center col-span-2">
+                      <MapPin className="w-4 h-4 text-[#D15556] mr-2" />
+                      <span className="text-gray-700">{client.address}</span>
+                    </div>
+                  )}
+                  {client.idade && (
+                    <div className="flex items-center">
+                      <Calendar className="w-4 h-4 text-[#D15556] mr-2" />
+                      <span className="text-gray-700">{client.idade} anos</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
             
             {client.notes && (
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-2">Observações</h3>
-                <p className="text-gray-600">{client.notes}</p>
+              <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+                  <Star className="w-4 h-4 text-[#D15556] mr-2" />
+                  Observações
+                </h3>
+                <p className="text-gray-700 leading-relaxed">{client.notes}</p>
               </div>
             )}
           </div>
@@ -238,64 +255,81 @@ export default function ClienteDetalhesPage() {
 
         {/* Estatísticas */}
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Estatísticas</h3>
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <TrendingUp className="w-5 h-5 text-[#D15556] mr-2" />
+              Estatísticas
+            </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total de Visitas</span>
-                <span className="font-semibold text-gray-900">{client.totalAppointments}</span>
+              <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Total de Visitas</span>
+                <span className="font-bold text-[#D15556] text-lg">{client.totalAppointments}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Valor Total Gasto</span>
-                <span className="font-semibold text-green-600">R$ {client.totalSpent.toFixed(2)}</span>
+              <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Valor Total Gasto</span>
+                <span className="font-bold text-green-600 text-lg">R$ {client.totalSpent.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Ticket Médio</span>
-                <span className="font-semibold text-gray-900">R$ {client.averageTicket.toFixed(2)}</span>
+              <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
+                <span className="text-gray-700 font-medium">Ticket Médio</span>
+                <span className="font-bold text-blue-600 text-lg">R$ {client.averageTicket.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Primeira Visita</span>
-                <span className="font-semibold text-gray-900">{new Date(client.firstVisit).toLocaleDateString('pt-BR')}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Última Visita</span>
-                <span className="font-semibold text-gray-900">{new Date(client.lastVisit).toLocaleDateString('pt-BR')}</span>
-              </div>
+              {client.firstVisit && (
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700 font-medium">Primeira Visita</span>
+                  <span className="font-semibold text-gray-900">{new Date(client.firstVisit).toLocaleDateString('pt-BR')}</span>
+                </div>
+              )}
+              {client.lastVisit && (
+                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <span className="text-gray-700 font-medium">Última Visita</span>
+                  <span className="font-semibold text-gray-900">{new Date(client.lastVisit).toLocaleDateString('pt-BR')}</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Serviços Favoritos</h3>
+          <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+              <Star className="w-5 h-5 text-[#D15556] mr-2" />
+              Serviços Favoritos
+            </h3>
             <div className="space-y-3">
-              {client.favoriteServices.map((service, index) => {
-                const IconComponent = serviceIcons[service.name as keyof typeof serviceIcons] || Scissors
-                return (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <IconComponent className="w-4 h-4 text-pink-600 mr-2" />
-                      <span className="text-sm text-gray-700">{service.name}</span>
+              {client.favoriteServices.length > 0 ? (
+                client.favoriteServices.map((service, index) => {
+                  const IconComponent = serviceIcons[service.name as keyof typeof serviceIcons] || Scissors
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+                      <div className="flex items-center">
+                        <IconComponent className="w-5 h-5 text-[#D15556] mr-3" />
+                        <span className="text-sm font-medium text-gray-800">{service.name}</span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-sm font-bold text-[#D15556]">{service.count}x</div>
+                        <div className="text-xs text-gray-600">R$ {service.totalSpent.toFixed(2)}</div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-gray-900">{service.count}x</div>
-                      <div className="text-xs text-gray-500">R$ {service.totalSpent.toFixed(2)}</div>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <Star className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                  <p>Nenhum serviço registrado ainda</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white rounded-lg shadow-lg border border-gray-100">
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'overview'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-[#D15556] text-[#D15556]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -303,9 +337,9 @@ export default function ClienteDetalhesPage() {
             </button>
             <button
               onClick={() => setActiveTab('appointments')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'appointments'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-[#D15556] text-[#D15556]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -313,9 +347,9 @@ export default function ClienteDetalhesPage() {
             </button>
             <button
               onClick={() => setActiveTab('payments')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'payments'
-                  ? 'border-pink-500 text-pink-600'
+                  ? 'border-[#D15556] text-[#D15556]'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               }`}
             >
@@ -328,48 +362,68 @@ export default function ClienteDetalhesPage() {
           {activeTab === 'overview' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Últimos Agendamentos</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Calendar className="w-5 h-5 text-[#D15556] mr-2" />
+                  Últimos Agendamentos
+                </h3>
                 <div className="space-y-3">
-                  {client.appointments.slice(0, 3).map((appointment) => (
-                    <div key={appointment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium text-gray-900">{appointment.service}</div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(appointment.date).toLocaleDateString('pt-BR')} • {appointment.professional}
+                  {client.appointments.length > 0 ? (
+                    client.appointments.slice(0, 3).map((appointment) => (
+                      <div key={appointment.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                        <div>
+                          <div className="font-medium text-gray-900">{appointment.service}</div>
+                          <div className="text-sm text-gray-600">
+                            {new Date(appointment.date).toLocaleDateString('pt-BR')} • {appointment.professional}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-semibold text-[#D15556]">R$ {appointment.price.toFixed(2)}</div>
+                          <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(appointment.status)}`}>
+                            {appointment.status === 'COMPLETED' ? 'Concluído' : appointment.status}
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-gray-900">R$ {appointment.price.toFixed(2)}</div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(appointment.status)}`}>
-                          {appointment.status === 'COMPLETED' ? 'Concluído' : appointment.status}
-                        </span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>Nenhum agendamento encontrado</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Últimos Pagamentos</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <DollarSign className="w-5 h-5 text-[#D15556] mr-2" />
+                  Últimos Pagamentos
+                </h3>
                 <div className="space-y-3">
-                  {client.payments.slice(0, 3).map((payment) => (
-                    <div key={payment.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {getPaymentMethodIcon(payment.method)} {payment.method}
+                  {client.payments.length > 0 ? (
+                    client.payments.slice(0, 3).map((payment) => (
+                      <div key={payment.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-md transition-shadow">
+                        <div>
+                          <div className="font-medium text-gray-900">
+                            {getPaymentMethodIcon(payment.method)} {payment.method}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {new Date(payment.date).toLocaleDateString('pt-BR')}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {new Date(payment.date).toLocaleDateString('pt-BR')}
+                        <div className="text-right">
+                          <div className="font-semibold text-green-600">R$ {payment.amount.toFixed(2)}</div>
+                          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                            Pago
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-semibold text-green-600">R$ {payment.amount.toFixed(2)}</div>
-                        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                          Pago
-                        </span>
-                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <DollarSign className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                      <p>Nenhum pagamento encontrado</p>
                     </div>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
@@ -377,106 +431,122 @@ export default function ClienteDetalhesPage() {
 
           {activeTab === 'appointments' && (
             <div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Serviço
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Profissional
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Observações
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {client.appointments.map((appointment) => (
-                      <tr key={appointment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(appointment.date).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {appointment.service}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {appointment.professional}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
-                            {appointment.status === 'COMPLETED' ? 'Concluído' : appointment.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          R$ {appointment.price.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {appointment.notes}
-                        </td>
+              {client.appointments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Data
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Serviço
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Profissional
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Valor
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Observações
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {client.appointments.map((appointment) => (
+                        <tr key={appointment.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {new Date(appointment.date).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {appointment.service}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {appointment.professional}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(appointment.status)}`}>
+                              {appointment.status === 'COMPLETED' ? 'Concluído' : appointment.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-[#D15556]">
+                            R$ {appointment.price.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-600">
+                            {appointment.notes || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento encontrado</h3>
+                  <p>Este cliente ainda não possui agendamentos registrados.</p>
+                </div>
+              )}
             </div>
           )}
 
           {activeTab === 'payments' && (
             <div>
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Data
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Método
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Valor
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Status
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {client.payments.map((payment) => (
-                      <tr key={payment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(payment.date).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <div className="flex items-center">
-                            <span className="mr-2">{getPaymentMethodIcon(payment.method)}</span>
-                            {payment.method}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                          R$ {payment.amount.toFixed(2)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            Pago
-                          </span>
-                        </td>
+              {client.payments.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Data
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Método
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Valor
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                          Status
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {client.payments.map((payment) => (
+                        <tr key={payment.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {new Date(payment.date).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="flex items-center">
+                              <span className="mr-2 text-lg">{getPaymentMethodIcon(payment.method)}</span>
+                              <span className="capitalize">{payment.method}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">
+                            R$ {payment.amount.toFixed(2)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              Pago
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum pagamento encontrado</h3>
+                  <p>Este cliente ainda não possui pagamentos registrados.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
