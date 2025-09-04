@@ -3,13 +3,24 @@ import bcrypt from 'bcryptjs'
 import connectDB from '@/lib/mongodb'
 import Client from '@/models/Client'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log('=== INÍCIO GET /api/clients ===')
     console.log('Tentando conectar ao MongoDB...')
 
     await connectDB()
-    const clients = await Client.find({}).sort({ createdAt: -1 })
+    
+    // Verificar se há parâmetro de busca por telefone
+    const { searchParams } = new URL(request.url)
+    const phone = searchParams.get('phone')
+    
+    let clients
+    if (phone) {
+      console.log('Buscando cliente por telefone:', phone)
+      clients = await Client.find({ phone: phone }).sort({ createdAt: -1 })
+    } else {
+      clients = await Client.find({}).sort({ createdAt: -1 })
+    }
 
     console.log('Clientes encontrados no MongoDB:', clients.length)
     return NextResponse.json(clients)
