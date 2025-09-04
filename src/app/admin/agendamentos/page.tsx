@@ -381,9 +381,13 @@ export default function AgendamentosPage() {
         const updatedAppointment = await response.json()
         console.log('✅ Agendamento atualizado:', updatedAppointment)
         
+        // Atualizar o selectedAppointment com os dados atualizados
+        setSelectedAppointment(updatedAppointment)
+        
         // Atualizar a lista de agendamentos
         await fetchAppointments()
-        closeEditModal()
+        
+        // Não fechar o modal automaticamente para mostrar as alterações
         console.log('Agendamento atualizado com sucesso!')
       } else {
         const error = await response.json()
