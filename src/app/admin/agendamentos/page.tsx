@@ -384,6 +384,18 @@ export default function AgendamentosPage() {
         // Atualizar o selectedAppointment com os dados atualizados
         setSelectedAppointment(updatedAppointment)
         
+        // Atualizar editingAppointment para refletir as mudanças nos campos de input
+        setEditingAppointment({
+          ...updatedAppointment,
+          date: updatedAppointment.date.split('T')[0], // Manter formato de input date
+        })
+
+        // Re-inicializar customLabels com base nas etiquetas salvas
+        setCustomLabels(prev => prev.map(label => ({
+          ...label,
+          selected: updatedAppointment.customLabels?.some((saved: any) => saved.id === label.id) || false
+        })))
+        
         // Atualizar a lista de agendamentos
         await fetchAppointments()
         
@@ -1240,11 +1252,11 @@ export default function AgendamentosPage() {
                           </div>
                         </div>
                       )}
-                      {editingAppointment.customLabels && editingAppointment.customLabels.length > 0 && (
+                      {selectedAppointment.customLabels && selectedAppointment.customLabels.length > 0 && (
                         <div className="text-sm text-gray-600">
                           <span className="font-medium">Etiquetas:</span>
                           <div className="flex flex-wrap gap-1 mt-1">
-                            {editingAppointment.customLabels.map((label: any) => (
+                            {selectedAppointment.customLabels.map((label: any) => (
                               <span
                                 key={label.id}
                                 className={`px-2 py-1 rounded text-xs font-medium ${label.color}`}
