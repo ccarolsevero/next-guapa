@@ -38,9 +38,6 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || '6months'
     
-    console.log('🔄 API Financeiro chamada - Período:', period)
-    console.log('🔑 MONGODB_URI existe:', !!process.env.MONGODB_URI)
-    console.log('🔑 DB_NAME:', process.env.DB_NAME || 'guapa')
     
     // Conectar ao MongoDB
     const uri = process.env.MONGODB_URI!
@@ -50,16 +47,9 @@ export async function GET(request: NextRequest) {
     }
     
     client = new MongoClient(uri)
-    console.log('🔌 Tentando conectar ao MongoDB...')
     await client.connect()
-    console.log('✅ Conectado ao MongoDB com sucesso')
     
     const db = client.db(process.env.DB_NAME || 'guapa')
-    console.log('🗄️ Banco selecionado:', db.databaseName)
-    
-    // Verificar se as coleções existem
-    const collections = await db.listCollections().toArray()
-    console.log('📚 Coleções disponíveis:', collections.map(c => c.name))
     
     // Calcular datas baseado no período
     const hoje = new Date()
@@ -79,16 +69,12 @@ export async function GET(request: NextRequest) {
         dataInicio = new Date(hoje.getFullYear(), hoje.getMonth() - 6, hoje.getDate())
     }
     
-    console.log('📅 Período:', { dataInicio: dataInicio.toISOString(), hoje: hoje.toISOString() })
-    
     // 1. Buscar comandas finalizadas para calcular faturamento
-    console.log('💰 Buscando comandas finalizadas...')
     
-    const comandasFinalizadas = await db.collection('comandas').find({
-      status: 'finalizada'
+    const comandasFinalizadas = await db.collection('finalizacoes').find({
+      status: 'ativo'
     }).toArray()
     
-    console.log('📊 Total de comandas finalizadas:', comandasFinalizadas.length)
     
     // Calcular faturamento total
     const totalFaturamento = comandasFinalizadas.reduce((sum: number, comanda: Document) => {
@@ -101,10 +87,8 @@ export async function GET(request: NextRequest) {
     profissionais.forEach(prof => {
       profissionalMap.set(prof._id.toString(), prof.name)
     })
-    console.log('👥 Profissionais mapeados:', Array.from(profissionalMap.entries()))
     
     // 3. Calcular comissões por profissional
-    console.log('👥 Buscando comissões por profissional...')
     
     const comissoesPorProfissional: any[] = []
     const comissoesPorProf = new Map()
@@ -119,10 +103,6 @@ export async function GET(request: NextRequest) {
           const profissionalNome = comandaData.profissionalNome || profissionalMap.get(profissionalId) || 'Profissional não definido'
           const comissao = (servicoData.preco || 0) * 0.10
           
-          console.log('🔍 Serviço - Comanda ID:', comandaData._id)
-          console.log('   Profissional ID:', profissionalId)
-          console.log('   Profissional Nome:', profissionalNome)
-          console.log('   Serviço:', servicoData.nome, 'Valor:', servicoData.preco)
           
           if (!comissoesPorProf.has(profissionalId)) {
             comissoesPorProf.set(profissionalId, {
@@ -189,10 +169,6 @@ export async function GET(request: NextRequest) {
     // Ordenar por total de comissão
     comissoesPorProfissional.sort((a, b) => b.totalComissao - a.totalComissao)
     
-    console.log('💰 Comissões por profissional encontradas:', comissoesPorProfissional.length)
-    comissoesPorProfissional.forEach((comissao, index) => {
-      console.log(`   ${index + 1}. ${comissao.profissional}: R$ ${comissao.totalComissao.toFixed(2)}`)
-    })
     
     // 3. Buscar métodos de pagamento das finalizações
     let metodosPagamento = await db.collection('finalizacoes').aggregate([
@@ -214,16 +190,8 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-    console.log('💳 Métodos de pagamento encontrados:', metodosPagamento.length)
-    if (metodosPagamento.length > 0) {
-      metodosPagamento.forEach((metodo, index) => {
-        console.log(`   ${index + 1}. ${metodo._id}: ${metodo.count} pagamentos, R$ ${metodo.amount.toFixed(2)}`)
-      })
-    }
 
     // 4. Buscar pagamentos recentes das finalizações
-    console.log('🔍 Buscando pagamentos recentes...')
-    console.log('📅 Período:', { dataInicio, hoje })
     
     const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
       {
@@ -251,10 +219,6 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-    console.log('📋 Pagamentos recentes encontrados:', pagamentosRecentes.length)
-    pagamentosRecentes.forEach((pagamento, index) => {
-      console.log(`   ${index + 1}. Cliente: "${pagamento.clientName}", Serviço: "${pagamento.service}", Valor: R$ ${pagamento.amount}`)
-    })
 
     // 5. Calcular totais
     const totalComandas = comandasFinalizadas.length
@@ -310,14 +274,6 @@ export async function GET(request: NextRequest) {
       detalhes: item.detalhes || []
     }))
     
-    console.log('✅ Dados financeiros carregados com sucesso')
-    console.log('💰 Total faturamento:', totalFaturamento)
-    console.log('💸 Total comissões:', totalComissoes)
-    console.log('📊 Total comandas:', totalComandas)
-    console.log('💸 Total despesas:', totalDespesas)
-    console.log('💳 Métodos de pagamento:', paymentMethods.length)
-    console.log('👥 Comissões por profissional:', commissionsByProfessional.length)
-    console.log('📋 Pagamentos recentes:', recentPayments.length)
     
     return NextResponse.json({
       success: true,
