@@ -92,8 +92,13 @@ export async function GET(request: NextRequest) {
             }
           },
           {
+            $addFields: {
+              clienteObjectId: { $toObjectId: '$clienteId' }
+            }
+          },
+          {
             $group: {
-              _id: '$clienteId',
+              _id: '$clienteObjectId',
               totalVisits: { $sum: 1 },
               totalSpent: { $sum: '$valorFinal' },
               lastVisit: { $max: '$dataCriacao' }
@@ -345,8 +350,13 @@ export async function GET(request: NextRequest) {
             }
           },
           {
+            $addFields: {
+              profissionalObjectId: { $toObjectId: '$profissionalId' }
+            }
+          },
+          {
             $group: {
-              _id: '$profissionalId',
+              _id: '$profissionalObjectId',
               totalRevenue: { $sum: '$valorFinal' },
               totalComandas: { $sum: 1 },
               totalCommissions: { $sum: '$totalComissao' }
@@ -393,8 +403,13 @@ export async function GET(request: NextRequest) {
             $unwind: '$servicos'
           },
           {
+            $addFields: {
+              servicoObjectId: { $toObjectId: '$servicos.servicoId' }
+            }
+          },
+          {
             $group: {
-              _id: '$servicos.servicoId',
+              _id: '$servicoObjectId',
               count: { $sum: 1 },
               totalRevenue: { $sum: '$servicos.preco' }
             }
@@ -439,8 +454,13 @@ export async function GET(request: NextRequest) {
             $unwind: '$produtos'
           },
           {
+            $addFields: {
+              produtoObjectId: { $toObjectId: '$produtos.id' }
+            }
+          },
+          {
             $group: {
-              _id: '$produtos.id',
+              _id: '$produtoObjectId',
               quantity: { $sum: '$produtos.quantidade' },
               totalRevenue: { $sum: { $multiply: ['$produtos.quantidade', '$produtos.preco'] } }
             }
@@ -498,8 +518,13 @@ export async function GET(request: NextRequest) {
             }
           },
           {
+            $addFields: {
+              clienteObjectId: { $toObjectId: '$clienteId' }
+            }
+          },
+          {
             $group: {
-              _id: '$clienteId',
+              _id: '$clienteObjectId',
               totalAppointments: { $sum: 1 },
               confirmedAppointments: {
                 $sum: {
@@ -551,8 +576,13 @@ export async function GET(request: NextRequest) {
             }
           },
           {
+            $addFields: {
+              clienteObjectId: { $toObjectId: '$clienteId' }
+            }
+          },
+          {
             $group: {
-              _id: '$clienteId',
+              _id: '$clienteObjectId',
               cancelledCount: { $sum: 1 }
             }
           },
@@ -644,8 +674,13 @@ export async function GET(request: NextRequest) {
           }
         },
         {
+          $addFields: {
+            clienteObjectId: { $toObjectId: '$clienteId' }
+          }
+        },
+        {
           $group: {
-            _id: '$clienteId',
+            _id: '$clienteObjectId',
             totalSpent: { $sum: '$valorFinal' },
             visits: { $sum: 1 }
           }
@@ -706,17 +741,22 @@ export async function GET(request: NextRequest) {
       const topServices = await db.collection('finalizacoes').aggregate([
         {
           $match: {
-            dataFinalizacao: { $gte: startDate, $lte: now }
+            dataCriacao: { $gte: startDate, $lte: endDate }
           }
         },
         {
           $unwind: '$servicos'
         },
         {
+          $addFields: {
+            servicoObjectId: { $toObjectId: '$servicos.servicoId' }
+          }
+        },
+        {
           $group: {
-            _id: '$servicos.servicoId',
+            _id: '$servicoObjectId',
             count: { $sum: 1 },
-            totalRevenue: { $sum: '$servicos.valor' }
+            totalRevenue: { $sum: '$servicos.preco' }
           }
         },
         {
@@ -753,15 +793,20 @@ export async function GET(request: NextRequest) {
       const topProfessionals = await db.collection('finalizacoes').aggregate([
         {
           $match: {
-            dataFinalizacao: { $gte: startDate, $lte: now }
+            dataCriacao: { $gte: startDate, $lte: endDate }
+          }
+        },
+        {
+          $addFields: {
+            profissionalObjectId: { $toObjectId: '$profissionalId' }
           }
         },
         {
           $group: {
-            _id: '$profissionalId',
+            _id: '$profissionalObjectId',
             appointments: { $sum: 1 },
-            revenue: { $sum: '$valorTotal' },
-            commissions: { $sum: '$comissoes' }
+            revenue: { $sum: '$valorFinal' },
+            commissions: { $sum: '$totalComissao' }
           }
         },
         {

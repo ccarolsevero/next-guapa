@@ -261,22 +261,22 @@ export default function RelatoriosPage() {
             {reports
               .filter(report => report.category === selectedCategory)
               .map((report) => {
-                const IconComponent = report.icon
-                return (
-                  <button
-                    key={report.id}
-                    onClick={() => setSelectedReport(report.id)}
+            const IconComponent = report.icon
+            return (
+              <button
+                key={report.id}
+                onClick={() => setSelectedReport(report.id)}
                     className={`w-full p-3 rounded-lg border transition-colors flex items-center text-left ${
-                      selectedReport === report.id
+                  selectedReport === report.id
                         ? 'border-[#D15556] bg-[#D15556] text-white'
                         : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
-                    }`}
-                  >
+                }`}
+              >
                     <IconComponent className="w-5 h-5 mr-3 flex-shrink-0" />
                     <span className="text-sm font-medium">{report.name}</span>
-                  </button>
-                )
-              })}
+              </button>
+            )
+          })}
           </div>
         </div>
       </div>
@@ -631,15 +631,15 @@ export default function RelatoriosPage() {
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <span className="text-gray-700">Receita Total</span>
                   <span className="font-semibold text-green-600">{formatCurrency(getTotalRevenue())}</span>
-                </div>
+                      </div>
                 <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <span className="text-gray-700">Despesas Total</span>
                   <span className="font-semibold text-red-600">{formatCurrency(getTotalExpenses())}</span>
-                </div>
+                    </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <span className="text-gray-700">Lucro Líquido</span>
                   <span className="font-semibold text-blue-600">{formatCurrency(getTotalProfit())}</span>
-                </div>
+                  </div>
               </div>
             </div>
 
