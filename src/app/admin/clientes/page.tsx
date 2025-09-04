@@ -34,6 +34,7 @@ interface Client {
   onboardingRequired: boolean
   firstAccess: boolean
   profileCompletionDate: string | null
+  isCompleteProfile?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -45,6 +46,7 @@ export default function ClientesPage() {
   const [sortOrder, setSortOrder] = useState('asc')
   const [isLoading, setIsLoading] = useState(true)
   const [showAnalytics, setShowAnalytics] = useState(false)
+  const [filterComplete, setFilterComplete] = useState<'all' | 'complete' | 'incomplete'>('all')
 
   // Carregar clientes do banco de dados
   useEffect(() => {
@@ -71,11 +73,22 @@ export default function ClientesPage() {
   }, [])
 
   const filteredAndSortedClients = clients
-    .filter(client => 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      client.phone.includes(searchTerm)
-    )
+    .filter(client => {
+      // Filtro de busca por texto
+      const matchesSearch = client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        client.phone.includes(searchTerm)
+      
+      // Filtro por perfil completo
+      let matchesCompleteFilter = true
+      if (filterComplete === 'complete') {
+        matchesCompleteFilter = client.isCompleteProfile === true
+      } else if (filterComplete === 'incomplete') {
+        matchesCompleteFilter = client.isCompleteProfile !== true
+      }
+      
+      return matchesSearch && matchesCompleteFilter
+    })
     .sort((a, b) => {
       let aValue: string | Date, bValue: string | Date
       
@@ -269,6 +282,15 @@ export default function ClientesPage() {
             </div>
             <div className="flex gap-2">
               <select
+                value={filterComplete}
+                onChange={(e) => setFilterComplete(e.target.value as 'all' | 'complete' | 'incomplete')}
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+              >
+                <option value="all">Todos os Clientes</option>
+                <option value="complete">Perfil Completo</option>
+                <option value="incomplete">Perfil Incompleto</option>
+              </select>
+              <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
@@ -330,7 +352,14 @@ export default function ClientesPage() {
                           <Users className="w-5 h-5 text-pink-600" />
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                            {client.isCompleteProfile && (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Completo
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-gray-500">ID: {client._id.slice(-8)}</div>
                         </div>
                       </div>
