@@ -347,8 +347,17 @@ function PainelClienteContent() {
   }
 
   const handleLogout = () => {
+    // Limpar todos os dados de autenticação
     localStorage.removeItem('isClientLoggedIn')
     localStorage.removeItem('loggedInClient')
+    localStorage.removeItem('clientToken')
+    
+    // Limpar estado local
+    setClientData(null)
+    setAppointments([])
+    setOrders([])
+    
+    // Redirecionar para a página inicial
     window.location.href = '/'
   }
 
@@ -424,7 +433,7 @@ function PainelClienteContent() {
                 Olá, {client?.name.split(' ')[0]}!
               </span>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm"
               >
                 <LogOut className="w-4 h-4 inline mr-1" />
