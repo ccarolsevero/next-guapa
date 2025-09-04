@@ -372,11 +372,12 @@ export default function AgendamentosPage() {
                     return (
                       <div key={professional._id} className="min-h-[40px] p-1 relative">
                         {isLunchPeriod && time === '13:00' ? (
-                          // Bloco de almoço que ocupa todo o período - usar position absolute para se estender
+                          // Bloco de almoço que ocupa todo o período
                           <div 
-                            className="absolute top-0 left-1 right-1 bg-orange-100 border border-orange-200 rounded p-2 text-center flex items-center justify-center z-10"
+                            className="bg-orange-100 border border-orange-200 rounded p-2 text-center flex items-center justify-center"
                             style={{
-                              height: `${4 * 40}px` // 4 slots de 15min = 1 hora
+                              height: `${4 * 40}px`, // 4 slots de 15min = 1 hora
+                              marginBottom: `${-3 * 40}px` // Compensar para ocupar as linhas abaixo
                             }}
                           >
                             <div className="text-xs text-orange-800 font-medium">🍽️ Almoço</div>
@@ -385,11 +386,12 @@ export default function AgendamentosPage() {
                           // Espaço vazio durante o almoço (já ocupado pelo bloco acima)
                           <div className="h-full"></div>
                         ) : startingAppointment ? (
-                          // Bloco de agendamento que se estende pela duração - usar position absolute
+                          // Bloco de agendamento que se estende pela duração
                           <div
-                            className={`absolute top-0 left-1 right-1 p-2 rounded border shadow-sm cursor-pointer transition-all hover:shadow-md z-10 ${getProfessionalColor(startingAppointment.professional)}`}
+                            className={`p-2 rounded border shadow-sm cursor-pointer transition-all hover:shadow-md ${getProfessionalColor(startingAppointment.professional)}`}
                             style={{
-                              height: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 40)}px`
+                              height: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 40)}px`,
+                              marginBottom: `${-(getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) - 1) * 40}px` // Compensar para ocupar as linhas abaixo
                             }}
                             onMouseEnter={(e) => {
                               setHoveredAppointment(startingAppointment)
