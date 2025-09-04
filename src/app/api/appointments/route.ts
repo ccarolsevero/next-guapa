@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
     
     // Filtrar por data específica
     if (date) {
-      const startDate = new Date(date)
-      startDate.setHours(0, 0, 0, 0)
-      const endDate = new Date(date)
-      endDate.setHours(23, 59, 59, 999)
+      // Considerar que a data vem no formato YYYY-MM-DD
+      // Precisamos buscar considerando o fuso horário
+      const startDate = new Date(date + 'T00:00:00.000Z') // UTC
+      const endDate = new Date(date + 'T23:59:59.999Z')   // UTC
       
       query.date = {
         $gte: startDate,
