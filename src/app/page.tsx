@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Calendar, Scissors, Sparkles, MessageCircle, X, User, MapPin, Phone, Mail, Package, Star } from 'lucide-react'
+import { Calendar, Scissors, Sparkles, MessageCircle, X, User, MapPin, Phone, Mail, Package, Star, LogOut } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { MessageCircle as WhatsAppIcon } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Dados reais dos serviços do Espaço Guapa
 const servicosEspacoGuapa = [
@@ -125,6 +126,7 @@ interface Professional {
 }
 
 export default function HomePage() {
+  const { client, isLoggedIn, logout } = useAuth()
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -341,12 +343,29 @@ export default function HomePage() {
                 </button>
               </nav>
               <div className="flex items-center space-x-3 md:space-x-0">
-                <Link 
-                  href="/login-cliente"
-                  className="bg-[#d34d4c] text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm md:text-base"
-                >
-                  Agendar
-                </Link>
+                {isLoggedIn ? (
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <Link 
+                      href="/painel-cliente"
+                      className="text-[#d34d4c] font-medium text-sm hidden xl:block hover:text-[#b83e3d] transition-colors cursor-pointer"
+                    >
+                      Olá, {client?.name}
+                    </Link>
+                    <button
+                      onClick={logout}
+                      className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm"
+                    >
+                      Sair
+                    </button>
+                  </div>
+                ) : (
+                  <Link 
+                    href="/login-cliente"
+                    className="bg-[#d34d4c] text-white px-4 md:px-8 py-2 md:py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-sm md:text-base"
+                  >
+                    Agendar
+                  </Link>
+                )}
                 <button 
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   className="lg:hidden text-[#d34d4c] p-2"
@@ -411,13 +430,34 @@ export default function HomePage() {
                 >
                   Contato
                 </button>
-                <Link 
-                  href="/login-cliente"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-center mt-4 block"
-                >
-                  Agendar
-                </Link>
+                {isLoggedIn ? (
+                  <div className="space-y-3 mt-4">
+                    <Link 
+                      href="/painel-cliente"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-[#d34d4c] font-medium text-sm text-center block hover:text-[#b83e3d] transition-colors py-2"
+                    >
+                      Olá, {client?.name}
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout()
+                        setIsMobileMenuOpen(false)
+                      }}
+                      className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm w-full text-center py-2"
+                    >
+                      Sair
+                    </button>
+                  </div>
+                ) : (
+                  <Link 
+                    href="/login-cliente"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-colors font-medium tracking-wide text-center mt-4 block"
+                  >
+                    Agendar
+                  </Link>
+                )}
               </div>
             </nav>
           )}
