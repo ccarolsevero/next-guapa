@@ -47,6 +47,16 @@ export async function GET(request: NextRequest) {
     }).sort({ date: -1 }).toArray()
     
     console.log('📅 Agendamentos encontrados:', agendamentos.length)
+    if (agendamentos.length > 0) {
+      console.log('🔍 Primeiro agendamento:', {
+        _id: agendamentos[0]._id,
+        service: agendamentos[0].service,
+        startTime: agendamentos[0].startTime,
+        time: agendamentos[0].time,
+        date: agendamentos[0].date,
+        status: agendamentos[0].status
+      })
+    }
     
     // Buscar comandas finalizadas do cliente
     const comandas = await db.collection('finalizacoes').find({
@@ -68,7 +78,7 @@ export async function GET(request: NextRequest) {
       service: apt.service || 'Serviço não especificado',
       professional: apt.professional || 'Profissional não especificado',
       date: apt.date || new Date().toISOString().split('T')[0],
-      time: apt.time || '00:00',
+      time: apt.startTime || '00:00',
       status: apt.status || 'pending',
       price: apt.price || 0,
       rating: apt.rating,
