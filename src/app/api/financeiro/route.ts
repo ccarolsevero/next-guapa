@@ -204,6 +204,9 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Buscar pagamentos recentes das finalizações
+    console.log('🔍 Buscando pagamentos recentes...')
+    console.log('📅 Período:', { dataInicio, hoje })
+    
     const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
       {
         $match: {
@@ -229,6 +232,11 @@ export async function GET(request: NextRequest) {
         $limit: 10
       }
     ]).toArray()
+
+    console.log('📋 Pagamentos recentes encontrados:', pagamentosRecentes.length)
+    pagamentosRecentes.forEach((pagamento, index) => {
+      console.log(`   ${index + 1}. Cliente: "${pagamento.clientName}", Serviço: "${pagamento.service}", Valor: R$ ${pagamento.amount}`)
+    })
 
     // 5. Calcular totais
     const totalComandas = comandasFinalizadas.length
