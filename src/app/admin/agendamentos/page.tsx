@@ -130,6 +130,15 @@ export default function AgendamentosPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [activeTab, setActiveTab] = useState<'reserva' | 'informacoes'>('reserva')
   const [editingAppointment, setEditingAppointment] = useState<Partial<Appointment>>({})
+  const [customLabels, setCustomLabels] = useState([
+    { id: 1, name: 'NOVA', color: 'bg-green-200 text-green-800', selected: false },
+    { id: 2, name: '100%Pg', color: 'bg-blue-500 text-white', selected: false },
+    { id: 3, name: 'R$50', color: 'bg-black text-white', selected: false },
+    { id: 4, name: '30%', color: 'bg-pink-500 text-white', selected: false }
+  ])
+  const [showCustomLabelModal, setShowCustomLabelModal] = useState(false)
+  const [newLabelName, setNewLabelName] = useState('')
+  const [newLabelColor, setNewLabelColor] = useState('bg-gray-500')
 
   // Buscar dados da API
   useEffect(() => {
@@ -304,8 +313,69 @@ export default function AgendamentosPage() {
   const closeEditModal = () => {
     setShowEditModal(false)
     setSelectedAppointment(null)
+    setEditingAppointment({})
     setActiveTab('reserva')
   }
+
+  const handleSaveAppointment = async () => {
+    if (!selectedAppointment) return
+
+    try {
+      const selectedLabels = customLabels.filter(label => label.selected)
+      const updatedData = {
+        ...editingAppointment,
+        date: editingAppointment.date ? new Date(editingAppointment.date).toISOString() : selectedAppointment.date,
+        customLabels: selectedLabels
+      }
+
+      const response = await fetch(`/api/appointments/${selectedAppointment._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      if (response.ok) {
+        // Atualizar a lista de agendamentos
+        await fetchAppointments()
+        closeEditModal()
+        console.log('Agendamento atualizado com sucesso!')
+      } else {
+        console.error('Erro ao atualizar agendamento')
+      }
+    } catch (error) {
+      console.error('Erro ao salvar agendamento:', error)
+    }
+  }
+
+  const handleLabelToggle = (labelId: number) => {
+    setCustomLabels(prev => prev.map(label => 
+      label.id === labelId ? { ...label, selected: !label.selected } : label
+    ))
+  }
+
+  const handleCreateCustomLabel = () => {
+    if (newLabelName.trim()) {
+      const newLabel = {
+        id: Date.now(),
+        name: newLabelName.trim(),
+        color: newLabelColor,
+        selected: false
+      }
+      setCustomLabels(prev => [...prev, newLabel])
+      setNewLabelName('')
+      setNewLabelColor('bg-gray-500')
+      setShowCustomLabelModal(false)
+    }
+  }
+
+  const colorOptions = [
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-yellow-500',
+    'bg-purple-500', 'bg-pink-500', 'bg-indigo-500', 'bg-gray-500',
+    'bg-red-200 text-red-800', 'bg-blue-200 text-blue-800', 'bg-green-200 text-green-800',
+    'bg-yellow-200 text-yellow-800', 'bg-purple-200 text-purple-800', 'bg-pink-200 text-pink-800'
+  ]
 
   const renderDayView = () => {
     const dayAppointments = getAppointmentsForDate(selectedDate)
@@ -408,7 +478,9 @@ export default function AgendamentosPage() {
                   professional.name === 'Ellen Souza' ? 'bg-blue-600' :
                   'bg-gray-600'
                 }`}>
-                  {professional.name}
+                  {professional.name === 'Bruna Canovas' || professional.name === 'Cicera Canovas' 
+                    ? professional.name.split(' ')[0] 
+                    : professional.name}
                 </div>
               </div>
             ))}
@@ -1224,6 +1296,39 @@ export default function AgendamentosPage() {
                         ))}
                       </div>
                     </div>
+
+                    {/* Etiquetas Customizadas */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">Etiqueta Customizada:</label>
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {customLabels.map((label) => (
+                          <label key={label.id} className="flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={label.selected}
+                              onChange={() => handleLabelToggle(label.id)}
+                              className="sr-only"
+                            />
+                            <div className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center space-x-2 ${
+                              label.selected 
+                                ? label.color + ' ring-2 ring-offset-2 ring-purple-500' 
+                                : label.color + ' opacity-50 hover:opacity-75'
+                            }`}>
+                              <div className={`w-3 h-3 rounded-full ${
+                                label.selected ? 'bg-white' : 'bg-gray-400'
+                              }`}></div>
+                              <span>{label.name}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                      <button
+                        onClick={() => setShowCustomLabelModal(true)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        + Editar etiqueta customizada
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -1265,9 +1370,70 @@ export default function AgendamentosPage() {
                 >
                   Cancelar
                 </button>
-                <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                <button 
+                  onClick={handleSaveAppointment}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
                   Salvar
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Etiquetas Customizadas */}
+        {showCustomLabelModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+              <div className="p-6">
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Criar Nova Etiqueta</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nome da Etiqueta
+                    </label>
+                    <input
+                      type="text"
+                      value={newLabelName}
+                      onChange={(e) => setNewLabelName(e.target.value)}
+                      placeholder="Ex: VIP, Desconto, etc."
+                      className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:border-purple-500 focus:outline-none bg-white text-gray-900 font-medium"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cor
+                    </label>
+                    <div className="grid grid-cols-6 gap-2">
+                      {colorOptions.map((color) => (
+                        <button
+                          key={color}
+                          onClick={() => setNewLabelColor(color)}
+                          className={`w-8 h-8 rounded-full ${color} ${
+                            newLabelColor === color ? 'ring-2 ring-offset-2 ring-purple-500' : ''
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 mt-6">
+                  <button
+                    onClick={() => setShowCustomLabelModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={handleCreateCustomLabel}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Criar
+                  </button>
+                </div>
               </div>
             </div>
           </div>
