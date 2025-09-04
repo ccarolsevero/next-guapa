@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react'
 import { useAuth, AuthProvider } from '@/contexts/AuthContext'
+import OnboardingModal from '@/components/OnboardingModal'
 
 interface ClientData {
   id: number
@@ -78,6 +79,7 @@ function PainelClienteContent() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -110,10 +112,16 @@ function PainelClienteContent() {
         setAppointments(data.appointments)
         setOrders(data.orders)
         
+        // Verificar se precisa completar onboarding
+        if (data.client && (!data.client.onboardingCompleted || data.client.onboardingRequired)) {
+          setShowOnboarding(true)
+        }
+        
         console.log('📊 Dashboard data loaded:', {
           appointments: data.appointments.length,
           orders: data.orders.length,
-          stats: data.stats
+          stats: data.stats,
+          needsOnboarding: !data.client.onboardingCompleted
         })
         
       } catch (error) {
@@ -293,6 +301,20 @@ function PainelClienteContent() {
     } finally {
       setPasswordLoading(false)
     }
+  }
+
+  const handleOnboardingComplete = (updatedClient: any) => {
+    // Atualizar dados do cliente
+    setClientData(updatedClient)
+    
+    // Atualizar localStorage
+    localStorage.setItem('loggedInClient', JSON.stringify(updatedClient))
+    
+    // Fechar modal
+    setShowOnboarding(false)
+    
+    // Mostrar mensagem de sucesso
+    alert('Cadastro completado com sucesso! Agora você tem acesso completo ao painel.')
   }
 
   const handleLogout = () => {
@@ -1291,6 +1313,14 @@ function PainelClienteContent() {
           </div>
         </div>
       )}
+
+      {/* Modal de Onboarding */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onClose={() => setShowOnboarding(false)}
+        onComplete={handleOnboardingComplete}
+        clientData={clientData}
+      />
     </div>
   )
 }

@@ -1,62 +1,31 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, User, Mail, Phone, MapPin, Calendar, Save, AlertCircle } from 'lucide-react'
+import { useState } from 'react'
+import { X, User, Mail, Phone, Calendar, MapPin, Lock, CheckCircle } from 'lucide-react'
 
 interface OnboardingModalProps {
   isOpen: boolean
   onClose: () => void
-  onComplete: () => void
+  onComplete: (data: any) => void
   clientData: any
 }
 
 export default function OnboardingModal({ isOpen, onClose, onComplete, clientData }: OnboardingModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    birthDate: '',
-    address: '',
-    currentPassword: '',
+    name: clientData?.name || '',
+    email: clientData?.email || '',
+    phone: clientData?.phone || '',
+    birthDate: clientData?.birthDate || '',
+    address: clientData?.address || '',
     newPassword: '',
     confirmPassword: ''
   })
-  const [errors, setErrors] = useState<{[key: string]: string}>({})
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  useEffect(() => {
-    if (clientData) {
-      setFormData({
-        name: clientData.name || '',
-        email: clientData.email || '',
-        phone: clientData.phone || '',
-        birthDate: clientData.birthDate ? new Date(clientData.birthDate).toISOString().split('T')[0] : '',
-        address: clientData.address || '',
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      })
-    }
-  }, [clientData])
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
-    
-    // Limpar erro do campo
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }))
-    }
-  }
+  
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
 
   const validateForm = () => {
-    const newErrors: {[key: string]: string} = {}
+    const newErrors: Record<string, string> = {}
 
     if (!formData.name.trim()) {
       newErrors.name = 'Nome é obrigatório'
@@ -64,30 +33,20 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email é obrigatório'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email inválido'
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Formato de email inválido'
     }
 
     if (!formData.phone.trim()) {
       newErrors.phone = 'Telefone é obrigatório'
     }
 
-    if (!formData.address.trim()) {
-      newErrors.address = 'Endereço é obrigatório'
-    }
-
-    if (!formData.currentPassword) {
-      newErrors.currentPassword = 'Senha atual é obrigatória'
-    }
-
-    if (!formData.newPassword) {
-      newErrors.newPassword = 'Nova senha é obrigatória'
-    } else if (formData.newPassword.length < 6) {
-      newErrors.newPassword = 'Senha deve ter pelo menos 6 caracteres'
+    if (formData.newPassword && formData.newPassword.length < 6) {
+      newErrors.newPassword = 'A senha deve ter pelo menos 6 caracteres'
     }
 
     if (formData.newPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Senhas não coincidem'
+      newErrors.confirmPassword = 'As senhas não coincidem'
     }
 
     setErrors(newErrors)
@@ -101,61 +60,45 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
       return
     }
 
-    setIsSubmitting(true)
+    setLoading(true)
 
     try {
-      // Atualizar perfil do cliente
-      const response = await fetch(`/api/clients/${clientData._id}`, {
-        method: 'PUT',
+      const response = await fetch('/api/clients/complete-onboarding', {
+        method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          clientId: clientData.id,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
           birthDate: formData.birthDate,
           address: formData.address,
-          profileComplete: true,
-          onboardingRequired: false,
-          firstAccess: false,
-          profileCompletionDate: new Date().toISOString()
-        }),
+          newPassword: formData.newPassword || undefined
+        })
       })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        setErrors({ submit: errorData.error || 'Erro ao atualizar perfil' })
-        return
+      const data = await response.json()
+
+      if (response.ok) {
+        onComplete(data.client)
+      } else {
+        setErrors({ general: data.error })
       }
-
-      // Atualizar senha se necessário
-      if (formData.newPassword) {
-        const passwordResponse = await fetch(`/api/clients/change-password`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            currentPassword: formData.currentPassword,
-            newPassword: formData.newPassword
-          }),
-        })
-
-        if (!passwordResponse.ok) {
-          const errorData = await passwordResponse.json()
-          setErrors({ submit: errorData.error || 'Erro ao alterar senha' })
-          return
-        }
-      }
-
-      // Perfil atualizado com sucesso
-      onComplete()
     } catch (error) {
-      console.error('Erro ao atualizar perfil:', error)
-      setErrors({ submit: 'Erro ao atualizar perfil. Tente novamente.' })
+      console.error('Erro ao completar onboarding:', error)
+      setErrors({ general: 'Erro ao salvar dados. Tente novamente.' })
     } finally {
-      setIsSubmitting(false)
+      setLoading(false)
+    }
+  }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+    // Limpar erro do campo quando usuário começar a digitar
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
 
@@ -163,211 +106,192 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center">
-            <AlertCircle className="w-6 h-6 text-blue-600 mr-3" />
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Complete seu Perfil</h2>
-              <p className="text-sm text-gray-600">Precisamos de algumas informações para personalizar sua experiência</p>
+      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center">
+              <div className="w-12 h-12 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-[#006D5B]">
+                  Complete seu Cadastro
+                </h2>
+                <p className="text-gray-600">
+                  Atualize seus dados para uma melhor experiência
+                </p>
+              </div>
             </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800 text-sm">{errors.general}</p>
+              </div>
+            )}
+
             {/* Nome */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
                 <User className="w-4 h-4 inline mr-2" />
-                Nome Completo
+                Nome Completo *
               </label>
               <input
                 type="text"
-                name="name"
                 value={formData.name}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                  errors.name ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="Seu nome completo"
+                placeholder="Digite seu nome completo"
               />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
             </div>
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
                 <Mail className="w-4 h-4 inline mr-2" />
-                Email
+                Email *
               </label>
               <input
                 type="email"
-                name="email"
                 value={formData.email}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                  errors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="seu@email.com"
+                placeholder="Digite seu email"
               />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
+              <p className="text-gray-500 text-sm mt-1">
+                Este será seu email para login no site
+              </p>
             </div>
 
             {/* Telefone */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
                 <Phone className="w-4 h-4 inline mr-2" />
-                Telefone
+                Telefone *
               </label>
               <input
                 type="tel"
-                name="phone"
                 value={formData.phone}
-                onChange={handleInputChange}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                  errors.phone ? 'border-red-300' : 'border-gray-300'
                 }`}
-                placeholder="(19) 99999-9999"
+                placeholder="(11) 99999-9999"
               />
-              {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
+              {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
             </div>
 
             {/* Data de Nascimento */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
                 Data de Nascimento
               </label>
               <input
                 type="date"
-                name="birthDate"
                 value={formData.birthDate}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onChange={(e) => handleInputChange('birthDate', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
               />
             </div>
-          </div>
 
-          {/* Endereço */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <MapPin className="w-4 h-4 inline mr-2" />
-              Endereço Completo
-            </label>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.address ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Rua, número, bairro, cidade - estado"
-            />
-            {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-          </div>
+            {/* Endereço */}
+            <div>
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                <MapPin className="w-4 h-4 inline mr-2" />
+                Endereço
+              </label>
+              <input
+                type="text"
+                value={formData.address}
+                onChange={(e) => handleInputChange('address', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                placeholder="Rua, número, bairro, cidade"
+              />
+            </div>
 
-          {/* Alteração de Senha */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Alterar Senha</h3>
-            <div className="grid md:grid-cols-3 gap-4">
+            {/* Nova Senha */}
+            <div>
+              <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                <Lock className="w-4 h-4 inline mr-2" />
+                Nova Senha (opcional)
+              </label>
+              <input
+                type="password"
+                value={formData.newPassword}
+                onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                  errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                }`}
+                placeholder="Mínimo 6 caracteres"
+              />
+              {errors.newPassword && <p className="text-red-600 text-sm mt-1">{errors.newPassword}</p>}
+            </div>
+
+            {/* Confirmar Senha */}
+            {formData.newPassword && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Senha Atual
-                </label>
-                <input
-                  type="password"
-                  name="currentPassword"
-                  value={formData.currentPassword}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="123456"
-                />
-                {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nova Senha
-                </label>
-                <input
-                  type="password"
-                  name="newPassword"
-                  value={formData.newPassword}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="Mínimo 6 caracteres"
-                />
-                {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  <Lock className="w-4 h-4 inline mr-2" />
                   Confirmar Nova Senha
                 </label>
                 <input
                   type="password"
-                  name="confirmPassword"
                   value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Confirme a nova senha"
+                  placeholder="Confirme sua nova senha"
                 />
-                {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>}
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Erro geral */}
-          {errors.submit && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-700 text-sm">{errors.submit}</p>
+            {/* Botões */}
+            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Completar Cadastro
+                  </>
+                )}
+              </button>
             </div>
-          )}
-
-          {/* Botões */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Salvando...
-                </>
-              ) : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Completar Perfil
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
   )

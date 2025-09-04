@@ -49,6 +49,18 @@ const clientSchema = new mongoose.Schema({
   profileCompletionDate: {
     type: Date,
     default: null
+  },
+  onboardingCompleted: {
+    type: Boolean,
+    default: false
+  },
+  onboardingCompletedAt: {
+    type: Date,
+    default: null
+  },
+  isCompleteProfile: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true

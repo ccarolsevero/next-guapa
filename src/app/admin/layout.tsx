@@ -36,6 +36,7 @@ export default function AdminLayout({
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Agendamentos', href: '/admin/agendamentos', icon: Calendar },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
+    { name: 'Clientes Completos', href: '/admin/clientes-completos', icon: Users },
     { name: 'Serviços', href: '/admin/servicos', icon: Scissors },
     { name: 'Pacotes', href: '/admin/pacotes', icon: Package },
     { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag },
