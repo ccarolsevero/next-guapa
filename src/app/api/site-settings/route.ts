@@ -1,68 +1,85 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-
-// Modelo simples para configurações do site
-interface SiteSettings {
-  siteName: string
-  description: string
-  address: string
-  whatsapp: string
-  email: string
-  updatedAt: string
-}
+import { MongoClient } from 'mongodb'
 
 export async function GET() {
+  let client: MongoClient | null = null
+  
   try {
-    console.log('Buscando configurações do site...')
+    console.log('🔍 === API SITE SETTINGS - GET ===')
     
-    // Por enquanto, vamos usar dados estáticos
-    // Em uma implementação futura, você pode criar um modelo SiteSettings no MongoDB
-    const settings: SiteSettings = {
-      siteName: 'Guapa',
-      description: 'Salão de beleza especializado em tratamentos capilares e coloração',
-      address: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
-      whatsapp: '(19) 99999-9999',
-      email: 'contato@guapa.com',
-      updatedAt: new Date().toISOString()
+    // Conectar ao MongoDB
+    const uri = process.env.MONGODB_URI!
+    client = new MongoClient(uri)
+    await client.connect()
+    const db = client.db(process.env.DB_NAME || 'guapa')
+    
+    console.log('✅ Conectado ao MongoDB')
+    
+    // Buscar configurações (apenas dados públicos)
+    const configuracao = await db.collection('configuracoes').findOne({})
+    
+    if (!configuracao) {
+      console.log('⚠️ Nenhuma configuração encontrada')
+      await client.close()
+      return NextResponse.json({
+        nomeSalao: 'Espaço Guapa',
+        emailContato: 'contato@espacoguapa.com',
+        telefone: '(11) 99999-9999',
+        endereco: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
+        horariosFuncionamento: [
+          { dia: 'Segunda-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Terça-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Quarta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Quinta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Sexta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Sábado', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+          { dia: 'Domingo', ativo: false, horaInicio: '09:00', horaFim: '18:00' }
+        ]
+      })
     }
     
-    console.log('Configurações carregadas')
-    return NextResponse.json(settings)
-  } catch (error) {
-    console.error('Erro ao buscar configurações:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
-  }
-}
-
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { siteName, description, address, whatsapp, email } = body
-
-    console.log('Atualizando configurações do site...')
-    
-    // Por enquanto, vamos apenas retornar sucesso
-    // Em uma implementação futura, você pode salvar no MongoDB
-    const updatedSettings: SiteSettings = {
-      siteName,
-      description,
-      address,
-      whatsapp,
-      email,
-      updatedAt: new Date().toISOString()
+    // Retornar apenas dados públicos (sem configurações sensíveis)
+    const dadosPublicos = {
+      nomeSalao: configuracao.nomeSalao,
+      emailContato: configuracao.emailContato,
+      telefone: configuracao.telefone,
+      endereco: configuracao.endereco,
+      horariosFuncionamento: configuracao.horariosFuncionamento,
+      politicaCancelamento: configuracao.politicaCancelamento,
+      politicaReagendamento: configuracao.politicaReagendamento
     }
     
-    console.log('Configurações atualizadas com sucesso')
+    console.log('✅ Configurações públicas retornadas')
     
-    return NextResponse.json(updatedSettings)
+    await client.close()
+    return NextResponse.json(dadosPublicos)
+    
   } catch (error) {
-    console.error('Erro ao atualizar configurações:', error)
-    return NextResponse.json(
-      { error: 'Erro interno do servidor' },
-      { status: 500 }
-    )
+    console.error('❌ Erro ao buscar configurações do site:', error)
+    
+    if (client) {
+      try {
+        await client.close()
+      } catch (closeError) {
+        console.error('❌ Erro ao fechar conexão:', closeError)
+      }
+    }
+    
+    // Retornar configurações padrão em caso de erro
+    return NextResponse.json({
+      nomeSalao: 'Espaço Guapa',
+      emailContato: 'contato@espacoguapa.com',
+      telefone: '(11) 99999-9999',
+      endereco: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
+      horariosFuncionamento: [
+        { dia: 'Segunda-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Terça-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Quarta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Quinta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Sexta-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Sábado', ativo: true, horaInicio: '09:00', horaFim: '18:00' },
+        { dia: 'Domingo', ativo: false, horaInicio: '09:00', horaFim: '18:00' }
+      ]
+    })
   }
 }
