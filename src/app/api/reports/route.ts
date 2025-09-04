@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
 export async function GET(request: NextRequest) {
@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
 
     console.log('Relatório solicitado:', { reportType, period, startDateParam, endDateParam })
 
-    await connectDB()
-    const db = (await import('@/lib/mongodb')).default.db
+    const { db } = await connectToDatabase()
+    console.log('Conexão com banco estabelecida:', !!db)
 
     // Calcular datas baseado no período ou usar datas customizadas
     const now = new Date()
@@ -66,9 +66,11 @@ export async function GET(request: NextRequest) {
 
     switch (reportType) {
       case 'clientes-aniversariantes':
+        console.log('Executando relatório: clientes-aniversariantes')
         const aniversariantes = await db.collection('clients').find({
           birthDate: { $exists: true, $ne: null }
         }).toArray()
+        console.log('Aniversariantes encontrados:', aniversariantes.length)
 
         reportData.aniversariantes = aniversariantes
           .filter(client => isBirthdayThisMonth(new Date(client.birthDate)))
@@ -82,6 +84,7 @@ export async function GET(request: NextRequest) {
         break
 
       case 'clientes-atendidos':
+        console.log('Executando relatório: clientes-atendidos')
         const clientesAtendidos = await db.collection('finalizacoes').aggregate([
           {
             $match: {
@@ -126,7 +129,9 @@ export async function GET(request: NextRequest) {
         break
 
       case 'lista-clientes':
+        console.log('Executando relatório: lista-clientes')
         const todosClientes = await db.collection('clients').find({}).toArray()
+        console.log('Total de clientes:', todosClientes.length)
         reportData.todosClientes = todosClientes.map(client => ({
           name: client.name,
           email: client.email,
@@ -581,6 +586,7 @@ export async function GET(request: NextRequest) {
       default:
         // Relatórios básicos (financial, clients, services, professionals, appointments)
         if (reportType === 'financial' || reportType === 'all') {
+          console.log('Executando relatório: financial')
           const financialData = await db.collection('finalizacoes').aggregate([
             {
               $match: {
