@@ -22,13 +22,16 @@ import { useAuth, AuthProvider } from '@/contexts/AuthContext'
 import OnboardingModal from '@/components/OnboardingModal'
 
 interface ClientData {
-  id: number
+  id?: string
+  _id?: string
   name: string
   email: string
   phone: string
   birthDate: string
   address: string
   createdAt: string
+  onboardingCompleted?: boolean
+  onboardingRequired?: boolean
 }
 
 interface Appointment {
@@ -99,13 +102,17 @@ function PainelClienteContent() {
         setClientData(clientInfo)
         
         // Buscar dados do dashboard do banco
-        const response = await fetch(`/api/clients/dashboard?clientId=${clientInfo.id}`)
+        const clientId = clientInfo.id || clientInfo._id
+        console.log('🔍 Buscando dashboard para clientId:', clientId)
+        
+        const response = await fetch(`/api/clients/dashboard?clientId=${clientId}`)
         
         if (!response.ok) {
           throw new Error('Erro ao carregar dados do dashboard')
         }
         
         const data = await response.json()
+        console.log('📊 Dados recebidos do dashboard:', data.client)
         
         // Atualizar dados do cliente com informações do banco
         setClientData(data.client)
@@ -215,13 +222,15 @@ function PainelClienteContent() {
 
   // Função para salvar alterações do perfil
   const saveProfileChanges = async () => {
-    if (!clientData?.id || !editProfileData) {
+    const clientId = clientData?.id || clientData?._id
+    
+    if (!clientId || !editProfileData) {
       alert('Erro: Dados do cliente não encontrados')
       return
     }
 
     try {
-      const response = await fetch(`/api/clients/${clientData.id}`, {
+      const response = await fetch(`/api/clients/${clientId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -262,7 +271,9 @@ function PainelClienteContent() {
       return
     }
 
-    if (!clientData?.id) {
+    const clientId = clientData?.id || clientData?._id
+    
+    if (!clientId) {
       alert('Erro: ID do cliente não encontrado')
       return
     }
@@ -278,7 +289,7 @@ function PainelClienteContent() {
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
           newPassword: passwordData.newPassword,
-          clientId: clientData.id
+          clientId: clientId
         })
       })
 

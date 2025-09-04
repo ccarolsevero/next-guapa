@@ -107,12 +107,15 @@ export async function GET(request: NextRequest) {
     const dashboardData = {
       client: {
         id: cliente._id.toString(),
+        _id: cliente._id.toString(),
         name: cliente.name,
         email: cliente.email,
         phone: cliente.phone,
         birthDate: cliente.birthDate,
         address: cliente.address,
-        createdAt: cliente.createdAt
+        createdAt: cliente.createdAt,
+        onboardingCompleted: cliente.onboardingCompleted,
+        onboardingRequired: cliente.onboardingRequired
       },
       appointments: allAppointments,
       orders: orders,

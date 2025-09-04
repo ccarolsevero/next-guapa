@@ -69,7 +69,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          clientId: clientData.id,
+          clientId: clientData.id || clientData._id,
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
