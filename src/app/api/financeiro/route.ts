@@ -212,20 +212,9 @@ export async function GET(request: NextRequest) {
         }
       },
       {
-        $lookup: {
-          from: 'clients',
-          localField: 'clienteId',
-          foreignField: '_id',
-          as: 'cliente'
-        }
-      },
-      {
-        $unwind: '$cliente'
-      },
-      {
         $project: {
           _id: 1,
-          clientName: '$cliente.name',
+          clientName: '$clienteNome',
           service: { $arrayElemAt: ['$servicos.nome', 0] },
           amount: '$valorFinal',
           method: '$metodoPagamento',
