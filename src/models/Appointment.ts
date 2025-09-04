@@ -12,7 +12,7 @@ export interface IAppointment extends Document {
   startTime: string
   endTime: string
   duration: number // em minutos
-  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  status: 'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   price: number
   notes?: string
   customLabels?: Array<{
@@ -81,7 +81,7 @@ const appointmentSchema = new Schema<IAppointment>({
   },
   status: {
     type: String,
-    enum: ['SCHEDULED', 'CONFIRMED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'],
+    enum: ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW'],
     default: 'SCHEDULED'
   },
   price: {

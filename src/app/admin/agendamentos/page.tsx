@@ -34,7 +34,7 @@ interface Appointment {
   date: string
   startTime: string
   endTime: string
-  status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  status: 'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   price: number
   notes?: string
   customLabels?: Array<{
