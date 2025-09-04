@@ -65,11 +65,6 @@ const statusColors = {
   NO_SHOW: 'bg-yellow-100 text-yellow-800 border-yellow-200'
 }
 
-const professionals = [
-  { id: 'bruna', name: 'Bruna Canovas', color: 'bg-pink-100', textColor: 'text-pink-800' },
-  { id: 'cicera', name: 'Cícera Canovas', color: 'bg-purple-100', textColor: 'text-purple-800' }
-]
-
 export default function AgendamentosPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -77,13 +72,15 @@ export default function AgendamentosPage() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [professionals, setProfessionals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  // Buscar agendamentos da API
+  // Buscar dados da API
   useEffect(() => {
     fetchAppointments()
+    fetchProfessionals()
   }, [selectedDate, filterStatus])
 
   const fetchAppointments = async () => {
@@ -106,6 +103,20 @@ export default function AgendamentosPage() {
       console.error('Erro ao buscar agendamentos:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchProfessionals = async () => {
+    try {
+      const response = await fetch('/api/professionals')
+      if (response.ok) {
+        const data = await response.json()
+        setProfessionals(data)
+      } else {
+        console.error('Erro ao buscar profissionais')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar profissionais:', error)
     }
   }
 
@@ -239,11 +250,11 @@ export default function AgendamentosPage() {
 
       {/* Cabeçalho dos Profissionais */}
       <div className="border-b border-gray-200">
-        <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50">
+        <div className={`grid gap-4 p-4 bg-gray-50`} style={{ gridTemplateColumns: `200px repeat(${professionals.length}, 1fr)` }}>
           <div className="text-sm font-medium text-gray-900">Horário</div>
           {professionals.map((professional) => (
-            <div key={professional.id} className="text-center">
-              <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${professional.color} ${professional.textColor}`}>
+            <div key={professional._id} className="text-center">
+              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#D15556] text-white">
                 {professional.name}
               </div>
             </div>
@@ -266,7 +277,7 @@ export default function AgendamentosPage() {
         <div className="grid grid-cols-1">
           {timeSlots.map((time) => (
             <div key={time} className="border-b border-gray-100">
-              <div className="grid grid-cols-3 gap-4 p-4">
+              <div className={`grid gap-4 p-4`} style={{ gridTemplateColumns: `200px repeat(${professionals.length}, 1fr)` }}>
                 {/* Horário */}
                 <div className="flex items-center">
                   <div className="text-sm font-medium text-gray-900">{time}</div>
@@ -274,11 +285,11 @@ export default function AgendamentosPage() {
                 
                 {/* Colunas dos Profissionais */}
                 {professionals.map((professional) => {
-                  const appointments = getAppointmentsForTimeSlot(time, professional.id)
+                  const appointments = getAppointmentsForTimeSlot(time, professional._id)
                   const hasAppointments = appointments.length > 0
                   
                   return (
-                    <div key={professional.id} className={`min-h-[60px] ${hasAppointments ? 'bg-pink-50' : ''}`}>
+                    <div key={professional._id} className={`min-h-[60px] ${hasAppointments ? 'bg-pink-50' : ''}`}>
                       {isLunchTime(time) ? (
                         <div className="h-full flex items-center justify-center">
                           <div className="bg-orange-100 border border-orange-200 rounded-lg p-2 text-center">
@@ -521,227 +532,229 @@ export default function AgendamentosPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Header */}
-      <div className="sm:flex sm:items-center sm:justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Agenda</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Gerencie todos os agendamentos do salão
-          </p>
+    <div className="min-h-screen bg-[#F5F0E8] p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="sm:flex sm:items-center sm:justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-[#006D5B]">Agenda</h1>
+            <p className="mt-2 text-sm text-gray-700">
+              Gerencie todos os agendamentos do salão
+            </p>
+          </div>
+          <div className="mt-4 sm:mt-0 flex space-x-3">
+            <Link
+              href="/admin/agendamentos/novo"
+              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Agendamento
+            </Link>
+          </div>
         </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
-          <Link
-            href="/admin/agendamentos/novo"
-            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Agendamento
-          </Link>
-        </div>
-      </div>
 
-      {/* Controles da Agenda */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-            {/* Navegação de Data */}
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigateDate('prev')}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              
-              <div className="text-center">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  {viewMode === 'day' && formatDate(selectedDate)}
-                  {viewMode === 'week' && `Semana de ${formatShortDate(selectedDate)}`}
-                  {viewMode === 'month' && selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-                </h2>
+        {/* Controles da Agenda */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="p-6 border-b border-gray-200">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              {/* Navegação de Data */}
+              <div className="flex items-center space-x-4">
                 <button
-                  onClick={goToToday}
-                  className="text-sm text-pink-600 hover:text-pink-700"
+                  onClick={() => navigateDate('prev')}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
-                  Ir para hoje
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                <div className="text-center">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {viewMode === 'day' && formatDate(selectedDate)}
+                    {viewMode === 'week' && `Semana de ${formatShortDate(selectedDate)}`}
+                    {viewMode === 'month' && selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <button
+                    onClick={goToToday}
+                    className="text-sm text-[#D15556] hover:text-[#c04546]"
+                  >
+                    Ir para hoje
+                  </button>
+                </div>
+                
+                <button
+                  onClick={() => navigateDate('next')}
+                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
-              
-              <button
-                onClick={() => navigateDate('next')}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
 
-            {/* Modos de Visualização */}
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setViewMode('day')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'day' 
-                    ? 'bg-pink-100 text-pink-600' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-                title="Vista Diária"
-              >
-                <Clock3 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('week')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'week' 
-                    ? 'bg-pink-100 text-pink-600' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-                title="Vista Semanal"
-              >
-                <CalendarDays className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('month')}
-                className={`p-2 rounded-lg transition-colors ${
-                  viewMode === 'month' 
-                    ? 'bg-pink-100 text-pink-600' 
-                    : 'hover:bg-gray-100 text-gray-600'
-                }`}
-                title="Vista Mensal"
-              >
-                <Grid3X3 className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Filtros */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Buscar cliente..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                  style={{ color: '#000000' }}
-                />
+              {/* Modos de Visualização */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setViewMode('day')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === 'day' 
+                      ? 'bg-[#D15556] text-white' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Vista Diária"
+                >
+                  <Clock3 className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('week')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === 'week' 
+                      ? 'bg-[#D15556] text-white' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Vista Semanal"
+                >
+                  <CalendarDays className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('month')}
+                  className={`p-2 rounded-lg transition-colors ${
+                    viewMode === 'month' 
+                      ? 'bg-[#D15556] text-white' 
+                      : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                  title="Vista Mensal"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </button>
               </div>
-              
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              >
-                <option value="all">Todos os Status</option>
-                <option value="SCHEDULED">Agendado</option>
-                <option value="CONFIRMED">Confirmado</option>
-                <option value="COMPLETED">Concluído</option>
-                <option value="CANCELLED">Cancelado</option>
-                <option value="NO_SHOW">Não Compareceu</option>
-              </select>
+
+              {/* Filtros */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Buscar cliente..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                    style={{ color: '#000000' }}
+                  />
+                </div>
+                
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                >
+                  <option value="all">Todos os Status</option>
+                  <option value="SCHEDULED">Agendado</option>
+                  <option value="CONFIRMED">Confirmado</option>
+                  <option value="COMPLETED">Concluído</option>
+                  <option value="CANCELLED">Cancelado</option>
+                  <option value="NO_SHOW">Não Compareceu</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
-        </div>
-      )}
-
-      {/* Agenda */}
-      {!loading && (
-        <>
-          {viewMode === 'day' && renderDayView()}
-          {viewMode === 'week' && renderWeekView()}
-          {viewMode === 'month' && renderMonthView()}
-        </>
-      )}
-
-      {/* Resumo do Dia */}
-      {viewMode === 'day' && (
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-3 rounded-full bg-blue-100 text-blue-600">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total de Agendamentos</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {getAppointmentsForDate(selectedDate).length}
-                </p>
-              </div>
-            </div>
+        {/* Loading */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D15556]"></div>
           </div>
+        )}
 
-          {professionals.map((professional) => {
-            const professionalAppointments = getAppointmentsForDate(selectedDate).filter(apt => apt.professionalId === professional.id)
-            return (
-              <div key={professional.id} className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-center">
-                  <div className={`p-3 rounded-full ${professional.color} ${professional.textColor}`}>
-                    <User className="w-6 h-6" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">{professional.name}</p>
-                    <p className="text-2xl font-semibold text-gray-900">
-                      {professionalAppointments.length}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      R$ {professionalAppointments.reduce((sum, apt) => sum + apt.price, 0).toFixed(2)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
+        {/* Agenda */}
+        {!loading && (
+          <>
+            {viewMode === 'day' && renderDayView()}
+            {viewMode === 'week' && renderWeekView()}
+            {viewMode === 'month' && renderMonthView()}
+          </>
+        )}
 
-      {/* Modal de Confirmação de Exclusão */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                  <AlertTriangle className="w-6 h-6 text-red-600" />
+        {/* Resumo do Dia */}
+        {viewMode === 'day' && (
+          <div className={`mt-6 grid gap-6`} style={{ gridTemplateColumns: `repeat(${professionals.length + 1}, 1fr)` }}>
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                  <Calendar className="w-6 h-6" />
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Confirmar Exclusão
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Tem certeza que deseja excluir este agendamento?
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total de Agendamentos</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {getAppointmentsForDate(selectedDate).length}
                   </p>
                 </div>
               </div>
-              
-              <p className="text-gray-700 mb-6">
-                Esta ação não pode ser desfeita. O agendamento será removido permanentemente.
-              </p>
-              
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={cancelDelete}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={confirmDeleteAppointment}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Excluir
-                </button>
+            </div>
+
+            {professionals.map((professional) => {
+              const professionalAppointments = getAppointmentsForDate(selectedDate).filter(apt => apt.professionalId === professional._id)
+              return (
+                <div key={professional._id} className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-center">
+                    <div className="p-3 rounded-full bg-[#D15556] text-white">
+                      <User className="w-6 h-6" />
+                    </div>
+                    <div className="ml-4">
+                      <p className="text-sm font-medium text-gray-600">{professional.name}</p>
+                      <p className="text-2xl font-semibold text-gray-900">
+                        {professionalAppointments.length}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        R$ {professionalAppointments.reduce((sum, apt) => sum + apt.price, 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Modal de Confirmação de Exclusão */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg shadow-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Confirmar Exclusão
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Tem certeza que deseja excluir este agendamento?
+                    </p>
+                  </div>
+                </div>
+                
+                <p className="text-gray-700 mb-6">
+                  Esta ação não pode ser desfeita. O agendamento será removido permanentemente.
+                </p>
+                
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={confirmDeleteAppointment}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Excluir
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
