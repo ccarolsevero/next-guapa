@@ -39,13 +39,50 @@ interface Appointment {
 }
 
 const timeSlots = [
-  "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30",
-  "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00"
+  "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45",
+  "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45",
+  "12:00", "12:15", "12:30", "12:45", "13:00", "13:15", "13:30", "13:45",
+  "14:00", "14:15", "14:30", "14:45", "15:00", "15:15", "15:30", "15:45",
+  "16:00", "16:15", "16:30", "16:45", "17:00", "17:15", "17:30", "17:45",
+  "18:00", "18:15", "18:30", "18:45", "19:00"
 ]
 
 const isLunchTime = (time: string) => {
-  return time === '13:00' || time === '13:30'
+  return time === '13:00' || time === '13:15' || time === '13:30' || time === '13:45'
+}
+
+// Cores para cada profissional
+const getProfessionalColor = (professionalName: string) => {
+  const colors = {
+    'Bruna Canovas': 'bg-purple-100 text-purple-800 border-purple-200',
+    'Vitória Uliani': 'bg-orange-100 text-orange-800 border-orange-200', 
+    'Cicera Canovas': 'bg-green-100 text-green-800 border-green-200',
+    'Ellen Souza': 'bg-blue-100 text-blue-800 border-blue-200'
+  }
+  return colors[professionalName as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200'
+}
+
+// Calcular duração em intervalos de 15 minutos
+const getDurationInSlots = (startTime: string, endTime: string) => {
+  const start = new Date(`2000-01-01T${startTime}:00`)
+  const end = new Date(`2000-01-01T${endTime}:00`)
+  const diffMs = end.getTime() - start.getTime()
+  const diffMinutes = diffMs / (1000 * 60)
+  return Math.ceil(diffMinutes / 15) // Arredonda para cima
+}
+
+// Verificar se um horário está dentro de um agendamento
+const isTimeInAppointment = (time: string, appointment: Appointment) => {
+  const timeMinutes = timeToMinutes(time)
+  const startMinutes = timeToMinutes(appointment.startTime)
+  const endMinutes = timeToMinutes(appointment.endTime)
+  return timeMinutes >= startMinutes && timeMinutes < endMinutes
+}
+
+// Converter horário para minutos
+const timeToMinutes = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number)
+  return hours * 60 + minutes
 }
 
 const serviceIcons = {
@@ -76,6 +113,8 @@ export default function AgendamentosPage() {
   const [loading, setLoading] = useState(true)
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [hoveredAppointment, setHoveredAppointment] = useState<Appointment | null>(null)
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
 
   // Buscar dados da API
   useEffect(() => {
@@ -237,137 +276,169 @@ export default function AgendamentosPage() {
     setAppointmentToDelete(null)
   }
 
-  const renderDayView = () => (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
-      <div className="border-b border-gray-200">
-        <div className="px-6 py-4">
-          <h3 className="text-lg font-semibold text-gray-900">Agenda do Dia</h3>
-          <p className="text-sm text-gray-600">
-            {getAppointmentsForDate(selectedDate).length} agendamentos para hoje
-          </p>
-        </div>
-      </div>
-
-      {/* Cabeçalho dos Profissionais */}
-      <div className="border-b border-gray-200">
-        <div className={`grid gap-4 p-4 bg-gray-50`} style={{ gridTemplateColumns: `200px repeat(${professionals.length}, 1fr)` }}>
-          <div className="text-sm font-medium text-gray-900">Horário</div>
-          {professionals.map((professional) => (
-            <div key={professional._id} className="text-center">
-              <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#D15556] text-white">
-                {professional.name}
-              </div>
+  const renderDayView = () => {
+    const dayAppointments = getAppointmentsForDate(selectedDate)
+    
+    return (
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        {/* Header com botões */}
+        <div className="border-b border-gray-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-3">
+              <button
+                onClick={goToToday}
+                className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors text-sm font-medium"
+              >
+                Hoje
+              </button>
+              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
+                Bloquear Horário
+              </button>
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Aviso de Horário de Almoço */}
-      <div className="bg-orange-50 border-b border-orange-200">
-        <div className="px-6 py-2">
-          <div className="flex items-center justify-center text-sm text-orange-800">
-            <span className="mr-2">🍽️</span>
-            <span className="font-medium">Horário de Almoço: 13:00 - 14:00</span>
-            <span className="ml-2">🍽️</span>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {formatDate(selectedDate)}
+            </h3>
           </div>
         </div>
-      </div>
 
-      <div className="overflow-y-auto max-h-[600px]">
-        <div className="grid grid-cols-1">
-          {timeSlots.map((time) => (
-            <div key={time} className="border-b border-gray-100">
-              <div className={`grid gap-4 p-4`} style={{ gridTemplateColumns: `200px repeat(${professionals.length}, 1fr)` }}>
-                {/* Horário */}
-                <div className="flex items-center">
-                  <div className="text-sm font-medium text-gray-900">{time}</div>
+        {/* Cabeçalho dos Profissionais */}
+        <div className="border-b border-gray-200">
+          <div className={`grid gap-1 p-2`} style={{ gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)` }}>
+            <div className="text-sm font-medium text-gray-900 p-2">Horário</div>
+            {professionals.map((professional) => (
+              <div key={professional._id} className="text-center p-2">
+                <div className={`inline-flex items-center px-3 py-2 rounded text-sm font-medium text-white ${getProfessionalColor(professional.name).replace('100', '600').replace('800', 'white')}`}>
+                  {professional.name}
                 </div>
-                
-                {/* Colunas dos Profissionais */}
-                {professionals.map((professional) => {
-                  const appointments = getAppointmentsForTimeSlot(time, professional._id)
-                  const hasAppointments = appointments.length > 0
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Grade de horários */}
+        <div className="overflow-y-auto max-h-[600px]">
+          <div className="grid grid-cols-1">
+            {timeSlots.map((time) => (
+              <div key={time} className="border-b border-gray-100">
+                <div className={`grid gap-1 p-1`} style={{ gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)` }}>
+                  {/* Horário */}
+                  <div className="flex items-center justify-center p-2">
+                    <div className="text-sm font-medium text-gray-900">{time}</div>
+                  </div>
                   
-                  return (
-                    <div key={professional._id} className={`min-h-[60px] ${hasAppointments ? 'bg-pink-50' : ''}`}>
-                      {isLunchTime(time) ? (
-                        <div className="h-full flex items-center justify-center">
-                          <div className="bg-orange-100 border border-orange-200 rounded-lg p-2 text-center">
-                            <div className="text-xs font-medium text-orange-800">🍽️ Almoço</div>
-                            <div className="text-xs text-orange-600">13:00 - 14:00</div>
+                  {/* Colunas dos Profissionais */}
+                  {professionals.map((professional) => {
+                    const professionalAppointments = dayAppointments.filter(apt => 
+                      apt.professionalId === professional._id && 
+                      isTimeInAppointment(time, apt)
+                    )
+                    
+                    // Encontrar o agendamento que começa neste horário
+                    const startingAppointment = dayAppointments.find(apt => 
+                      apt.professionalId === professional._id && 
+                      apt.startTime === time
+                    )
+                    
+                    return (
+                      <div key={professional._id} className="min-h-[40px] p-1 relative">
+                        {isLunchTime(time) ? (
+                          <div className="h-full flex items-center justify-center">
+                            <div className="bg-orange-100 border border-orange-200 rounded p-1 text-center w-full">
+                              <div className="text-xs text-orange-800">🍽️</div>
+                            </div>
                           </div>
-                        </div>
-                      ) : hasAppointments ? (
-                        <div className="space-y-2">
-                          {appointments.map((appointment) => {
-                            const IconComponent = serviceIcons[appointment.service as keyof typeof serviceIcons] || Scissors
-                            return (
-                              <div
-                                key={appointment._id}
-                                className={`p-2 rounded-lg border ${statusColors[appointment.status]} shadow-sm`}
-                              >
-                                <div className="space-y-1">
-                                  <div className="flex items-start justify-between">
-                                    <IconComponent className="w-4 h-4 mt-0.5 text-pink-600 flex-shrink-0" />
-                                    <div className="flex space-x-1 ml-1">
-                                      <Link
-                                        href={`/admin/agendamentos/${appointment._id}`}
-                                        className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-                                        title="Ver detalhes"
-                                      >
-                                        <Eye className="w-3 h-3" />
-                                      </Link>
-                                      <Link
-                                        href={`/admin/agendamentos/${appointment._id}/editar`}
-                                        className="p-1 text-green-600 hover:text-green-800 transition-colors"
-                                        title="Editar agendamento"
-                                      >
-                                        <Edit className="w-3 h-3" />
-                                      </Link>
-                                      <button 
-                                        onClick={() => handleDeleteAppointment(appointment._id)}
-                                        className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                                        title="Excluir agendamento"
-                                      >
-                                        <Trash className="w-3 h-3" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                  <div className="text-xs font-medium text-gray-900 truncate">
-                                    {appointment.clientName}
-                                  </div>
-                                  <div className="text-xs text-gray-600 truncate">
-                                    {appointment.service}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {appointment.startTime} - {appointment.endTime}
-                                  </div>
-                                  <div className="text-xs font-medium text-gray-900">
-                                    R$ {appointment.price.toFixed(2)}
-                                  </div>
-                                  <span className={`inline-block px-1 py-0.5 text-xs rounded-full ${statusColors[appointment.status]}`}>
-                                    {getStatusText(appointment.status)}
-                                  </span>
-                                </div>
+                        ) : startingAppointment ? (
+                          <div
+                            className={`p-2 rounded border shadow-sm cursor-pointer transition-all hover:shadow-md ${getProfessionalColor(startingAppointment.professional)}`}
+                            style={{
+                              minHeight: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 20)}px`
+                            }}
+                            onMouseEnter={(e) => {
+                              setHoveredAppointment(startingAppointment)
+                              setTooltipPosition({ x: e.clientX, y: e.clientY })
+                            }}
+                            onMouseLeave={() => setHoveredAppointment(null)}
+                          >
+                            <div className="space-y-1">
+                              <div className="text-xs font-semibold">
+                                {startingAppointment.startTime}
                               </div>
-                            )
-                          })}
-                        </div>
-                      ) : (
-                        <div className="text-xs text-gray-400 italic h-full flex items-center justify-center">
-                          Disponível
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                              <div className="text-xs font-medium truncate">
+                                {startingAppointment.clientName}
+                              </div>
+                              <div className="text-xs truncate">
+                                {startingAppointment.service}
+                              </div>
+                            </div>
+                          </div>
+                        ) : professionalAppointments.length > 0 ? (
+                          // Agendamento em andamento (não é o início)
+                          <div className="h-full"></div>
+                        ) : (
+                          <div className="h-full border border-transparent hover:border-gray-200 rounded transition-colors"></div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Tooltip */}
+        {hoveredAppointment && (
+          <div
+            className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg p-4 max-w-xs"
+            style={{
+              left: `${tooltipPosition.x + 10}px`,
+              top: `${tooltipPosition.y - 10}px`,
+              pointerEvents: 'none'
+            }}
+          >
+            <div className="space-y-2">
+              <div>
+                <span className="text-sm font-medium text-gray-600">Serviço:</span>
+                <p className="text-sm text-gray-900">{hoveredAppointment.service}</p>
+              </div>
+              <div>
+                <span className="text-sm font-medium text-gray-600">Status:</span>
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs ${statusColors[hoveredAppointment.status]}`}>
+                  {getStatusText(hoveredAppointment.status)}
+                </span>
+              </div>
+              {hoveredAppointment.notes && (
+                <div>
+                  <span className="text-sm font-medium text-gray-600">Obs:</span>
+                  <p className="text-sm text-gray-900">{hoveredAppointment.notes}</p>
+                </div>
+              )}
+              <div className="flex space-x-2 pt-2">
+                <Link
+                  href={`/admin/agendamentos/${hoveredAppointment._id}`}
+                  className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+                >
+                  Ver detalhes
+                </Link>
+                <Link
+                  href={`/admin/agendamentos/${hoveredAppointment._id}/editar`}
+                  className="text-xs text-green-600 hover:text-green-800 transition-colors"
+                >
+                  Editar
+                </Link>
+                <button 
+                  onClick={() => handleDeleteAppointment(hoveredAppointment._id)}
+                  className="text-xs text-red-600 hover:text-red-800 transition-colors"
+                >
+                  Excluir
+                </button>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderWeekView = () => {
     const weekDates = getWeekDates()
