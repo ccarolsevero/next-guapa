@@ -375,7 +375,7 @@ export async function GET(request: NextRequest) {
           },
           {
             $project: {
-              name: '$professional.nome',
+              name: '$professional.name',
               totalRevenue: 1,
               totalComandas: 1,
               totalCommissions: 1,
@@ -427,7 +427,7 @@ export async function GET(request: NextRequest) {
           },
           {
             $project: {
-              name: '$service.nome',
+              name: '$service.name',
               count: 1,
               totalRevenue: 1,
               averagePrice: {
@@ -478,7 +478,7 @@ export async function GET(request: NextRequest) {
           },
           {
             $project: {
-              name: '$product.nome',
+              name: '$product.name',
               quantity: 1,
               totalRevenue: 1,
               averagePrice: {
@@ -822,7 +822,7 @@ export async function GET(request: NextRequest) {
         },
         {
           $project: {
-            name: '$professional.nome',
+            name: '$professional.name',
             appointments: 1,
             revenue: 1,
             commissions: 1
