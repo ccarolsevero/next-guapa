@@ -206,14 +206,39 @@ function PainelClienteContent() {
   }
 
   // Função para salvar alterações do perfil
-  const saveProfileChanges = () => {
-    if (clientData && editProfileData) {
-      const updatedData = { ...clientData, ...editProfileData }
-      setClientData(updatedData)
-      // Aqui você poderia fazer uma chamada para a API para salvar no banco
-      localStorage.setItem('clientData', JSON.stringify(updatedData))
-      setShowEditProfileModal(false)
-      alert('Perfil atualizado com sucesso!')
+  const saveProfileChanges = async () => {
+    if (!clientData?.id || !editProfileData) {
+      alert('Erro: Dados do cliente não encontrados')
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/clients/${clientData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(editProfileData)
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Atualizar dados do cliente localmente
+        const updatedData = { ...clientData, ...editProfileData }
+        setClientData(updatedData)
+        
+        // Atualizar localStorage
+        localStorage.setItem('loggedInClient', JSON.stringify(updatedData))
+        
+        setShowEditProfileModal(false)
+        alert('Perfil atualizado com sucesso!')
+      } else {
+        alert(`Erro: ${data.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar perfil:', error)
+      alert('Erro ao atualizar perfil. Tente novamente.')
     }
   }
 
@@ -229,6 +254,11 @@ function PainelClienteContent() {
       return
     }
 
+    if (!clientData?.id) {
+      alert('Erro: ID do cliente não encontrado')
+      return
+    }
+
     setPasswordLoading(true)
 
     try {
@@ -239,7 +269,8 @@ function PainelClienteContent() {
         },
         body: JSON.stringify({
           currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
+          newPassword: passwordData.newPassword,
+          clientId: clientData.id
         })
       })
 

@@ -8,14 +8,14 @@ export async function POST(request: NextRequest) {
     console.log('=== INÍCIO POST /api/clients/change-password ===')
     
     const body = await request.json()
-    const { currentPassword, newPassword } = body
+    const { currentPassword, newPassword, clientId } = body
 
-    console.log('Dados recebidos:', { currentPassword: '***', newPassword: '***' })
+    console.log('Dados recebidos:', { currentPassword: '***', newPassword: '***', clientId })
 
     // Validar campos obrigatórios
-    if (!currentPassword || !newPassword) {
+    if (!currentPassword || !newPassword || !clientId) {
       return NextResponse.json(
-        { error: 'Senha atual e nova senha são obrigatórias' },
+        { error: 'Senha atual, nova senha e ID do cliente são obrigatórios' },
         { status: 400 }
       )
     }
@@ -34,10 +34,8 @@ export async function POST(request: NextRequest) {
       
       await connectDB()
       
-      // Buscar o cliente pelo email (assumindo que temos o email do cliente logado)
-      // Por enquanto, vamos buscar o primeiro cliente como exemplo
-      // Em produção, você deve usar o token JWT para identificar o cliente
-      const client = await Client.findOne({})
+      // Buscar o cliente pelo ID
+      const client = await Client.findById(clientId)
       
       if (!client) {
         return NextResponse.json(
@@ -45,6 +43,8 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         )
       }
+
+      console.log('Cliente encontrado:', client.name)
 
       // Verificar se a senha atual está correta
       const isCurrentPasswordValid = await bcrypt.compare(currentPassword, client.password)
@@ -60,11 +60,12 @@ export async function POST(request: NextRequest) {
       const hashedNewPassword = await bcrypt.hash(newPassword, 12)
 
       // Atualizar a senha no banco
-      await Client.findByIdAndUpdate(client._id, {
-        password: hashedNewPassword
+      await Client.findByIdAndUpdate(clientId, {
+        password: hashedNewPassword,
+        updatedAt: new Date()
       })
 
-      console.log('Senha alterada com sucesso para o cliente:', client._id)
+      console.log('Senha alterada com sucesso para o cliente:', clientId)
 
       return NextResponse.json({
         message: 'Senha alterada com sucesso'
