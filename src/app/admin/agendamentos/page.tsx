@@ -553,6 +553,7 @@ export default function AgendamentosPage() {
               const durationSlots = getDurationInSlots(appointment.startTime, appointment.endTime)
               const professionalIndex = professionals.findIndex(prof => prof._id === appointment.professionalId)
               
+              
               if (startIndex === -1 || professionalIndex === -1) return null
               
               return (
@@ -573,9 +574,6 @@ export default function AgendamentosPage() {
                   <div className="space-y-1 h-full flex flex-col justify-between">
                     <div className="text-xs font-bold opacity-90">
                       {appointment.startTime}
-                    </div>
-                    <div className="text-xs font-semibold truncate leading-tight">
-                      {appointment.clientName}
                     </div>
                     <div className="text-xs truncate leading-tight opacity-90">
                       {appointment.service}
