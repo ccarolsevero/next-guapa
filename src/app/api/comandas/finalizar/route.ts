@@ -53,9 +53,11 @@ export async function POST(request: NextRequest) {
     console.log('✅ Comanda encontrada:', {
       status: comanda.status,
       clienteId: comanda.clienteId,
+      clienteNome: comanda.clienteNome,
       profissionalId: comanda.profissionalId,
       valorTotal: comanda.valorTotal
     })
+    console.log('🔍 Estrutura completa da comanda:', JSON.stringify(comanda, null, 2))
 
     // 2. Atualizar status da comanda para 'finalizada'
     console.log('🔄 Atualizando comanda no banco...')
@@ -95,21 +97,35 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 3. Buscar dados do cliente
-    console.log('👤 Buscando dados do cliente...')
+    // 3. Obter nome do cliente
+    console.log('👤 Obtendo nome do cliente...')
+    console.log('🔍 comanda.clienteNome:', comanda.clienteNome)
+    console.log('🔍 comanda.clienteId:', comanda.clienteId)
+    
     let clienteNome = 'Cliente não encontrado'
-    if (comanda.clienteId) {
+    
+    // Primeiro tenta usar o nome que já está na comanda
+    if (comanda.clienteNome) {
+      clienteNome = comanda.clienteNome
+      console.log('✅ Nome do cliente obtido da comanda:', clienteNome)
+    }
+    // Se não tiver na comanda, busca no banco
+    else if (comanda.clienteId) {
       try {
+        console.log('🔍 Buscando cliente no banco com ID:', comanda.clienteId)
         const cliente = await db.collection('clients').findOne({ _id: new ObjectId(comanda.clienteId) })
+        
         if (cliente) {
-          clienteNome = cliente.name || 'Nome não definido'
-          console.log('✅ Cliente encontrado:', clienteNome)
+          clienteNome = cliente.name || cliente.nome || cliente.fullName || 'Nome não definido'
+          console.log('✅ Cliente encontrado no banco:', clienteNome)
         } else {
           console.log('⚠️ Cliente não encontrado no banco')
         }
       } catch (error) {
-        console.log('⚠️ Erro ao buscar cliente:', error)
+        console.log('⚠️ Erro ao buscar cliente no banco:', error)
       }
+    } else {
+      console.log('⚠️ Comanda não tem clienteId nem clienteNome')
     }
 
     // 4. Salvar dados da finalização em uma nova coleção
