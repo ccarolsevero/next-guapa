@@ -237,22 +237,19 @@ export async function GET(request: NextRequest) {
       console.log(`   ${index + 1}. ${comissao.profissional}: R$ ${comissao.totalComissao.toFixed(2)}`)
     })
     
-    // 3. Buscar métodos de pagamento das comandas
-    let metodosPagamento = await db.collection('comandas').aggregate([
+    // 3. Buscar métodos de pagamento das finalizações
+    let metodosPagamento = await db.collection('finalizacoes').aggregate([
       {
         $match: {
-          status: 'finalizada',
-          $or: [
-            { dataFim: { $gte: dataInicio, $lte: hoje } },
-            { updatedAt: { $gte: dataInicio, $lte: hoje } }
-          ]
+          status: 'ativo',
+          dataCriacao: { $gte: dataInicio, $lte: hoje }
         }
       },
       {
         $group: {
           _id: '$metodoPagamento',
           count: { $sum: 1 },
-          amount: { $sum: '$valorTotal' }
+          amount: { $sum: '$valorFinal' }
         }
       },
       {
@@ -260,43 +257,12 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-    // Se não encontrar métodos de pagamento, criar baseado nos pagamentos recentes
-    if (metodosPagamento.length === 0) {
-      console.log('🔍 Buscando métodos de pagamento alternativos...')
-      
-      // Buscar todas as comandas finalizadas do período
-      const comandasPeriodo = await db.collection('comandas').find({
-        status: 'finalizada',
-        $or: [
-          { dataFim: { $gte: dataInicio, $lte: hoje } },
-          { updatedAt: { $gte: dataInicio, $lte: hoje } }
-        ]
-      }).toArray()
-
-      console.log('📊 Comandas do período encontradas:', comandasPeriodo.length)
-
-      // Agrupar por método de pagamento
-      const metodosMap = new Map()
-      
-      comandasPeriodo.forEach((comanda) => {
-        const metodo = comanda.metodoPagamento || 'dinheiro'
-        const valor = comanda.valorTotal || 0
-        
-        if (!metodosMap.has(metodo)) {
-          metodosMap.set(metodo, { count: 0, amount: 0 })
-        }
-        
-        const atual = metodosMap.get(metodo)
-        atual.count += 1
-        atual.amount += valor
+    console.log('💳 Métodos de pagamento encontrados:', metodosPagamento.length)
+    if (metodosPagamento.length > 0) {
+      metodosPagamento.forEach((metodo, index) => {
+        console.log(`   ${index + 1}. ${metodo._id}: ${metodo.count} pagamentos, R$ ${metodo.amount.toFixed(2)}`)
       })
-
-      // Converter para o formato esperado
-      metodosPagamento = Array.from(metodosMap.entries()).map(([metodo, dados]) => ({
-        _id: metodo,
-        count: dados.count,
-        amount: dados.amount
-      }))
+    }
 
       console.log('💳 Métodos de pagamento criados:', metodosPagamento)
     }
@@ -307,15 +273,12 @@ export async function GET(request: NextRequest) {
     console.log('💳 Métodos de pagamento encontrados:', metodosPagamento)
     console.log('💳 Estrutura dos métodos:', JSON.stringify(metodosPagamento, null, 2))
     
-    // 4. Buscar pagamentos recentes das comandas
-    const pagamentosRecentes = await db.collection('comandas').aggregate([
+    // 4. Buscar pagamentos recentes das finalizações
+    const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
       {
         $match: {
-          status: 'finalizada',
-                  $or: [
-          { dataFim: { $gte: dataInicio, $lte: hoje } },
-          { updatedAt: { $gte: dataInicio, $lte: hoje } }
-        ]
+          status: 'ativo',
+          dataCriacao: { $gte: dataInicio, $lte: hoje }
         }
       },
       {
@@ -334,9 +297,9 @@ export async function GET(request: NextRequest) {
           _id: 1,
           clientName: '$cliente.name',
           service: { $arrayElemAt: ['$servicos.nome', 0] },
-          amount: '$valorTotal',
+          amount: '$valorFinal',
           method: '$metodoPagamento',
-          date: '$dataFim',
+          date: '$dataCriacao',
           status: 'PAID'
         }
       },
