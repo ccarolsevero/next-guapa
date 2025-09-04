@@ -459,6 +459,115 @@ export default function AgendamentosPage() {
     )
   }
 
+  const renderSideCalendar = () => {
+    const today = new Date()
+    const currentMonth = selectedDate.getMonth()
+    const currentYear = selectedDate.getFullYear()
+    
+    // Primeiro dia do mês
+    const firstDay = new Date(currentYear, currentMonth, 1)
+    const lastDay = new Date(currentYear, currentMonth + 1, 0)
+    
+    // Dias do mês anterior para completar a primeira semana
+    const startDate = new Date(firstDay)
+    startDate.setDate(startDate.getDate() - firstDay.getDay())
+    
+    const calendarDays = []
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate)
+      date.setDate(startDate.getDate() + i)
+      calendarDays.push(date)
+    }
+    
+    return (
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+          </h3>
+          <div className="flex space-x-1">
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate)
+                newDate.setMonth(newDate.getMonth() - 1)
+                setSelectedDate(newDate)
+              }}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => {
+                const newDate = new Date(selectedDate)
+                newDate.setMonth(newDate.getMonth() + 1)
+                setSelectedDate(newDate)
+              }}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+        
+        {/* Cabeçalho dos dias da semana */}
+        <div className="grid grid-cols-7 gap-1 mb-2">
+          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, index) => (
+            <div key={index} className="text-center text-xs font-medium text-gray-500 p-1">
+              {day}
+            </div>
+          ))}
+        </div>
+        
+        {/* Dias do calendário */}
+        <div className="grid grid-cols-7 gap-1">
+          {calendarDays.map((date, index) => {
+            const dayAppointments = getAppointmentsForDate(date)
+            const isCurrentMonth = date.getMonth() === currentMonth
+            const isToday = date.toDateString() === today.toDateString()
+            const isSelected = date.toDateString() === selectedDate.toDateString()
+            
+            return (
+              <button
+                key={index}
+                onClick={() => {
+                  setSelectedDate(date)
+                  setViewMode('day')
+                }}
+                className={`h-8 w-8 text-xs rounded transition-colors ${
+                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                } ${
+                  isToday ? 'bg-[#D15556] text-white font-semibold' : 
+                  isSelected ? 'bg-[#006D5B] text-white font-semibold' :
+                  'hover:bg-gray-100'
+                } ${
+                  dayAppointments.length > 0 && !isToday && !isSelected ? 'bg-blue-50 text-blue-600' : ''
+                }`}
+              >
+                {date.getDate()}
+              </button>
+            )
+          })}
+        </div>
+        
+        {/* Legenda */}
+        <div className="mt-4 space-y-2 text-xs">
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-[#D15556] rounded"></div>
+            <span>Hoje</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-[#006D5B] rounded"></div>
+            <span>Selecionado</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
+            <span>Com agendamentos</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   const renderMonthView = () => {
     const monthDates = getMonthDates()
     const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
@@ -492,12 +601,15 @@ export default function AgendamentosPage() {
             return (
               <div
                 key={index}
-                className={`min-h-[80px] p-2 border border-gray-200 ${
+                className={`min-h-[80px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
                   isCurrentMonth ? 'bg-white' : 'bg-gray-50'
                 } ${isToday ? 'ring-2 ring-pink-500' : ''} ${
                   isSelected ? 'bg-pink-100' : ''
                 }`}
-                onClick={() => setSelectedDate(date)}
+                onClick={() => {
+                  setSelectedDate(date)
+                  setViewMode('day')
+                }}
               >
                 <div className={`text-sm font-medium mb-1 ${
                   isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
@@ -665,11 +777,19 @@ export default function AgendamentosPage() {
 
         {/* Agenda */}
         {!loading && (
-          <>
-            {viewMode === 'day' && renderDayView()}
-            {viewMode === 'week' && renderWeekView()}
-            {viewMode === 'month' && renderMonthView()}
-          </>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Calendário Lateral */}
+            <div className="lg:col-span-1">
+              {renderSideCalendar()}
+            </div>
+            
+            {/* Agenda Principal */}
+            <div className="lg:col-span-3">
+              {viewMode === 'day' && renderDayView()}
+              {viewMode === 'week' && renderWeekView()}
+              {viewMode === 'month' && renderMonthView()}
+            </div>
+          </div>
         )}
 
         {/* Resumo do Dia */}
