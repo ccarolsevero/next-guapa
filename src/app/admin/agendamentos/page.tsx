@@ -54,12 +54,12 @@ const isLunchTime = (time: string) => {
 // Cores para cada profissional
 const getProfessionalColor = (professionalName: string) => {
   const colors: Record<string, string> = {
-    'Bruna Canovas': 'bg-purple-100 text-purple-800 border-purple-200',
-    'Vitória Uliani': 'bg-orange-100 text-orange-800 border-orange-200', 
-    'Cicera Canovas': 'bg-green-100 text-green-800 border-green-200',
-    'Ellen Souza': 'bg-blue-100 text-blue-800 border-blue-200'
+    'Bruna Canovas': 'bg-gradient-to-br from-purple-200 to-purple-300 text-purple-900 border-purple-400',
+    'Vitória Uliani': 'bg-gradient-to-br from-orange-200 to-orange-300 text-orange-900 border-orange-400', 
+    'Cicera Canovas': 'bg-gradient-to-br from-green-200 to-green-300 text-green-900 border-green-400',
+    'Ellen Souza': 'bg-gradient-to-br from-blue-200 to-blue-300 text-blue-900 border-blue-400'
   }
-  return colors[professionalName] || 'bg-gray-100 text-gray-800 border-gray-200'
+  return colors[professionalName] || 'bg-gradient-to-br from-gray-200 to-gray-300 text-gray-900 border-gray-400'
 }
 
 // Calcular duração em intervalos de 15 minutos
@@ -323,9 +323,64 @@ export default function AgendamentosPage() {
         {/* Cabeçalho dos Profissionais */}
         <div className="border-b border-gray-200">
           <div className={`grid gap-1 p-2`} style={{ gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)` }}>
-            <div className="text-sm font-medium text-gray-900 p-2">Horário</div>
+            <div className="text-sm font-medium text-gray-900 p-2 flex items-center justify-center">Horário</div>
             {professionals.map((professional) => (
               <div key={professional._id} className="text-center p-2">
+                <div className={`flex flex-col items-center p-3 rounded-lg text-white shadow-sm ${
+                  professional.name === 'Bruna Canovas' ? 'bg-gradient-to-br from-purple-600 to-purple-700' :
+                  professional.name === 'Vitória Uliani' ? 'bg-gradient-to-br from-orange-500 to-orange-600' :
+                  professional.name === 'Cicera Canovas' ? 'bg-gradient-to-br from-green-600 to-green-700' :
+                  professional.name === 'Ellen Souza' ? 'bg-gradient-to-br from-blue-600 to-blue-700' :
+                  'bg-gradient-to-br from-gray-600 to-gray-700'
+                }`}>
+                  {/* Foto do profissional */}
+                  <div className="w-8 h-8 rounded-full bg-white/20 mb-2 flex items-center justify-center overflow-hidden">
+                    {professional.name === 'Bruna Canovas' ? (
+                      <img src="/assents/fotobruna.jpeg" alt="Bruna" className="w-full h-full object-cover" />
+                    ) : professional.name === 'Cicera Canovas' ? (
+                      <img src="/assents/ciceraperfil.jpeg" alt="Cicera" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-white/30 flex items-center justify-center text-xs font-bold">
+                        {professional.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                    )}
+                  </div>
+                  <div className="text-xs font-medium text-center leading-tight">
+                    {professional.name.split(' ')[0]}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Grade de horários usando CSS Grid */}
+        <div className="overflow-y-auto max-h-[600px]">
+          <div 
+            className="grid gap-1 p-1"
+            style={{ 
+              gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)`,
+              gridTemplateRows: `repeat(${timeSlots.length}, 40px)`
+            }}
+          >
+            {/* Cabeçalho dos horários */}
+            {timeSlots.map((time, index) => (
+              <div 
+                key={`time-${time}`} 
+                className="flex items-center justify-center p-2 border-b border-gray-100"
+                style={{ gridRow: index + 1, gridColumn: 1 }}
+              >
+                <div className="text-sm font-medium text-gray-900">{time}</div>
+              </div>
+            ))}
+            
+            {/* Cabeçalho dos profissionais */}
+            {professionals.map((professional, index) => (
+              <div 
+                key={`header-${professional._id}`}
+                className="text-center p-2 border-b border-gray-200"
+                style={{ gridRow: 1, gridColumn: index + 2 }}
+              >
                 <div className={`inline-flex items-center px-3 py-2 rounded text-sm font-medium text-white ${
                   professional.name === 'Bruna Canovas' ? 'bg-purple-600' :
                   professional.name === 'Vitória Uliani' ? 'bg-orange-600' :
@@ -337,93 +392,62 @@ export default function AgendamentosPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Grade de horários */}
-        <div className="overflow-y-auto max-h-[600px]">
-          <div className="grid grid-cols-1">
-            {timeSlots.map((time) => (
-              <div key={time} className="border-b border-gray-100">
-                <div className={`grid gap-1 p-1`} style={{ gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)` }}>
-                  {/* Horário */}
-                  <div className="flex items-center justify-center p-2">
-                    <div className="text-sm font-medium text-gray-900">{time}</div>
-                  </div>
-                  
-                  {/* Colunas dos Profissionais */}
-                  {professionals.map((professional) => {
-                    // Encontrar o agendamento que começa neste horário
-                    const startingAppointment = dayAppointments.find(apt => 
-                      apt.professionalId === professional._id && 
-                      apt.startTime === time
-                    )
-                    
-                    // Verificar se este horário está ocupado por um agendamento em andamento
-                    const ongoingAppointment = dayAppointments.find(apt => 
-                      apt.professionalId === professional._id && 
-                      isTimeInAppointment(time, apt) &&
-                      apt.startTime !== time // Não é o início do agendamento
-                    )
-                    
-                    // Verificar se é horário de almoço (13:00-13:45)
-                    const isLunchPeriod = time >= '13:00' && time <= '13:45'
-                    
-                    return (
-                      <div key={professional._id} className="min-h-[40px] p-1 relative">
-                        {isLunchPeriod && time === '13:00' ? (
-                          // Bloco de almoço que ocupa todo o período
-                          <div 
-                            className="bg-orange-100 border border-orange-200 rounded p-2 text-center flex items-center justify-center"
-                            style={{
-                              height: `${4 * 40}px`, // 4 slots de 15min = 1 hora
-                              marginBottom: `${-3 * 40}px` // Compensar para ocupar as linhas abaixo
-                            }}
-                          >
-                            <div className="text-xs text-orange-800 font-medium">🍽️ Almoço</div>
-                          </div>
-                        ) : isLunchPeriod ? (
-                          // Espaço vazio durante o almoço (já ocupado pelo bloco acima)
-                          <div className="h-full"></div>
-                        ) : startingAppointment ? (
-                          // Bloco de agendamento que se estende pela duração
-                          <div
-                            className={`p-2 rounded border shadow-sm cursor-pointer transition-all hover:shadow-md ${getProfessionalColor(startingAppointment.professional)}`}
-                            style={{
-                              height: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 40)}px`,
-                              marginBottom: `${-(getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) - 1) * 40}px` // Compensar para ocupar as linhas abaixo
-                            }}
-                            onMouseEnter={(e) => {
-                              setHoveredAppointment(startingAppointment)
-                              setTooltipPosition({ x: e.clientX, y: e.clientY })
-                            }}
-                            onMouseLeave={() => setHoveredAppointment(null)}
-                          >
-                            <div className="space-y-1">
-                              <div className="text-xs font-semibold">
-                                {startingAppointment.startTime}
-                              </div>
-                              <div className="text-xs font-medium truncate">
-                                {startingAppointment.clientName}
-                              </div>
-                              <div className="text-xs truncate">
-                                {startingAppointment.service}
-                              </div>
-                            </div>
-                          </div>
-                        ) : ongoingAppointment ? (
-                          // Horário ocupado por agendamento em andamento (não é o início)
-                          <div className="h-full"></div>
-                        ) : (
-                          // Espaço vazio disponível
-                          <div className="h-full border border-transparent hover:border-gray-200 rounded transition-colors"></div>
-                        )}
-                      </div>
-                    )
-                  })}
+            
+            {/* Blocos de almoço */}
+            {professionals.map((professional, profIndex) => {
+              const lunchStartIndex = timeSlots.findIndex(time => time === '13:00')
+              if (lunchStartIndex === -1) return null
+              
+              return (
+                <div
+                  key={`lunch-${professional._id}`}
+                  className="bg-gradient-to-br from-orange-100 to-orange-200 border-2 border-orange-300 rounded-lg p-3 text-center flex items-center justify-center shadow-sm"
+                  style={{
+                    gridRow: `${lunchStartIndex + 2} / span 4`, // +2 porque row 1 é o header
+                    gridColumn: profIndex + 2
+                  }}
+                >
+                  <div className="text-sm text-orange-800 font-bold">🍽️ Almoço</div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
+            
+            {/* Agendamentos */}
+            {dayAppointments.map((appointment) => {
+              const startIndex = timeSlots.findIndex(time => time === appointment.startTime)
+              const durationSlots = getDurationInSlots(appointment.startTime, appointment.endTime)
+              const professionalIndex = professionals.findIndex(prof => prof._id === appointment.professionalId)
+              
+              if (startIndex === -1 || professionalIndex === -1) return null
+              
+              return (
+                <div
+                  key={appointment._id}
+                  className={`p-3 rounded-lg border-2 shadow-md cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] ${getProfessionalColor(appointment.professional)}`}
+                  style={{
+                    gridRow: `${startIndex + 2} / span ${durationSlots}`, // +2 porque row 1 é o header
+                    gridColumn: professionalIndex + 2
+                  }}
+                  onMouseEnter={(e) => {
+                    setHoveredAppointment(appointment)
+                    setTooltipPosition({ x: e.clientX, y: e.clientY })
+                  }}
+                  onMouseLeave={() => setHoveredAppointment(null)}
+                >
+                  <div className="space-y-1 h-full flex flex-col justify-between">
+                    <div className="text-xs font-bold opacity-90">
+                      {appointment.startTime}
+                    </div>
+                    <div className="text-xs font-semibold truncate leading-tight">
+                      {appointment.clientName}
+                    </div>
+                    <div className="text-xs truncate leading-tight opacity-90">
+                      {appointment.service}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         </div>
 
