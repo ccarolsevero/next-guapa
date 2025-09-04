@@ -19,8 +19,6 @@ import {
   Filter,
   Search,
   AlertTriangle,
-  Grid3X3,
-  CalendarDays,
   Clock3
 } from 'lucide-react'
 
@@ -122,7 +120,7 @@ const statusColors = {
 export default function AgendamentosPage() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week')
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -233,13 +231,7 @@ export default function AgendamentosPage() {
 
   const navigateDate = (direction: 'prev' | 'next') => {
     const newDate = new Date(selectedDate)
-    if (viewMode === 'day') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
-    } else if (viewMode === 'week') {
-      newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7))
-    } else if (viewMode === 'month') {
-      newDate.setMonth(newDate.getMonth() + (direction === 'next' ? 1 : -1))
-    }
+    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
     setSelectedDate(newDate)
   }
 
@@ -247,35 +239,6 @@ export default function AgendamentosPage() {
     setSelectedDate(new Date())
   }
 
-  const getWeekDates = () => {
-    const dates = []
-    const startOfWeek = new Date(selectedDate)
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(startOfWeek)
-      date.setDate(date.getDate() + i)
-      dates.push(date)
-    }
-    return dates
-  }
-
-  const getMonthDates = () => {
-    const dates = []
-    const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-    const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0)
-    
-    // Adicionar dias do mês anterior para completar a primeira semana
-    const startOfWeek = new Date(startOfMonth)
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-    
-    for (let i = 0; i < 42; i++) { // 6 semanas x 7 dias
-      const date = new Date(startOfWeek)
-      date.setDate(date.getDate() + i)
-      dates.push(date)
-    }
-    return dates
-  }
 
   const handleDeleteAppointment = (appointmentId: string) => {
     setAppointmentToDelete(appointmentId)
@@ -642,6 +605,21 @@ export default function AgendamentosPage() {
                   {getStatusText(hoveredAppointment.status)}
                 </span>
               </div>
+              {hoveredAppointment.customLabels && hoveredAppointment.customLabels.length > 0 && (
+                <div>
+                  <span className="font-medium">Etiquetas:</span>
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {hoveredAppointment.customLabels.map((label: any) => (
+                      <span
+                        key={label.id}
+                        className={`px-2 py-1 rounded text-xs font-medium ${label.color}`}
+                      >
+                        {label.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {hoveredAppointment.notes && (
                 <div>
                   <span className="font-medium">Obs:</span>
@@ -662,95 +640,6 @@ export default function AgendamentosPage() {
     )
   }
 
-  const renderWeekView = () => {
-    const weekDates = getWeekDates()
-    
-    return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="border-b border-gray-200">
-          <div className="px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">Vista Semanal</h3>
-            <p className="text-sm text-gray-600">
-              {weekDates[0].toLocaleDateString('pt-BR')} - {weekDates[6].toLocaleDateString('pt-BR')}
-            </p>
-          </div>
-        </div>
-
-        {/* Cabeçalho dos Dias */}
-        <div className="border-b border-gray-200">
-          <div className="grid grid-cols-8 gap-4 p-4 bg-gray-50">
-            <div className="text-sm font-medium text-gray-900">Horário</div>
-            {weekDates.map((date, index) => (
-              <div key={index} className="text-center">
-                <div className={`text-sm font-medium ${date.toDateString() === new Date().toDateString() ? 'text-pink-600' : 'text-gray-900'}`}>
-                  {date.toLocaleDateString('pt-BR', { weekday: 'short' })}
-                </div>
-                <div className={`text-xs ${date.toDateString() === new Date().toDateString() ? 'text-pink-600' : 'text-gray-600'}`}>
-                  {date.getDate()}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="overflow-y-auto max-h-[600px]">
-          <div className="grid grid-cols-1">
-            {timeSlots.map((time) => (
-              <div key={time} className="border-b border-gray-100">
-                <div className="grid grid-cols-8 gap-4 p-4">
-                  {/* Horário */}
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{time}</div>
-                  </div>
-                  
-                  {/* Colunas dos Dias */}
-                  {weekDates.map((date, dateIndex) => {
-                    const dayAppointments = getAppointmentsForDate(date).filter(apt => apt.startTime === time)
-                    const isToday = date.toDateString() === new Date().toDateString()
-                    const isLunch = isLunchTime(time)
-                    
-                    return (
-                      <div key={dateIndex} className={`min-h-[60px] ${isToday ? 'bg-pink-50' : ''}`}>
-                        {isLunch ? (
-                          <div className="h-full flex items-center justify-center">
-                            <div className="bg-orange-100 border border-orange-200 rounded-lg p-1 text-center">
-                              <div className="text-xs text-orange-800">🍽️</div>
-                            </div>
-                          </div>
-                        ) : dayAppointments.length > 0 ? (
-                          <div className="space-y-1">
-                            {dayAppointments.slice(0, 2).map((appointment) => (
-                              <div
-                                key={appointment._id}
-                                className={`p-1 rounded border ${statusColors[appointment.status]} text-xs`}
-                                title={`${appointment.clientName} - ${appointment.service}`}
-                              >
-                                <div className="truncate font-medium">{appointment.clientName}</div>
-                                <div className="truncate text-gray-600">{appointment.service}</div>
-                              </div>
-                            ))}
-                            {dayAppointments.length > 2 && (
-                              <div className="text-xs text-gray-500 text-center">
-                                +{dayAppointments.length - 2} mais
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-gray-400 italic h-full flex items-center justify-center">
-                            -
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   const renderSideCalendar = () => {
     const today = new Date()
@@ -861,80 +750,6 @@ export default function AgendamentosPage() {
     )
   }
 
-  const renderMonthView = () => {
-    const monthDates = getMonthDates()
-    const monthName = selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-    
-    return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="border-b border-gray-200">
-          <div className="px-6 py-4">
-            <h3 className="text-lg font-semibold text-gray-900">{monthName}</h3>
-          </div>
-        </div>
-
-        {/* Cabeçalho dos Dias da Semana */}
-        <div className="border-b border-gray-200">
-          <div className="grid grid-cols-7 gap-1 p-4 bg-gray-50">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-              <div key={day} className="text-center text-sm font-medium text-gray-900">
-                {day}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-7 gap-1 p-4">
-          {monthDates.map((date, index) => {
-            const dayAppointments = getAppointmentsForDate(date)
-            const isCurrentMonth = date.getMonth() === selectedDate.getMonth()
-            const isToday = date.toDateString() === new Date().toDateString()
-            const isSelected = date.toDateString() === selectedDate.toDateString()
-            
-            return (
-              <div
-                key={index}
-                className={`min-h-[80px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                } ${isToday ? 'ring-2 ring-pink-500' : ''} ${
-                  isSelected ? 'bg-pink-100' : ''
-                }`}
-                onClick={() => {
-                  setSelectedDate(date)
-                  setViewMode('day')
-                }}
-              >
-                <div className={`text-sm font-medium mb-1 ${
-                  isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                } ${isToday ? 'text-pink-600' : ''}`}>
-                  {date.getDate()}
-                </div>
-                
-                {isCurrentMonth && dayAppointments.length > 0 && (
-                  <div className="space-y-1">
-                    {dayAppointments.slice(0, 3).map((appointment) => (
-                      <div
-                        key={appointment._id}
-                        className={`p-1 rounded text-xs ${statusColors[appointment.status]} truncate`}
-                        title={`${appointment.clientName} - ${appointment.service}`}
-                      >
-                        {appointment.clientName}
-                      </div>
-                    ))}
-                    {dayAppointments.length > 3 && (
-                      <div className="text-xs text-gray-500 text-center">
-                        +{dayAppointments.length - 3} mais
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-[#F5F0E8] p-6">
@@ -973,9 +788,7 @@ export default function AgendamentosPage() {
                 
                 <div className="text-center">
                   <h2 className="text-xl font-semibold text-gray-900">
-                    {viewMode === 'day' && formatDate(selectedDate)}
-                    {viewMode === 'week' && `Semana de ${formatShortDate(selectedDate)}`}
-                    {viewMode === 'month' && selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                    {formatDate(selectedDate)}
                   </h2>
                   <button
                     onClick={goToToday}
@@ -993,40 +806,14 @@ export default function AgendamentosPage() {
                 </button>
               </div>
 
-              {/* Modos de Visualização */}
+              {/* Modo de Visualização - Apenas Vista Diária */}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setViewMode('day')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === 'day' 
-                      ? 'bg-[#D15556] text-white' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
+                  className="p-2 rounded-lg transition-colors bg-[#D15556] text-white"
                   title="Vista Diária"
                 >
                   <Clock3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('week')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === 'week' 
-                      ? 'bg-[#D15556] text-white' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-                  title="Vista Semanal"
-                >
-                  <CalendarDays className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('month')}
-                  className={`p-2 rounded-lg transition-colors ${
-                    viewMode === 'month' 
-                      ? 'bg-[#D15556] text-white' 
-                      : 'hover:bg-gray-100 text-gray-600'
-                  }`}
-                  title="Vista Mensal"
-                >
-                  <Grid3X3 className="w-4 h-4" />
                 </button>
               </div>
 
@@ -1078,16 +865,13 @@ export default function AgendamentosPage() {
             
             {/* Agenda Principal */}
             <div className="lg:col-span-3">
-              {viewMode === 'day' && renderDayView()}
-              {viewMode === 'week' && renderWeekView()}
-              {viewMode === 'month' && renderMonthView()}
+              {renderDayView()}
             </div>
           </div>
         )}
 
         {/* Resumo do Dia */}
-        {viewMode === 'day' && (
-          <div className={`mt-6 grid gap-6`} style={{ gridTemplateColumns: `repeat(${professionals.length + 1}, 1fr)` }}>
+        <div className={`mt-6 grid gap-6`} style={{ gridTemplateColumns: `repeat(${professionals.length + 1}, 1fr)` }}>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -1124,7 +908,6 @@ export default function AgendamentosPage() {
               )
             })}
           </div>
-        )}
 
         {/* Modal de Confirmação de Exclusão */}
         {showDeleteModal && (
