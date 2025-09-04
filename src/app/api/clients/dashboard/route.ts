@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         name: cliente.name,
         email: cliente.email,
         phone: cliente.phone,
-        birthDate: cliente.birthDate,
+        birthDate: cliente.birthDate ? new Date(cliente.birthDate).toISOString().split('T')[0] : null,
         address: cliente.address,
         createdAt: cliente.createdAt,
         onboardingCompleted: cliente.onboardingCompleted || false,

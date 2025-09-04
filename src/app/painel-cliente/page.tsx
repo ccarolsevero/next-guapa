@@ -113,6 +113,10 @@ function PainelClienteContent() {
         
         const data = await response.json()
         console.log('📊 Dados recebidos do dashboard:', data.client)
+        console.log('📅 Data de nascimento:', {
+          birthDate: data.client.birthDate,
+          birthDateType: typeof data.client.birthDate
+        })
         
         // Atualizar dados do cliente com informações do banco
         setClientData(data.client)
@@ -219,6 +223,10 @@ function PainelClienteContent() {
   // Função para abrir modal de edição de perfil
   const openEditProfileModal = () => {
     if (clientData) {
+      console.log('Dados do cliente para edição:', {
+        birthDate: clientData.birthDate,
+        birthDateType: typeof clientData.birthDate
+      })
       setEditProfileData({
         name: clientData.name,
         email: clientData.email,

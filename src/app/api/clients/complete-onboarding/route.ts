@@ -23,6 +23,7 @@ export async function POST(request: NextRequest) {
       name, 
       email, 
       phone, 
+      birthDate,
       address,
       hasNewPassword: !!newPassword
     })
@@ -92,6 +93,11 @@ export async function POST(request: NextRequest) {
       firstAccess: false,
       onboardingRequired: false
     }
+
+    console.log('Dados para atualização:', {
+      ...updateData,
+      birthDate: updateData.birthDate ? updateData.birthDate.toISOString() : null
+    })
 
     // Se uma nova senha foi fornecida, criptografá-la
     if (newPassword) {
