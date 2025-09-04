@@ -477,7 +477,10 @@ export default function AgendamentoPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setStep(isLoggedIn ? 3 : 4)}
+                    onClick={() => {
+                      console.log('🔍 Botão Próximo clicado - isLoggedIn:', isLoggedIn, 'selectedService:', selectedService)
+                      setStep(isLoggedIn ? 3 : 4)
+                    }}
                     disabled={!selectedService}
                     className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
                   >
@@ -488,6 +491,7 @@ export default function AgendamentoPage() {
             )}
 
             {/* Etapa 3: Data e Horário (para logados) ou Etapa 4 (para não logados) */}
+            {console.log('🔍 Debug - step:', step, 'isLoggedIn:', isLoggedIn, 'condition:', (step === 3 && isLoggedIn) || (step === 4 && !isLoggedIn))}
             {((step === 3 && isLoggedIn) || (step === 4 && !isLoggedIn)) && (
               <div>
                 <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Data e Horário</h2>
