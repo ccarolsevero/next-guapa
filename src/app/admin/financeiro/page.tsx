@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, Download, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
+import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
 
 interface Despesa {
   _id: string
@@ -80,16 +80,6 @@ export default function FinanceiroPage() {
     }).format(value)
   }
 
-  const formatPaymentMethod = (method: string) => {
-    const methods: { [key: string]: string } = {
-      'cash': 'Dinheiro',
-      'debit': 'Cartão de Débito',
-      'credit': 'Cartão de Crédito',
-      'pix': 'PIX',
-      'transfer': 'Transferência'
-    }
-    return methods[method] || method
-  }
 
   const getPaymentMethods = () => {
     const methods = [
@@ -579,7 +569,7 @@ export default function FinanceiroPage() {
                 <div className="text-center py-8">
                   <DollarSign className="w-16 h-16 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">Nenhuma despesa registrada</p>
-                  <p className="text-sm text-gray-400">Clique em "Nova Despesa" para começar</p>
+                  <p className="text-sm text-gray-400">Clique em &quot;Nova Despesa&quot; para começar</p>
                 </div>
               )}
             </div>
@@ -713,7 +703,7 @@ export default function FinanceiroPage() {
                                 <p className="text-sm text-gray-700">Total</p>
                                 <p className="font-medium text-[#D15556]">
                                   R$ {comissao.detalhes
-                                    .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
+                                    .filter(d => d.tipo === 'servico')
                                     .reduce((sum, d) => sum + d.valor, 0)
                                     .toFixed(2)}
                                 </p>
@@ -721,7 +711,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="space-y-2 mb-4">
                               {comissao.detalhes
-                                .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
+                                .filter(d => d.tipo === 'servico')
                                 .map((detalhe, detIndex) => (
                                   <div key={detIndex} className="flex justify-between text-sm">
                                     <span className="text-gray-700">{detalhe.item}</span>
@@ -733,7 +723,7 @@ export default function FinanceiroPage() {
                               <span className="text-gray-700">Comissão (10%):</span>
                               <span className="text-[#D15556]">
                                 R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Serviço' && d.profissional === comissao.profissional)
+                                  .filter(d => d.tipo === 'servico')
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
                               </span>
@@ -751,7 +741,7 @@ export default function FinanceiroPage() {
                                 <p className="text-sm text-gray-700">Total</p>
                                 <p className="font-medium text-[#D15556]">
                                   R$ {comissao.detalhes
-                                    .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
+                                    .filter(d => d.tipo === 'produto')
                                     .reduce((sum, d) => sum + d.valor, 0)
                                     .toFixed(2)}
                                 </p>
@@ -759,7 +749,7 @@ export default function FinanceiroPage() {
                             </div>
                             <div className="space-y-2 mb-4">
                               {comissao.detalhes
-                                .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
+                                .filter(d => d.tipo === 'produto')
                                 .map((detalhe, detIndex) => (
                                   <div key={detIndex} className="flex justify-between text-sm">
                                     <span className="text-gray-700">{detalhe.item}</span>
@@ -771,10 +761,10 @@ export default function FinanceiroPage() {
                               <span className="text-gray-700">Comissão (15%):</span>
                               <span className="text-[#D15556]">
                                 R$ {comissao.detalhes
-                                  .filter(d => d.tipo === 'Produto' && d.profissional === comissao.profissional)
+                                  .filter(d => d.tipo === 'produto')
                                   .reduce((sum, d) => sum + d.comissao, 0)
                                   .toFixed(2)}
-                        </span>
+                              </span>
                             </div>
                           </div>
                         </div>
