@@ -53,7 +53,8 @@ export default function FinanceiroPage() {
   const [novaDespesa, setNovaDespesa] = useState({
     valor: '',
     categoria: '',
-    observacao: ''
+    observacao: '',
+    tipo: 'variavel' as 'fixa' | 'variavel'
   })
   const [novaCategoria, setNovaCategoria] = useState('')
   const [showCategoriaModal, setShowCategoriaModal] = useState(false)
@@ -235,13 +236,39 @@ export default function FinanceiroPage() {
         if (response.ok) {
           const result = await response.json()
           setDespesas([result.data, ...despesas])
-          setNovaDespesa({ valor: '', categoria: '', observacao: '' })
+          setNovaDespesa({ valor: '', categoria: '', observacao: '', tipo: 'variavel' })
           setShowDespesaModal(false)
           // Recarregar dados financeiros para atualizar totais
           loadFinancialData(selectedPeriod, customStartDate, customEndDate)
         }
       } catch (error) {
         console.error('Erro ao criar despesa:', error)
+      }
+    }
+
+    const editarDespesa = async () => {
+      if (!editingDespesa) return
+      
+      try {
+        const response = await fetch(`/api/despesas/${editingDespesa._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(editingDespesa)
+        })
+        
+        if (response.ok) {
+          const result = await response.json()
+          // Atualizar a despesa na lista local
+          setDespesas(despesas.map(d => 
+            d._id === editingDespesa._id ? result.data : d
+          ))
+          setShowEditDespesaModal(false)
+          setEditingDespesa(null)
+          // Recarregar dados financeiros para atualizar totais
+          loadFinancialData(selectedPeriod, customStartDate, customEndDate)
+        }
+      } catch (error) {
+        console.error('Erro ao editar despesa:', error)
       }
     }
 
@@ -449,8 +476,12 @@ export default function FinanceiroPage() {
                       <div>
                         <div className="flex items-center space-x-2">
                           <span className="font-medium text-gray-900">{despesa.categoria}</span>
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
-                            {despesa.tipo || 'Variável'}
+                          <span className={`px-2 py-1 text-xs rounded-full text-white font-medium ${
+                            despesa.tipo === 'fixa' 
+                              ? 'bg-blue-500' 
+                              : 'bg-orange-500'
+                          }`}>
+                            {despesa.tipo === 'fixa' ? 'Fixa' : 'Variável'}
                           </span>
                         </div>
                         {despesa.observacao && (
@@ -785,6 +816,20 @@ export default function FinanceiroPage() {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Despesa
+                </label>
+                <select
+                  value={novaDespesa.tipo}
+                  onChange={(e) => setNovaDespesa({...novaDespesa, tipo: e.target.value as 'fixa' | 'variavel'})}
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                >
+                  <option value="variavel">Variável</option>
+                  <option value="fixa">Fixa</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Observação
                 </label>
                 <textarea
@@ -809,6 +854,102 @@ export default function FinanceiroPage() {
                   className="flex-1 px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Salvar Despesa
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar Despesa */}
+      {showEditDespesaModal && editingDespesa && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Editar Despesa</h3>
+              <button
+                onClick={() => setShowEditDespesaModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valor
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editingDespesa.valor}
+                  onChange={(e) => setEditingDespesa({...editingDespesa, valor: parseFloat(e.target.value) || 0})}
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                  placeholder="0.00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categoria
+                </label>
+                <div className="flex space-x-2">
+                  <select
+                    value={editingDespesa.categoria}
+                    onChange={(e) => setEditingDespesa({...editingDespesa, categoria: e.target.value})}
+                    className="flex-1 border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                  >
+                    <option value="">Selecione uma categoria</option>
+                    {categorias.map((cat) => (
+                      <option key={cat._id} value={cat.nome}>
+                        {cat.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Despesa
+                </label>
+                <select
+                  value={editingDespesa.tipo}
+                  onChange={(e) => setEditingDespesa({...editingDespesa, tipo: e.target.value as 'fixa' | 'variavel'})}
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                >
+                  <option value="variavel">Variável</option>
+                  <option value="fixa">Fixa</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observação
+                </label>
+                <textarea
+                  value={editingDespesa.observacao}
+                  onChange={(e) => setEditingDespesa({...editingDespesa, observacao: e.target.value})}
+                  className="w-full border border-gray-500 rounded-md px-3 py-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
+                  rows={3}
+                  placeholder="Descrição da despesa..."
+                />
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  onClick={() => setShowEditDespesaModal(false)}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={editarDespesa}
+                  disabled={!editingDespesa.valor || !editingDespesa.categoria}
+                  className="flex-1 px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#B84444] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salvar Alterações
                 </button>
               </div>
             </div>
