@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   Settings, 
   User, 
@@ -9,13 +9,42 @@ import {
   Shield, 
   Save,
   Eye,
-  EyeOff
+  EyeOff,
+  Loader2
 } from 'lucide-react'
+
+interface Configuracao {
+  _id?: string
+  nomeSalao: string
+  emailContato: string
+  telefone: string
+  endereco: string
+  moeda: string
+  fusoHorario: string
+  taxaCancelamento: number
+  tempoAntecedencia: number
+  politicaCancelamento: string
+  politicaReagendamento: string
+  horariosFuncionamento: Array<{
+    dia: string
+    ativo: boolean
+    horaInicio: string
+    horaFim: string
+  }>
+  intervaloAgendamentos: number
+  duracaoMaximaAgendamento: number
+  autenticacaoDuasEtapas: boolean
+  sessaoAutomatica: boolean
+  logAtividades: boolean
+}
 
 export default function ConfiguracoesPage() {
   const [activeTab, setActiveTab] = useState('general')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [configuracao, setConfiguracao] = useState<Configuracao | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const tabs = [
     { id: 'general', name: 'Geral', icon: Settings },
@@ -24,13 +53,101 @@ export default function ConfiguracoesPage() {
     { id: 'security', name: 'Segurança', icon: Shield }
   ]
 
+  useEffect(() => {
+    const fetchConfiguracao = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/configuracoes')
+        
+        if (!response.ok) {
+          throw new Error('Erro ao carregar configurações')
+        }
+        
+        const data = await response.json()
+        setConfiguracao(data)
+      } catch (err) {
+        console.error('Erro ao buscar configurações:', err)
+        setError(err instanceof Error ? err.message : 'Erro desconhecido')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchConfiguracao()
+  }, [])
+
   const handleSave = async () => {
-    setIsLoading(true)
-    // Simular salvamento
-    setTimeout(() => {
-      console.log('Configurações salvas!')
+    if (!configuracao) return
+    
+    try {
+      setIsLoading(true)
+      
+      const response = await fetch('/api/configuracoes', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(configuracao),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao salvar configurações')
+      }
+      
+      const result = await response.json()
+      console.log('Configurações salvas:', result)
+      
+      // Mostrar feedback de sucesso
+      alert('Configurações salvas com sucesso!')
+      
+    } catch (error) {
+      console.error('Erro ao salvar:', error)
+      alert('Erro ao salvar configurações. Tente novamente.')
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
+  }
+
+  const updateConfiguracao = (field: string, value: any) => {
+    setConfiguracao(prev => prev ? { ...prev, [field]: value } : null)
+  }
+
+  const updateHorarioFuncionamento = (index: number, field: string, value: any) => {
+    if (!configuracao) return
+    
+    const novosHorarios = [...configuracao.horariosFuncionamento]
+    novosHorarios[index] = { ...novosHorarios[index], [field]: value }
+    
+    setConfiguracao(prev => prev ? { ...prev, horariosFuncionamento: novosHorarios } : null)
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-center h-64">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="w-6 h-6 animate-spin text-[#D15556]" />
+            <span className="text-gray-600">Carregando configurações...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error || !configuracao) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">
+            <Settings className="w-16 h-16 mx-auto mb-2" />
+            <h2 className="text-xl font-semibold">Erro ao carregar configurações</h2>
+            <p className="text-gray-600">{error || 'Configurações não encontradas'}</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -81,7 +198,8 @@ export default function ConfiguracoesPage() {
                   </label>
                   <input
                     type="text"
-                    defaultValue="Espaço Guapa"
+                    value={configuracao.nomeSalao}
+                    onChange={(e) => updateConfiguracao('nomeSalao', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
@@ -93,7 +211,8 @@ export default function ConfiguracoesPage() {
                   </label>
                   <input
                     type="email"
-                    defaultValue="contato@espacoguapa.com"
+                    value={configuracao.emailContato}
+                    onChange={(e) => updateConfiguracao('emailContato', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
@@ -105,7 +224,8 @@ export default function ConfiguracoesPage() {
                   </label>
                   <input
                     type="tel"
-                    defaultValue="(11) 99999-9999"
+                    value={configuracao.telefone}
+                    onChange={(e) => updateConfiguracao('telefone', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
@@ -117,7 +237,8 @@ export default function ConfiguracoesPage() {
                   </label>
                   <input
                     type="text"
-                    defaultValue="Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP"
+                    value={configuracao.endereco}
+                    onChange={(e) => updateConfiguracao('endereco', e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
