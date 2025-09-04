@@ -27,6 +27,7 @@ import {
 interface Appointment {
   _id: string
   clientName: string
+  clientPhone: string
   service: string
   professional: string
   professionalId: string
@@ -36,6 +37,11 @@ interface Appointment {
   status: 'SCHEDULED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   price: number
   notes?: string
+  customLabels?: Array<{
+    id: number
+    name: string
+    color: string
+  }>
 }
 
 const timeSlots = [
@@ -139,6 +145,7 @@ export default function AgendamentosPage() {
   const [showCustomLabelModal, setShowCustomLabelModal] = useState(false)
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState('bg-gray-500')
+  const [clientData, setClientData] = useState<any>(null)
 
   // Buscar dados da API
   useEffect(() => {
@@ -300,7 +307,7 @@ export default function AgendamentosPage() {
     setAppointmentToDelete(null)
   }
 
-  const handleEditAppointment = (appointment: Appointment) => {
+  const handleEditAppointment = async (appointment: Appointment) => {
     setSelectedAppointment(appointment)
     setEditingAppointment({
       ...appointment,
@@ -308,12 +315,42 @@ export default function AgendamentosPage() {
     })
     setShowEditModal(true)
     setActiveTab('reserva')
+    
+    // Buscar dados completos do cliente
+    await fetchClientData(appointment.clientPhone)
+    
+    // Carregar etiquetas salvas se existirem
+    if ((appointment as any).customLabels) {
+      const savedLabels = (appointment as any).customLabels
+      setCustomLabels(prev => prev.map(label => ({
+        ...label,
+        selected: savedLabels.some((saved: any) => saved.id === label.id)
+      })))
+    }
+  }
+
+  const fetchClientData = async (phone: string) => {
+    try {
+      const response = await fetch(`/api/clients?phone=${phone}`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.length > 0) {
+          setClientData(data[0])
+        } else {
+          setClientData(null)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados do cliente:', error)
+      setClientData(null)
+    }
   }
 
   const closeEditModal = () => {
     setShowEditModal(false)
     setSelectedAppointment(null)
     setEditingAppointment({})
+    setClientData(null)
     setActiveTab('reserva')
   }
 
@@ -478,9 +515,7 @@ export default function AgendamentosPage() {
                   professional.name === 'Ellen Souza' ? 'bg-blue-600' :
                   'bg-gray-600'
                 }`}>
-                  {professional.name === 'Bruna Canovas' || professional.name === 'Cicera Canovas' 
-                    ? professional.name.split(' ')[0] 
-                    : professional.name}
+                  {professional.name.split(' ')[0]}
                 </div>
               </div>
             ))}
@@ -1157,12 +1192,49 @@ export default function AgendamentosPage() {
                     <div className="bg-gray-50 p-4 rounded-lg">
                       <div className="text-sm text-gray-600 mb-2">
                         <span className="font-medium">Cliente:</span>{' '}
-                        <span className="text-blue-600 underline">{selectedAppointment.clientName}</span>
+                        <span className="text-blue-600 underline">
+                          {clientData?.name || selectedAppointment.clientName}
+                        </span>
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-sm text-gray-600 mb-2">
                         <span className="font-medium">Celular:</span>{' '}
                         <span className="text-blue-600 underline">{selectedAppointment.clientPhone}</span>
                       </div>
+                      {clientData?.birthDate && (
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="font-medium">Data de Nascimento:</span>{' '}
+                          <span>{new Date(clientData.birthDate).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      )}
+                      {clientData?.createdAt && (
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="font-medium">Cliente desde:</span>{' '}
+                          <span>{new Date(clientData.createdAt).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                      )}
+                      {selectedAppointment.notes && (
+                        <div className="text-sm text-gray-600 mb-2">
+                          <span className="font-medium">Observações:</span>
+                          <div className="mt-1 text-xs text-gray-500 bg-gray-100 p-2 rounded">
+                            {selectedAppointment.notes}
+                          </div>
+                        </div>
+                      )}
+                      {editingAppointment.customLabels && editingAppointment.customLabels.length > 0 && (
+                        <div className="text-sm text-gray-600">
+                          <span className="font-medium">Etiquetas:</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {editingAppointment.customLabels.map((label: any) => (
+                              <span
+                                key={label.id}
+                                className={`px-2 py-1 rounded text-xs font-medium ${label.color}`}
+                              >
+                                {label.name}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Data */}
