@@ -36,6 +36,8 @@ export async function PUT(
     await connectToDatabase()
     
     const body = await request.json()
+    console.log('🔍 API PUT - Dados recebidos:', JSON.stringify(body, null, 2))
+    console.log('🔍 API PUT - ID do agendamento:', params.id)
     
     // Se estiver alterando horário, validar conflitos
     if (body.startTime || body.endTime || body.date || body.professionalId) {
@@ -77,9 +79,10 @@ export async function PUT(
     
     return NextResponse.json(appointment)
   } catch (error) {
-    console.error('Erro ao atualizar agendamento:', error)
+    console.error('❌ Erro ao atualizar agendamento:', error)
+    console.error('❌ Stack trace:', error.stack)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error.message },
       { status: 500 }
     )
   }
