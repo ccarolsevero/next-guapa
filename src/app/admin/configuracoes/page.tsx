@@ -6,13 +6,10 @@ import {
   User, 
   Building, 
   Clock, 
-  Bell, 
   Shield, 
   Save,
   Eye,
-  EyeOff,
-  Upload,
-  Trash
+  EyeOff
 } from 'lucide-react'
 
 export default function ConfiguracoesPage() {
@@ -24,7 +21,6 @@ export default function ConfiguracoesPage() {
     { id: 'general', name: 'Geral', icon: Settings },
     { id: 'business', name: 'Negócio', icon: Building },
     { id: 'schedule', name: 'Horários', icon: Clock },
-    { id: 'notifications', name: 'Notificações', icon: Bell },
     { id: 'security', name: 'Segurança', icon: Shield }
   ]
 
@@ -129,43 +125,6 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Logo e Branding</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Logo do Salão
-                  </label>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <span className="text-gray-400">Logo</span>
-                    </div>
-                    <div className="flex space-x-2">
-                      <button className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center">
-                        <Upload className="w-4 h-4 mr-2" />
-                        Upload
-                      </button>
-                      <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center">
-                        <Trash className="w-4 h-4 mr-2" />
-                        Remover
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Cor Principal
-                  </label>
-                  <input
-                    type="color"
-                    defaultValue="#ec4899"
-                    className="w-20 h-10 border border-gray-300 rounded-lg"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
@@ -332,70 +291,6 @@ export default function ConfiguracoesPage() {
           </div>
         )}
 
-        {/* Configurações de Notificações */}
-        {activeTab === 'notifications' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificações por Email</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Confirmação de Agendamento</div>
-                    <div className="text-sm text-gray-600">Enviar email quando um agendamento for confirmado</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Lembrete de Agendamento</div>
-                    <div className="text-sm text-gray-600">Enviar lembrete 24h antes do agendamento</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Cancelamento de Agendamento</div>
-                    <div className="text-sm text-gray-600">Enviar email quando um agendamento for cancelado</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Relatório Semanal</div>
-                    <div className="text-sm text-gray-600">Enviar relatório semanal de agendamentos</div>
-                  </div>
-                  <input type="checkbox" className="rounded" />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Notificações SMS/WhatsApp</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Lembrete por WhatsApp</div>
-                    <div className="text-sm text-gray-600">Enviar lembrete via WhatsApp 2h antes</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="rounded" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-gray-900">Confirmação por SMS</div>
-                    <div className="text-sm text-gray-600">Enviar confirmação por SMS</div>
-                  </div>
-                  <input type="checkbox" className="rounded" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Configurações de Segurança */}
         {activeTab === 'security' && (
