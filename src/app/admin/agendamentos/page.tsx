@@ -53,26 +53,32 @@ const isLunchTime = (time: string) => {
 
 // Cores para cada profissional
 const getProfessionalColor = (professionalName: string) => {
-  const colors = {
+  const colors: Record<string, string> = {
     'Bruna Canovas': 'bg-purple-100 text-purple-800 border-purple-200',
     'Vitória Uliani': 'bg-orange-100 text-orange-800 border-orange-200', 
     'Cicera Canovas': 'bg-green-100 text-green-800 border-green-200',
     'Ellen Souza': 'bg-blue-100 text-blue-800 border-blue-200'
   }
-  return colors[professionalName as keyof typeof colors] || 'bg-gray-100 text-gray-800 border-gray-200'
+  return colors[professionalName] || 'bg-gray-100 text-gray-800 border-gray-200'
 }
 
 // Calcular duração em intervalos de 15 minutos
 const getDurationInSlots = (startTime: string, endTime: string) => {
-  const start = new Date(`2000-01-01T${startTime}:00`)
-  const end = new Date(`2000-01-01T${endTime}:00`)
-  const diffMs = end.getTime() - start.getTime()
-  const diffMinutes = diffMs / (1000 * 60)
-  return Math.ceil(diffMinutes / 15) // Arredonda para cima
+  if (!startTime || !endTime) return 1
+  try {
+    const start = new Date(`2000-01-01T${startTime}:00`)
+    const end = new Date(`2000-01-01T${endTime}:00`)
+    const diffMs = end.getTime() - start.getTime()
+    const diffMinutes = diffMs / (1000 * 60)
+    return Math.max(1, Math.ceil(diffMinutes / 15)) // Mínimo 1 slot
+  } catch (error) {
+    return 1
+  }
 }
 
 // Verificar se um horário está dentro de um agendamento
 const isTimeInAppointment = (time: string, appointment: Appointment) => {
+  if (!appointment || !appointment.startTime || !appointment.endTime) return false
   const timeMinutes = timeToMinutes(time)
   const startMinutes = timeToMinutes(appointment.startTime)
   const endMinutes = timeToMinutes(appointment.endTime)
@@ -81,8 +87,13 @@ const isTimeInAppointment = (time: string, appointment: Appointment) => {
 
 // Converter horário para minutos
 const timeToMinutes = (time: string) => {
-  const [hours, minutes] = time.split(':').map(Number)
-  return hours * 60 + minutes
+  if (!time) return 0
+  try {
+    const [hours, minutes] = time.split(':').map(Number)
+    return (hours || 0) * 60 + (minutes || 0)
+  } catch (error) {
+    return 0
+  }
 }
 
 const serviceIcons = {
@@ -279,6 +290,14 @@ export default function AgendamentosPage() {
   const renderDayView = () => {
     const dayAppointments = getAppointmentsForDate(selectedDate)
     
+    if (!professionals || professionals.length === 0) {
+      return (
+        <div className="bg-white rounded-lg shadow p-8 text-center">
+          <p className="text-gray-500">Carregando profissionais...</p>
+        </div>
+      )
+    }
+    
     return (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         {/* Header com botões */}
@@ -307,7 +326,13 @@ export default function AgendamentosPage() {
             <div className="text-sm font-medium text-gray-900 p-2">Horário</div>
             {professionals.map((professional) => (
               <div key={professional._id} className="text-center p-2">
-                <div className={`inline-flex items-center px-3 py-2 rounded text-sm font-medium text-white ${getProfessionalColor(professional.name).replace('100', '600').replace('800', 'white')}`}>
+                <div className={`inline-flex items-center px-3 py-2 rounded text-sm font-medium text-white ${
+                  professional.name === 'Bruna Canovas' ? 'bg-purple-600' :
+                  professional.name === 'Vitória Uliani' ? 'bg-orange-600' :
+                  professional.name === 'Cicera Canovas' ? 'bg-green-600' :
+                  professional.name === 'Ellen Souza' ? 'bg-blue-600' :
+                  'bg-gray-600'
+                }`}>
                   {professional.name}
                 </div>
               </div>
@@ -328,30 +353,36 @@ export default function AgendamentosPage() {
                   
                   {/* Colunas dos Profissionais */}
                   {professionals.map((professional) => {
-                    const professionalAppointments = dayAppointments.filter(apt => 
-                      apt.professionalId === professional._id && 
-                      isTimeInAppointment(time, apt)
-                    )
-                    
                     // Encontrar o agendamento que começa neste horário
                     const startingAppointment = dayAppointments.find(apt => 
                       apt.professionalId === professional._id && 
                       apt.startTime === time
                     )
                     
+                    // Verificar se é horário de almoço (13:00-13:45)
+                    const isLunchPeriod = time >= '13:00' && time <= '13:45'
+                    
                     return (
                       <div key={professional._id} className="min-h-[40px] p-1 relative">
-                        {isLunchTime(time) ? (
-                          <div className="h-full flex items-center justify-center">
-                            <div className="bg-orange-100 border border-orange-200 rounded p-1 text-center w-full">
-                              <div className="text-xs text-orange-800">🍽️</div>
-                            </div>
+                        {isLunchPeriod && time === '13:00' ? (
+                          // Bloco de almoço que ocupa todo o período
+                          <div 
+                            className="bg-orange-100 border border-orange-200 rounded p-2 text-center w-full flex items-center justify-center"
+                            style={{
+                              minHeight: `${4 * 40}px` // 4 slots de 15min = 1 hora
+                            }}
+                          >
+                            <div className="text-xs text-orange-800 font-medium">🍽️ Almoço</div>
                           </div>
+                        ) : isLunchPeriod ? (
+                          // Espaço vazio durante o almoço (já ocupado pelo bloco acima)
+                          <div className="h-full"></div>
                         ) : startingAppointment ? (
+                          // Bloco de agendamento que se estende pela duração
                           <div
                             className={`p-2 rounded border shadow-sm cursor-pointer transition-all hover:shadow-md ${getProfessionalColor(startingAppointment.professional)}`}
                             style={{
-                              minHeight: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 20)}px`
+                              minHeight: `${Math.max(40, getDurationInSlots(startingAppointment.startTime, startingAppointment.endTime) * 40)}px`
                             }}
                             onMouseEnter={(e) => {
                               setHoveredAppointment(startingAppointment)
@@ -371,10 +402,8 @@ export default function AgendamentosPage() {
                               </div>
                             </div>
                           </div>
-                        ) : professionalAppointments.length > 0 ? (
-                          // Agendamento em andamento (não é o início)
-                          <div className="h-full"></div>
                         ) : (
+                          // Espaço vazio disponível
                           <div className="h-full border border-transparent hover:border-gray-200 rounded transition-colors"></div>
                         )}
                       </div>
