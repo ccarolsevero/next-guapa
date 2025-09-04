@@ -353,6 +353,9 @@ export default function RelatoriosPage() {
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes Aniversariantes do Mês</h3>
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-600">Debug: reportData.aniversariantes = {JSON.stringify(reportData.aniversariantes)}</p>
+            </div>
             <div className="space-y-3">
               {reportData.aniversariantes?.map((cliente, index) => (
                 <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -818,6 +821,13 @@ export default function RelatoriosPage() {
           <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum dado encontrado</h3>
           <p className="text-gray-600">Não há dados disponíveis para o período selecionado.</p>
+          <div className="mt-4 p-4 bg-gray-100 rounded-lg text-left">
+            <p className="text-sm text-gray-600">Debug info:</p>
+            <p className="text-xs text-gray-500">selectedReport: {selectedReport}</p>
+            <p className="text-xs text-gray-500">selectedPeriod: {selectedPeriod}</p>
+            <p className="text-xs text-gray-500">reportData keys: {Object.keys(reportData).join(', ')}</p>
+            <p className="text-xs text-gray-500">reportData: {JSON.stringify(reportData, null, 2)}</p>
+          </div>
         </div>
       )}
     </div>

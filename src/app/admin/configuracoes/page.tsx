@@ -204,8 +204,8 @@ export default function ConfiguracoesPage() {
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Configurações</h1>
-        <p className="mt-2 text-sm text-gray-700">
+        <h1 className="text-3xl font-light text-[#006D5B]">Configurações</h1>
+        <p className="mt-2 text-sm text-gray-600">
           Configure as preferências do sistema
         </p>
       </div>
@@ -221,8 +221,8 @@ export default function ConfiguracoesPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
                   activeTab === tab.id
-                    ? 'border-pink-500 text-pink-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-[#D15556] text-[#D15556]'
+                    : 'border-transparent text-gray-500 hover:text-[#D15556] hover:border-[#D15556]'
                 }`}
               >
                 <IconComponent className="w-4 h-4 mr-2" />
@@ -238,8 +238,8 @@ export default function ConfiguracoesPage() {
         {/* Configurações Gerais */}
         {activeTab === 'general' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Informações do Sistema</h3>
+            <div className="bg-white rounded-lg shadow p-6" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Informações do Sistema</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -250,7 +250,7 @@ export default function ConfiguracoesPage() {
                     type="text"
                     value={configuracao.nomeSalao}
                     onChange={(e) => updateConfiguracao('nomeSalao', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -263,7 +263,7 @@ export default function ConfiguracoesPage() {
                     type="email"
                     value={configuracao.emailContato}
                     onChange={(e) => updateConfiguracao('emailContato', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -276,7 +276,7 @@ export default function ConfiguracoesPage() {
                     type="tel"
                     value={configuracao.telefone}
                     onChange={(e) => updateConfiguracao('telefone', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -289,15 +289,15 @@ export default function ConfiguracoesPage() {
                     type="text"
                     value={configuracao.endereco}
                     onChange={(e) => updateConfiguracao('endereco', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Alterar Senha</h3>
+            <div className="bg-white rounded-lg shadow p-6" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Alterar Senha</h3>
               
               <div className="space-y-4">
                 <div>
@@ -309,7 +309,7 @@ export default function ConfiguracoesPage() {
                       type={showPassword ? "text" : "password"}
                       value={senhaAtual}
                       onChange={(e) => setSenhaAtual(e.target.value)}
-                      className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent pr-10"
+                      className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent pr-10"
                       style={{ color: '#000000' }}
                     />
                     <button
@@ -334,7 +334,7 @@ export default function ConfiguracoesPage() {
                     type="password"
                     value={novaSenha}
                     onChange={(e) => setNovaSenha(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -347,7 +347,7 @@ export default function ConfiguracoesPage() {
                     type="password"
                     value={confirmarSenha}
                     onChange={(e) => setConfirmarSenha(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -356,7 +356,7 @@ export default function ConfiguracoesPage() {
                   <button
                     onClick={handleChangePassword}
                     disabled={salvandoSenha}
-                    className="bg-pink-600 text-white px-6 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#b83e3d] transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {salvandoSenha ? (
                       <>
@@ -377,8 +377,8 @@ export default function ConfiguracoesPage() {
         {/* Configurações do Negócio */}
         {activeTab === 'business' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Configurações do Negócio</h3>
+            <div className="bg-white rounded-lg shadow p-6" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Configurações do Negócio</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -414,7 +414,7 @@ export default function ConfiguracoesPage() {
                     defaultValue="10"
                     min="0"
                     max="100"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -427,7 +427,7 @@ export default function ConfiguracoesPage() {
                     type="number"
                     defaultValue="15"
                     min="0"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -445,7 +445,7 @@ export default function ConfiguracoesPage() {
                   <textarea
                     rows={4}
                     defaultValue="Cancelamentos devem ser feitos com pelo menos 24h de antecedência. Cancelamentos em menos de 24h podem ser cobrados 50% do valor do serviço."
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
@@ -457,7 +457,7 @@ export default function ConfiguracoesPage() {
                   <textarea
                     rows={4}
                     defaultValue="Reagendamentos podem ser feitos até 2h antes do horário marcado, sem custo adicional."
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                     style={{ color: '#000000' }}
                   />
                 </div>
