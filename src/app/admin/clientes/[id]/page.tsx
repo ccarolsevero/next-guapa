@@ -20,7 +20,9 @@ import {
   Palette,
   Sparkles,
   Loader2,
-  FileText
+  FileText,
+  Lightbulb,
+  Paperclip
 } from 'lucide-react'
 
 interface ClienteData {
@@ -220,6 +222,13 @@ export default function ClienteDetalhesPage() {
             >
               <FileText className="w-4 h-4 mr-2" />
               Prontuários
+            </Link>
+            <Link
+              href={`/admin/clientes/${client._id}/recomendacoes`}
+              className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center"
+            >
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Recomendações
             </Link>
             <Link
               href={`/admin/clientes/${client._id}/historico`}
