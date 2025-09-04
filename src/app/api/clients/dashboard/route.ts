@@ -114,8 +114,9 @@ export async function GET(request: NextRequest) {
         birthDate: cliente.birthDate,
         address: cliente.address,
         createdAt: cliente.createdAt,
-        onboardingCompleted: cliente.onboardingCompleted,
-        onboardingRequired: cliente.onboardingRequired
+        onboardingCompleted: cliente.onboardingCompleted || false,
+        onboardingRequired: cliente.onboardingRequired || false,
+        isCompleteProfile: cliente.isCompleteProfile || false
       },
       appointments: allAppointments,
       orders: orders,

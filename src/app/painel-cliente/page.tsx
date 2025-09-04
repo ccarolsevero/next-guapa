@@ -120,8 +120,18 @@ function PainelClienteContent() {
         setOrders(data.orders)
         
         // Verificar se precisa completar onboarding
-        if (data.client && (!data.client.onboardingCompleted || data.client.onboardingRequired)) {
+        console.log('🔍 Verificando onboarding:', {
+          onboardingCompleted: data.client.onboardingCompleted,
+          onboardingRequired: data.client.onboardingRequired,
+          isCompleteProfile: data.client.isCompleteProfile
+        })
+        
+        // Mostrar onboarding para todos que não têm perfil completo
+        if (data.client && !data.client.isCompleteProfile) {
+          console.log('✅ Mostrando modal de onboarding - perfil não completo')
           setShowOnboarding(true)
+        } else {
+          console.log('❌ Perfil já completo - não mostrar onboarding')
         }
         
         console.log('📊 Dashboard data loaded:', {
@@ -514,9 +524,17 @@ function PainelClienteContent() {
             {/* Dashboard */}
             {activeTab === 'dashboard' && (
               <div className="space-y-6">
-                <h2 className="text-2xl font-light text-[#006D5B] mb-6">
-                  Dashboard
-                </h2>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-light text-[#006D5B]">
+                    Dashboard
+                  </h2>
+                  <button
+                    onClick={() => setShowOnboarding(true)}
+                    className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                  >
+                    Testar Onboarding
+                  </button>
+                </div>
 
                 {/* Cards de Resumo */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
