@@ -1089,7 +1089,7 @@ export default function AgendamentosPage() {
                       <User className="w-6 h-6" />
                     </div>
                     <div className="ml-4">
-                      <p className="text-sm font-medium text-gray-600">{professional.name}</p>
+                      <p className="text-sm font-medium text-gray-600">{professional.name.split(' ')[0]}</p>
                       <p className="text-2xl font-semibold text-gray-900">
                         {professionalAppointments.length}
                       </p>

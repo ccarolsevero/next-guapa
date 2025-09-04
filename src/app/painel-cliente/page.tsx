@@ -160,6 +160,67 @@ function PainelClienteContent() {
     fetchDashboardData()
   }, [])
 
+  // Recarregar dados quando a aba ganha foco (para sincronizar com mudanças do admin)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (clientData) {
+        fetchDashboardData()
+      }
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden && clientData) {
+        fetchDashboardData()
+      }
+    }
+
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [clientData])
+
+  // Função para recarregar dados (pode ser chamada manualmente)
+  const fetchDashboardData = async () => {
+    try {
+      // Verificar se o cliente está logado
+      const isLoggedIn = localStorage.getItem('isClientLoggedIn')
+      const loggedInClient = localStorage.getItem('loggedInClient')
+      
+      if (!isLoggedIn || !loggedInClient) {
+        window.location.href = '/login-cliente'
+        return
+      }
+
+      const clientInfo = JSON.parse(loggedInClient)
+      setClientData(clientInfo)
+      
+      // Buscar dados do dashboard do banco
+      const clientId = clientInfo.id || clientInfo._id
+      console.log('🔄 Recarregando dashboard para clientId:', clientId)
+      
+      const response = await fetch(`/api/clients/dashboard?clientId=${clientId}`)
+      
+      if (!response.ok) {
+        throw new Error('Erro ao carregar dados do dashboard')
+      }
+      
+      const data = await response.json()
+      console.log('📊 Dados atualizados do dashboard:', data.client)
+      
+      // Atualizar dados do cliente com informações do banco
+      setClientData(data.client)
+      setAppointments(data.appointments)
+      setOrders(data.orders)
+      
+    } catch (error) {
+      console.error('❌ Erro ao recarregar dados do dashboard:', error)
+    }
+  }
+
   // Função para abrir modal de avaliação
   const openReviewModal = (appointment: Appointment) => {
     setSelectedAppointment(appointment)
@@ -657,13 +718,23 @@ function PainelClienteContent() {
                   <h2 className="text-2xl font-light text-[#006D5B]">
                     Meus Agendamentos
                   </h2>
-                  <Link
-                    href="/agendamento"
-                    className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
-                  >
-                    <Plus className="w-4 h-4 inline mr-2" />
-                    Novo Agendamento
-                  </Link>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={fetchDashboardData}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center"
+                      title="Atualizar dados"
+                    >
+                      <Clock className="w-4 h-4 mr-2" />
+                      Atualizar
+                    </button>
+                    <Link
+                      href="/agendamento"
+                      className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium"
+                    >
+                      <Plus className="w-4 h-4 inline mr-2" />
+                      Novo Agendamento
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="bg-white rounded-lg shadow-lg overflow-hidden">
