@@ -364,12 +364,18 @@ function PainelClienteContent() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
+      case 'CONFIRMED':
         return 'bg-green-100 text-green-800'
       case 'pending':
+      case 'SCHEDULED':
         return 'bg-yellow-100 text-yellow-800'
       case 'completed':
+      case 'COMPLETED':
         return 'bg-blue-100 text-blue-800'
       case 'cancelled':
+      case 'CANCELLED':
+        return 'bg-red-100 text-red-800'
+      case 'NO_SHOW':
         return 'bg-red-100 text-red-800'
       default:
         return 'bg-gray-100 text-gray-800'
@@ -386,6 +392,16 @@ function PainelClienteContent() {
         return 'Concluído'
       case 'cancelled':
         return 'Cancelado'
+      case 'SCHEDULED':
+        return 'Agendado'
+      case 'CONFIRMED':
+        return 'Confirmado'
+      case 'COMPLETED':
+        return 'Concluído'
+      case 'CANCELLED':
+        return 'Cancelado'
+      case 'NO_SHOW':
+        return 'Não Compareceu'
       default:
         return status
     }
@@ -597,28 +613,43 @@ function PainelClienteContent() {
                   <h3 className="text-lg font-medium text-[#006D5B] mb-4">
                     Próximo Agendamento
                   </h3>
-                  {appointments.filter(a => a.status === 'confirmed').length > 0 ? (
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-medium text-[#006D5B]">
-                            {appointments.filter(a => a.status === 'confirmed')[0].service}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            {appointments.filter(a => a.status === 'confirmed')[0].professional}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            {formatDate(appointments.filter(a => a.status === 'confirmed')[0].date)} às {formatTime(appointments.filter(a => a.status === 'confirmed')[0].time)}
-                          </p>
+                  {(() => {
+                    // Buscar próximo agendamento (confirmado ou agendado)
+                    const nextAppointment = appointments
+                      .filter(a => a.status === 'confirmed' || a.status === 'pending' || a.status === 'SCHEDULED')
+                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0]
+                    
+                    return nextAppointment ? (
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="font-medium text-[#006D5B]">
+                              {nextAppointment.service}
+                            </h4>
+                            <p className="text-sm text-gray-600">
+                              {nextAppointment.professional}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              {formatDate(nextAppointment.date)} às {formatTime(nextAppointment.time)}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-xs ${
+                            nextAppointment.status === 'confirmed' 
+                              ? 'bg-green-100 text-green-800'
+                              : nextAppointment.status === 'SCHEDULED' || nextAppointment.status === 'pending'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {nextAppointment.status === 'SCHEDULED' ? 'Agendado' : 
+                             nextAppointment.status === 'confirmed' ? 'Confirmado' :
+                             nextAppointment.status === 'pending' ? 'Pendente' : nextAppointment.status}
+                          </span>
                         </div>
-                        <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs">
-                          Confirmado
-                        </span>
                       </div>
-                    </div>
-                  ) : (
-                    <p className="text-gray-600">Nenhum agendamento confirmado.</p>
-                  )}
+                    ) : (
+                      <p className="text-gray-600">Nenhum agendamento próximo.</p>
+                    )
+                  })()}
                 </div>
               </div>
             )}

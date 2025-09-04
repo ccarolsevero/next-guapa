@@ -217,10 +217,10 @@ export default function AgendamentoPage() {
               <p className="text-sm text-gray-700 font-medium"><strong>Horário:</strong> {formData.time}</p>
             </div>
             <Link 
-              href="/"
+              href={isLoggedIn ? "/painel-cliente" : "/"}
               className="bg-[#D15556] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c04546] transition-colors"
             >
-              Voltar ao Início
+              {isLoggedIn ? "Ir para o Painel" : "Voltar ao Início"}
             </Link>
           </div>
         </div>
