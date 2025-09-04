@@ -18,7 +18,7 @@ interface Recomendacao {
   _id: string
   titulo: string
   descricao: string
-  tipo: 'produto' | 'servico' | 'tratamento' | 'cuidado' | 'outro'
+  tipo: 'pos-atendimento' | 'cuidados' | 'manutencao' | 'orientacoes' | 'outro'
   prioridade: 'baixa' | 'media' | 'alta'
   status: 'ativa' | 'concluida' | 'cancelada'
   anexos: Array<{
@@ -96,20 +96,20 @@ export default function RecomendacoesClientePage() {
 
   const getTipoIcon = (tipo: string) => {
     switch (tipo) {
-      case 'produto': return '🛍️'
-      case 'servico': return '✂️'
-      case 'tratamento': return '💆‍♀️'
-      case 'cuidado': return '💅'
+      case 'pos-atendimento': return '📋'
+      case 'cuidados': return '💅'
+      case 'manutencao': return '🔧'
+      case 'orientacoes': return '📖'
       default: return '💡'
     }
   }
 
   const getTipoLabel = (tipo: string) => {
     switch (tipo) {
-      case 'produto': return 'Produto'
-      case 'servico': return 'Serviço'
-      case 'tratamento': return 'Tratamento'
-      case 'cuidado': return 'Cuidado'
+      case 'pos-atendimento': return 'Pós-Atendimento'
+      case 'cuidados': return 'Cuidados'
+      case 'manutencao': return 'Manutenção'
+      case 'orientacoes': return 'Orientações'
       default: return 'Outro'
     }
   }
@@ -160,10 +160,10 @@ export default function RecomendacoesClientePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center">
           <Lightbulb className="w-8 h-8 text-orange-600 mr-3" />
-          Minhas Recomendações
+          Orientações e Cuidados
         </h1>
         <p className="text-gray-600 mt-2">
-          Recomendações personalizadas dos nossos profissionais para você
+          Orientações e cuidados pós-atendimento dos nossos profissionais
         </p>
       </div>
 
@@ -223,7 +223,7 @@ export default function RecomendacoesClientePage() {
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-900 mb-3 flex items-center">
                     <Paperclip className="w-4 h-4 mr-2" />
-                    Materiais e Arquivos ({recomendacao.anexos.length})
+                    Guias e Materiais ({recomendacao.anexos.length})
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {recomendacao.anexos.map((anexo, index) => (
@@ -271,9 +271,9 @@ export default function RecomendacoesClientePage() {
         ) : (
           <div className="text-center py-12">
             <Lightbulb className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma recomendação encontrada</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma orientação encontrada</h3>
             <p className="text-gray-600">
-              Nossos profissionais ainda não criaram recomendações personalizadas para você.
+              Nossos profissionais ainda não criaram orientações de cuidados para você.
             </p>
           </div>
         )}

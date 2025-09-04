@@ -4,7 +4,7 @@ export interface IRecomendacao extends Document {
   clientId: string
   titulo: string
   descricao: string
-  tipo: 'produto' | 'servico' | 'tratamento' | 'cuidado' | 'outro'
+  tipo: 'pos-atendimento' | 'cuidados' | 'manutencao' | 'orientacoes' | 'outro'
   prioridade: 'baixa' | 'media' | 'alta'
   status: 'ativa' | 'concluida' | 'cancelada'
   anexos: Array<{
@@ -40,7 +40,7 @@ const RecomendacaoSchema = new Schema<IRecomendacao>({
   },
   tipo: {
     type: String,
-    enum: ['produto', 'servico', 'tratamento', 'cuidado', 'outro'],
+    enum: ['pos-atendimento', 'cuidados', 'manutencao', 'orientacoes', 'outro'],
     required: true
   },
   prioridade: {

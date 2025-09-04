@@ -24,7 +24,7 @@ interface Recomendacao {
   _id: string
   titulo: string
   descricao: string
-  tipo: 'produto' | 'servico' | 'tratamento' | 'cuidado' | 'outro'
+  tipo: 'pos-atendimento' | 'cuidados' | 'manutencao' | 'orientacoes' | 'outro'
   prioridade: 'baixa' | 'media' | 'alta'
   status: 'ativa' | 'concluida' | 'cancelada'
   anexos: Array<{
@@ -63,7 +63,7 @@ export default function RecomendacoesPage() {
   const [formData, setFormData] = useState({
     titulo: '',
     descricao: '',
-    tipo: 'produto' as const,
+    tipo: 'pos-atendimento' as const,
     prioridade: 'media' as const,
     dataValidade: '',
     observacoes: ''
@@ -208,10 +208,10 @@ export default function RecomendacoesPage() {
 
   const getTipoIcon = (tipo: string) => {
     switch (tipo) {
-      case 'produto': return '🛍️'
-      case 'servico': return '✂️'
-      case 'tratamento': return '💆‍♀️'
-      case 'cuidado': return '💅'
+      case 'pos-atendimento': return '📋'
+      case 'cuidados': return '💅'
+      case 'manutencao': return '🔧'
+      case 'orientacoes': return '📖'
       default: return '💡'
     }
   }
@@ -415,7 +415,7 @@ export default function RecomendacoesPage() {
                     value={formData.titulo}
                     onChange={(e) => setFormData(prev => ({ ...prev, titulo: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
-                    placeholder="Ex: Hidratação Profunda"
+                    placeholder="Ex: Cuidados pós-coloração"
                     required
                   />
                 </div>
@@ -429,7 +429,7 @@ export default function RecomendacoesPage() {
                     onChange={(e) => setFormData(prev => ({ ...prev, descricao: e.target.value }))}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 resize-none"
                     rows={3}
-                    placeholder="Descreva a recomendação em detalhes..."
+                    placeholder="Descreva os cuidados e orientações em detalhes..."
                     required
                   />
                 </div>
@@ -445,10 +445,10 @@ export default function RecomendacoesPage() {
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
                       required
                     >
-                      <option value="produto">Produto</option>
-                      <option value="servico">Serviço</option>
-                      <option value="tratamento">Tratamento</option>
-                      <option value="cuidado">Cuidado</option>
+                      <option value="pos-atendimento">Pós-Atendimento</option>
+                      <option value="cuidados">Cuidados</option>
+                      <option value="manutencao">Manutenção</option>
+                      <option value="orientacoes">Orientações</option>
                       <option value="outro">Outro</option>
                     </select>
                   </div>
