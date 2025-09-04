@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { 
   BarChart3, 
   TrendingUp, 
@@ -12,60 +11,65 @@ import {
   Filter,
   CalendarDays,
   PieChart,
-  Activity
+  Activity,
+  Loader2
 } from 'lucide-react'
 
-// Mock data para relatórios
-const mockData = {
-  // Dados financeiros dos últimos 6 meses
-  financialData: [
-    { month: 'Jul', revenue: 8500, expenses: 3200, profit: 5300 },
-    { month: 'Ago', revenue: 9200, expenses: 3400, profit: 5800 },
-    { month: 'Set', revenue: 7800, expenses: 3100, profit: 4700 },
-    { month: 'Out', revenue: 10500, expenses: 3800, profit: 6700 },
-    { month: 'Nov', revenue: 9800, expenses: 3600, profit: 6200 },
-    { month: 'Dez', revenue: 12000, expenses: 4200, profit: 7800 }
-  ],
-  
-  // Serviços mais vendidos
-  topServices: [
-    { name: 'Corte Feminino', count: 45, revenue: 2025 },
-    { name: 'Coloração', count: 32, revenue: 2560 },
-    { name: 'Hidratação', count: 28, revenue: 1400 },
-    { name: 'Corte Masculino', count: 25, revenue: 875 },
-    { name: 'Maquiagem Social', count: 18, revenue: 1440 }
-  ],
-  
-  // Profissionais mais ativos
-  topProfessionals: [
-    { name: 'Ana Carolina', appointments: 65, revenue: 3200 },
-    { name: 'Mariana Silva', appointments: 58, revenue: 2800 },
-    { name: 'Carlos Eduardo', appointments: 42, revenue: 1500 },
-    { name: 'Juliana Costa', appointments: 38, revenue: 1800 }
-  ],
-  
-  // Clientes mais fiéis
-  topClients: [
-    { name: 'Maria Silva', visits: 12, totalSpent: 850 },
-    { name: 'João Santos', visits: 10, totalSpent: 720 },
-    { name: 'Ana Costa', visits: 8, totalSpent: 650 },
-    { name: 'Pedro Lima', visits: 7, totalSpent: 580 },
-    { name: 'Carla Ferreira', visits: 6, totalSpent: 520 }
-  ],
-  
-  // Agendamentos por status
-  appointmentsByStatus: [
-    { status: 'Confirmado', count: 85, percentage: 65 },
-    { status: 'Agendado', count: 25, percentage: 19 },
-    { status: 'Concluído', count: 15, percentage: 12 },
-    { status: 'Cancelado', count: 5, percentage: 4 }
-  ]
+interface ReportData {
+  financial?: {
+    revenue: Array<{
+      _id: { year: number; month: number }
+      totalRevenue: number
+      totalCommissions: number
+      count: number
+    }>
+    expenses: Array<{
+      _id: { year: number; month: number }
+      totalExpenses: number
+    }>
+  }
+  clients?: {
+    topClients: Array<{
+      name: string
+      totalSpent: number
+      visits: number
+    }>
+    stats: {
+      totalClients: number
+      newClients: number
+    }
+  }
+  services?: {
+    topServices: Array<{
+      name: string
+      count: number
+      totalRevenue: number
+    }>
+  }
+  professionals?: {
+    topProfessionals: Array<{
+      name: string
+      appointments: number
+      revenue: number
+      commissions: number
+    }>
+  }
+  appointments?: {
+    byStatus: Array<{
+      status: string
+      count: number
+      percentage: number
+    }>
+    total: number
+  }
 }
 
 export default function RelatoriosPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('6months')
   const [selectedReport, setSelectedReport] = useState('financial')
   const [isLoading, setIsLoading] = useState(false)
+  const [reportData, setReportData] = useState<ReportData>({})
+  const [loadingData, setLoadingData] = useState(true)
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
@@ -81,6 +85,28 @@ export default function RelatoriosPage() {
     { id: 'professionals', name: 'Profissionais', icon: Activity },
     { id: 'appointments', name: 'Agendamentos', icon: Calendar }
   ]
+
+  // Carregar dados dos relatórios
+  useEffect(() => {
+    const loadReportData = async () => {
+      setLoadingData(true)
+      try {
+        const response = await fetch(`/api/reports?period=${selectedPeriod}&type=${selectedReport}`)
+        if (response.ok) {
+          const data = await response.json()
+          setReportData(data)
+        } else {
+          console.error('Erro ao carregar dados dos relatórios')
+        }
+      } catch (error) {
+        console.error('Erro ao carregar dados dos relatórios:', error)
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    loadReportData()
+  }, [selectedPeriod, selectedReport])
 
   const handleExport = (type: string) => {
     setIsLoading(true)
@@ -99,16 +125,22 @@ export default function RelatoriosPage() {
   }
 
   const getTotalRevenue = () => {
-    return mockData.financialData.reduce((sum, item) => sum + item.revenue, 0)
+    if (!reportData.financial?.revenue) return 0
+    return reportData.financial.revenue.reduce((sum, item) => sum + item.totalRevenue, 0)
+  }
+
+  const getTotalExpenses = () => {
+    if (!reportData.financial?.expenses) return 0
+    return reportData.financial.expenses.reduce((sum, item) => sum + item.totalExpenses, 0)
   }
 
   const getTotalProfit = () => {
-    return mockData.financialData.reduce((sum, item) => sum + item.profit, 0)
+    return getTotalRevenue() - getTotalExpenses()
   }
 
-  const getAverageTicket = () => {
-    const totalAppointments = mockData.topServices.reduce((sum, service) => sum + service.count, 0)
-    return totalAppointments > 0 ? getTotalRevenue() / totalAppointments : 0
+  const getMonthName = (month: number) => {
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+    return months[month - 1] || ''
   }
 
   return (
@@ -116,8 +148,8 @@ export default function RelatoriosPage() {
       {/* Header */}
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Relatórios</h1>
-          <p className="mt-2 text-sm text-gray-700">
+          <h1 className="text-3xl font-light text-[#006D5B]">Relatórios</h1>
+          <p className="mt-2 text-sm text-gray-600">
             Análise completa dos dados do salão
           </p>
         </div>
@@ -125,7 +157,7 @@ export default function RelatoriosPage() {
           <select
             value={selectedPeriod}
             onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
           >
             {periods.map((period) => (
               <option key={period.value} value={period.value}>
@@ -137,7 +169,7 @@ export default function RelatoriosPage() {
           <button
             onClick={() => handleExport('pdf')}
             disabled={isLoading}
-            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center disabled:opacity-50"
+            className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-colors flex items-center disabled:opacity-50"
           >
             <Download className="w-4 h-4 mr-2" />
             {isLoading ? 'Exportando...' : 'Exportar PDF'}
@@ -146,8 +178,8 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Filtros de Relatórios */}
-      <div className="bg-white rounded-lg shadow p-6 mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+      <div className="bg-white rounded-lg shadow p-6 mb-8" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+        <h2 className="text-lg font-semibold text-[#006D5B] mb-4 flex items-center">
           <Filter className="w-5 h-5 mr-2" />
           Tipo de Relatório
         </h2>
@@ -161,8 +193,8 @@ export default function RelatoriosPage() {
                 onClick={() => setSelectedReport(report.id)}
                 className={`p-4 rounded-lg border transition-colors ${
                   selectedReport === report.id
-                    ? 'border-pink-500 bg-pink-50 text-pink-700'
-                    : 'border-gray-300 hover:border-gray-400'
+                    ? 'border-[#D15556] bg-[#D15556] text-white'
+                    : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
                 }`}
               >
                 <IconComponent className="w-6 h-6 mx-auto mb-2" />
@@ -183,7 +215,7 @@ export default function RelatoriosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Receita Total</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(getTotalRevenue())}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalRevenue())}
               </p>
             </div>
           </div>
@@ -197,7 +229,7 @@ export default function RelatoriosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Lucro Total</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(getTotalProfit())}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalProfit())}
               </p>
             </div>
           </div>
@@ -211,7 +243,7 @@ export default function RelatoriosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total de Clientes</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {mockData.topClients.length + 45}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : reportData.clients?.stats?.totalClients || 0}
               </p>
             </div>
           </div>
@@ -223,79 +255,93 @@ export default function RelatoriosPage() {
               <Calendar className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Ticket Médio</p>
+              <p className="text-sm font-medium text-gray-600">Total Agendamentos</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {formatCurrency(getAverageTicket())}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : reportData.appointments?.total || 0}
               </p>
             </div>
           </div>
         </div>
       </div>
 
+      {/* Loading State */}
+      {loadingData && (
+        <div className="flex justify-center items-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-[#D15556]" />
+          <span className="ml-2 text-gray-600">Carregando dados...</span>
+        </div>
+      )}
+
       {/* Relatório Financeiro */}
-      {selectedReport === 'financial' && (
+      {selectedReport === 'financial' && !loadingData && (
         <div className="space-y-8">
           {/* Gráfico de Receita */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
-            <div className="h-64 flex items-end justify-between space-x-2">
-              {mockData.financialData.map((item, index) => (
-                <div key={index} className="flex-1 flex flex-col items-center">
-                  <div className="w-full bg-pink-200 rounded-t-lg relative group">
-                    <div 
-                      className="bg-pink-600 rounded-t-lg transition-all duration-300 group-hover:bg-pink-700"
-                      style={{ height: `${(item.revenue / 12000) * 200}px` }}
-                    ></div>
-                    <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                      {formatCurrency(item.revenue)}
+          {reportData.financial?.revenue && reportData.financial.revenue.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Receita Mensal</h3>
+              <div className="h-64 flex items-end justify-between space-x-2">
+                {reportData.financial.revenue.map((item, index) => {
+                  const maxRevenue = Math.max(...reportData.financial!.revenue.map(r => r.totalRevenue))
+                  return (
+                    <div key={index} className="flex-1 flex flex-col items-center">
+                      <div className="w-full bg-gray-200 rounded-t-lg relative group">
+                        <div 
+                          className="bg-[#D15556] rounded-t-lg transition-all duration-300 group-hover:bg-[#b83e3d]"
+                          style={{ height: `${(item.totalRevenue / maxRevenue) * 200}px` }}
+                        ></div>
+                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                          {formatCurrency(item.totalRevenue)}
+                        </div>
+                      </div>
+                      <div className="text-sm text-gray-600 mt-2">
+                        {getMonthName(item._id.month)}/{item._id.year}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-sm text-gray-600 mt-2">{item.month}</div>
-                </div>
-              ))}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Resumo Financeiro Detalhado */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita vs Despesas</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Resumo Financeiro</h3>
               <div className="space-y-4">
-                {mockData.financialData.slice(-3).map((item, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <div className="font-medium text-gray-900">{item.month}</div>
-                      <div className="text-sm text-gray-600">
-                        Receita: {formatCurrency(item.revenue)} | Despesas: {formatCurrency(item.expenses)}
-                      </div>
-                    </div>
-                    <div className={`font-bold ${item.profit > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(item.profit)}
-                    </div>
-                  </div>
-                ))}
+                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                  <span className="text-gray-700">Receita Total</span>
+                  <span className="font-semibold text-green-600">{formatCurrency(getTotalRevenue())}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                  <span className="text-gray-700">Despesas Total</span>
+                  <span className="font-semibold text-red-600">{formatCurrency(getTotalExpenses())}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
+                  <span className="text-gray-700">Lucro Líquido</span>
+                  <span className="font-semibold text-blue-600">{formatCurrency(getTotalProfit())}</span>
+                </div>
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Distribuição de Lucro</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Estatísticas</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Margem de Lucro</span>
                   <span className="font-semibold text-green-600">
-                    {((getTotalProfit() / getTotalRevenue()) * 100).toFixed(1)}%
+                    {getTotalRevenue() > 0 ? ((getTotalProfit() / getTotalRevenue()) * 100).toFixed(1) : 0}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Receita Média/Mês</span>
                   <span className="font-semibold text-gray-900">
-                    {formatCurrency(getTotalRevenue() / mockData.financialData.length)}
+                    {reportData.financial?.revenue ? formatCurrency(getTotalRevenue() / reportData.financial.revenue.length) : formatCurrency(0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600">Lucro Médio/Mês</span>
-                  <span className="font-semibold text-green-600">
-                    {formatCurrency(getTotalProfit() / mockData.financialData.length)}
+                  <span className="text-gray-600">Total de Comandas</span>
+                  <span className="font-semibold text-gray-900">
+                    {reportData.financial?.revenue ? reportData.financial.revenue.reduce((sum, item) => sum + item.count, 0) : 0}
                   </span>
                 </div>
               </div>
@@ -305,17 +351,17 @@ export default function RelatoriosPage() {
       )}
 
       {/* Relatório de Clientes */}
-      {selectedReport === 'clients' && (
+      {selectedReport === 'clients' && !loadingData && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Clientes Mais Fiéis</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes Mais Fiéis</h3>
               <div className="space-y-3">
-                {mockData.topClients.map((client, index) => (
+                {reportData.clients?.topClients?.map((client, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div className="flex items-center">
-                      <div className="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center mr-3">
-                        <span className="text-pink-600 font-bold text-sm">{client.name.charAt(0)}</span>
+                      <div className="w-8 h-8 bg-[#D15556] rounded-full flex items-center justify-center mr-3">
+                        <span className="text-white font-bold text-sm">{client.name.charAt(0)}</span>
                       </div>
                       <div>
                         <div className="font-medium text-gray-900">{client.name}</div>
@@ -327,28 +373,24 @@ export default function RelatoriosPage() {
                       <div className="text-sm text-gray-600">Total gasto</div>
                     </div>
                   </div>
-                ))}
+                )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Estatísticas de Clientes</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Estatísticas de Clientes</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-gray-700">Novos Clientes (Mês)</span>
-                  <span className="font-semibold text-blue-600">12</span>
+                  <span className="text-gray-700">Total de Clientes</span>
+                  <span className="font-semibold text-blue-600">{reportData.clients?.stats?.totalClients || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-gray-700">Clientes Ativos</span>
-                  <span className="font-semibold text-green-600">89</span>
+                  <span className="text-gray-700">Novos Clientes (Período)</span>
+                  <span className="font-semibold text-green-600">{reportData.clients?.stats?.newClients || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <span className="text-gray-700">Taxa de Retorno</span>
-                  <span className="font-semibold text-purple-600">78%</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                  <span className="text-gray-700">Frequência Média</span>
-                  <span className="font-semibold text-orange-600">2.3x/mês</span>
+                  <span className="text-gray-700">Clientes Ativos</span>
+                  <span className="font-semibold text-purple-600">{reportData.clients?.topClients?.length || 0}</span>
                 </div>
               </div>
             </div>
@@ -357,16 +399,16 @@ export default function RelatoriosPage() {
       )}
 
       {/* Relatório de Serviços */}
-      {selectedReport === 'services' && (
+      {selectedReport === 'services' && !loadingData && (
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Serviços Mais Vendidos</h3>
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Serviços Mais Vendidos</h3>
             <div className="space-y-4">
-              {mockData.topServices.map((service, index) => (
+              {reportData.services?.topServices?.map((service, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-pink-600 font-bold">{index + 1}</span>
+                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white font-bold">{index + 1}</span>
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{service.name}</div>
@@ -374,27 +416,27 @@ export default function RelatoriosPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-gray-900">{formatCurrency(service.revenue)}</div>
+                    <div className="font-semibold text-gray-900">{formatCurrency(service.totalRevenue)}</div>
                     <div className="text-sm text-gray-600">Receita total</div>
                   </div>
                 </div>
-              ))}
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
             </div>
           </div>
         </div>
       )}
 
       {/* Relatório de Profissionais */}
-      {selectedReport === 'professionals' && (
+      {selectedReport === 'professionals' && !loadingData && (
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance dos Profissionais</h3>
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Performance dos Profissionais</h3>
             <div className="space-y-4">
-              {mockData.topProfessionals.map((professional, index) => (
+              {reportData.professionals?.topProfessionals?.map((professional, index) => (
                 <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                   <div className="flex items-center">
-                    <div className="w-10 h-10 bg-pink-100 rounded-full flex items-center justify-center mr-4">
-                      <span className="text-pink-600 font-bold">{index + 1}</span>
+                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white font-bold">{index + 1}</span>
                     </div>
                     <div>
                       <div className="font-medium text-gray-900">{professional.name}</div>
@@ -406,24 +448,24 @@ export default function RelatoriosPage() {
                     <div className="text-sm text-gray-600">Receita gerada</div>
                   </div>
                 </div>
-              ))}
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
             </div>
           </div>
         </div>
       )}
 
       {/* Relatório de Agendamentos */}
-      {selectedReport === 'appointments' && (
+      {selectedReport === 'appointments' && !loadingData && (
         <div className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Status dos Agendamentos</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Status dos Agendamentos</h3>
               <div className="space-y-4">
-                {mockData.appointmentsByStatus.map((status, index) => (
+                {reportData.appointments?.byStatus?.map((status, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center">
                       <div className="w-4 h-4 rounded-full mr-3" style={{
-                        backgroundColor: ['#10B981', '#3B82F6', '#6B7280', '#EF4444'][index]
+                        backgroundColor: ['#10B981', '#3B82F6', '#6B7280', '#EF4444'][index % 4]
                       }}></div>
                       <span className="text-gray-700">{status.status}</span>
                     </div>
@@ -432,28 +474,20 @@ export default function RelatoriosPage() {
                       <div className="text-sm text-gray-600">{status.percentage}%</div>
                     </div>
                   </div>
-                ))}
+                )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
               </div>
             </div>
 
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Taxa de Ocupação</h3>
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Resumo de Agendamentos</h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <span className="text-gray-700">Horários Ocupados</span>
-                  <span className="font-semibold text-green-600">85%</span>
+                  <span className="text-gray-700">Total de Agendamentos</span>
+                  <span className="font-semibold text-green-600">{reportData.appointments?.total || 0}</span>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <span className="text-gray-700">Taxa de Cancelamento</span>
-                  <span className="font-semibold text-blue-600">4%</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <span className="text-gray-700">Agendamentos/Dia</span>
-                  <span className="font-semibold text-purple-600">12.5</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg">
-                  <span className="text-gray-700">Duração Média</span>
-                  <span className="font-semibold text-orange-600">75 min</span>
+                  <span className="text-gray-700">Período Selecionado</span>
+                  <span className="font-semibold text-blue-600">{periods.find(p => p.value === selectedPeriod)?.label}</span>
                 </div>
               </div>
             </div>
@@ -461,38 +495,14 @@ export default function RelatoriosPage() {
         </div>
       )}
 
-      {/* Botões de Exportação */}
-      <div className="mt-8 bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Exportar Relatórios</h3>
-        <div className="flex flex-wrap gap-4">
-          <button
-            onClick={() => handleExport('pdf')}
-            disabled={isLoading}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            PDF
-          </button>
-          <button
-            onClick={() => handleExport('excel')}
-            disabled={isLoading}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Excel
-          </button>
-          <button
-            onClick={() => handleExport('csv')}
-            disabled={isLoading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center disabled:opacity-50"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            CSV
-          </button>
+      {/* Mensagem quando não há dados */}
+      {!loadingData && Object.keys(reportData).length === 0 && (
+        <div className="bg-white rounded-lg shadow p-12 text-center">
+          <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Nenhum dado encontrado</h3>
+          <p className="text-gray-600">Não há dados disponíveis para o período selecionado.</p>
         </div>
-      </div>
+      )}
     </div>
   )
 }
-
-
