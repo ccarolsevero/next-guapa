@@ -34,19 +34,13 @@ export default function AgendamentoPage() {
   useEffect(() => {
     const loadProfessionals = async () => {
       try {
-        console.log('👥 Carregando profissionais...')
         const response = await fetch('/api/professionals')
-        console.log('👥 Response status:', response.status)
-        
         if (response.ok) {
           const data = await response.json()
-          console.log('👥 Profissionais carregados:', data.length, data)
           setProfessionals(data)
-        } else {
-          console.error('👥 Erro ao carregar profissionais:', response.status)
         }
       } catch (error) {
-        console.error('👥 Erro ao carregar profissionais:', error)
+        console.error('Erro ao carregar profissionais:', error)
       }
     }
     loadProfessionals()
@@ -57,19 +51,13 @@ export default function AgendamentoPage() {
     if (selectedProfessional) {
       const loadServices = async () => {
         try {
-          console.log('🔧 Carregando serviços para profissional:', selectedProfessional._id)
           const response = await fetch(`/api/services?professionalId=${selectedProfessional._id}`)
-          console.log('🔧 Response status:', response.status)
-          
           if (response.ok) {
             const data = await response.json()
-            console.log('🔧 Serviços carregados:', data.length, data)
             setServices(data)
-          } else {
-            console.error('🔧 Erro ao carregar serviços:', response.status)
           }
         } catch (error) {
-          console.error('🔧 Erro ao carregar serviços:', error)
+          console.error('Erro ao carregar serviços:', error)
         }
       }
       loadServices()
@@ -78,31 +66,23 @@ export default function AgendamentoPage() {
 
   // Carregar horários disponíveis quando data e profissional forem selecionados
   useEffect(() => {
-    console.log('🕐 useEffect horários - date:', formData.date, 'professional:', selectedProfessional?._id)
-    
     if (formData.date && selectedProfessional) {
       const loadAvailableTimes = async () => {
         try {
-          console.log('🕐 Carregando horários para:', formData.date, selectedProfessional._id)
           const response = await fetch(`/api/appointments/available-times?date=${formData.date}&professionalId=${selectedProfessional._id}`)
-          console.log('🕐 Response status:', response.status)
-          
           if (response.ok) {
             const data = await response.json()
-            console.log('🕐 Horários disponíveis:', data.availableTimes)
             setAvailableTimes(data.availableTimes || [])
           } else {
-            console.log('🕐 Erro na resposta, usando horários padrão')
             setAvailableTimes(timeSlots)
           }
         } catch (error) {
-          console.error('🕐 Erro ao carregar horários disponíveis:', error)
+          console.error('Erro ao carregar horários disponíveis:', error)
           setAvailableTimes(timeSlots)
         }
       }
       loadAvailableTimes()
     } else {
-      console.log('🕐 Sem data ou profissional, usando horários padrão')
       setAvailableTimes(timeSlots)
     }
   }, [formData.date, selectedProfessional])
@@ -552,7 +532,6 @@ export default function AgendamentoPage() {
                       style={{ color: '#000000' }}
                     >
                       <option value="">Selecione um horário</option>
-                      {console.log('🕐 Renderizando select - availableTimes:', availableTimes, 'length:', availableTimes.length)}
                       {availableTimes.length > 0 ? (
                         availableTimes.map((time) => (
                           <option key={time} value={time}>{time}</option>
