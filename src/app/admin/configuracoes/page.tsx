@@ -30,8 +30,6 @@ interface Configuracao {
     horaInicio: string
     horaFim: string
   }>
-  intervaloAgendamentos: number
-  duracaoMaximaAgendamento: number
   autenticacaoDuasEtapas: boolean
   sessaoAutomatica: boolean
   logAtividades: boolean
@@ -505,37 +503,6 @@ export default function ConfiguracoesPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Intervalos de Agendamento</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Intervalo entre Agendamentos (min)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue="15"
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    style={{ color: '#000000' }}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Duração Máxima de Agendamento (min)
-                  </label>
-                  <input
-                    type="number"
-                    defaultValue="180"
-                    min="0"
-                    className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    style={{ color: '#000000' }}
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
