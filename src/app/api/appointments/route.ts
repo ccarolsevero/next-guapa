@@ -56,6 +56,9 @@ export async function POST(request: NextRequest) {
     
     const body = await request.json()
     
+    console.log('🔍 === API APPOINTMENTS - POST ===')
+    console.log('📝 Dados recebidos:', JSON.stringify(body, null, 2))
+    
     // Validar se já existe agendamento no mesmo horário para o profissional
     const existingAppointment = await Appointment.findOne({
       professionalId: body.professionalId,
@@ -69,6 +72,7 @@ export async function POST(request: NextRequest) {
     })
     
     if (existingAppointment) {
+      console.log('❌ Agendamento já existe neste horário')
       return NextResponse.json(
         { error: 'Já existe um agendamento neste horário para este profissional' },
         { status: 400 }
@@ -80,11 +84,23 @@ export async function POST(request: NextRequest) {
       date: new Date(body.date)
     })
     
+    console.log('💾 Salvando agendamento:', {
+      clientId: appointment.clientId,
+      clientName: appointment.clientName,
+      service: appointment.service,
+      professional: appointment.professional,
+      date: appointment.date,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime
+    })
+    
     await appointment.save()
+    
+    console.log('✅ Agendamento salvo com sucesso:', appointment._id)
     
     return NextResponse.json(appointment, { status: 201 })
   } catch (error) {
-    console.error('Erro ao criar agendamento:', error)
+    console.error('❌ Erro ao criar agendamento:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

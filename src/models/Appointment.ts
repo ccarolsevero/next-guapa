@@ -35,6 +35,12 @@ const appointmentSchema = new Schema<IAppointment>({
     trim: true,
     lowercase: true
   },
+  clientId: {
+    type: String,
+    trim: true,
+    index: true,
+    sparse: true
+  },
   service: {
     type: String,
     required: true,
@@ -91,5 +97,6 @@ appointmentSchema.index({ date: 1, startTime: 1 })
 appointmentSchema.index({ professionalId: 1, date: 1 })
 appointmentSchema.index({ status: 1 })
 appointmentSchema.index({ clientPhone: 1 })
+appointmentSchema.index({ clientId: 1 })
 
 export default mongoose.models.Appointment || mongoose.model<IAppointment>('Appointment', appointmentSchema)
