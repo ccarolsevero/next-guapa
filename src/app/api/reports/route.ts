@@ -85,15 +85,15 @@ export async function GET(request: NextRequest) {
         const clientesAtendidos = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
             $group: {
               _id: '$clienteId',
               totalVisits: { $sum: 1 },
-              totalSpent: { $sum: '$valorTotal' },
-              lastVisit: { $max: '$dataFinalizacao' }
+              totalSpent: { $sum: '$valorFinal' },
+              lastVisit: { $max: '$dataCriacao' }
             }
           },
           {
@@ -160,7 +160,7 @@ export async function GET(request: NextRequest) {
         const taxaRetorno = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
@@ -199,7 +199,7 @@ export async function GET(request: NextRequest) {
           {
             $match: {
               'servicos.servicoId': new ObjectId(serviceId),
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
@@ -214,7 +214,7 @@ export async function GET(request: NextRequest) {
             $group: {
               _id: '$clienteId',
               totalServices: { $sum: 1 },
-              totalSpent: { $sum: '$servicos.valor' }
+              totalSpent: { $sum: '$servicos.preco' }
             }
           },
           {
@@ -275,7 +275,7 @@ export async function GET(request: NextRequest) {
         const retornoProfissional = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
@@ -336,15 +336,15 @@ export async function GET(request: NextRequest) {
         const faturamentoProfissional = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
             $group: {
               _id: '$profissionalId',
-              totalRevenue: { $sum: '$valorTotal' },
+              totalRevenue: { $sum: '$valorFinal' },
               totalComandas: { $sum: 1 },
-              totalCommissions: { $sum: '$comissoes' }
+              totalCommissions: { $sum: '$totalComissao' }
             }
           },
           {
@@ -381,7 +381,7 @@ export async function GET(request: NextRequest) {
         const servicosRealizados = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
@@ -391,7 +391,7 @@ export async function GET(request: NextRequest) {
             $group: {
               _id: '$servicos.servicoId',
               count: { $sum: 1 },
-              totalRevenue: { $sum: '$servicos.valor' }
+              totalRevenue: { $sum: '$servicos.preco' }
             }
           },
           {
@@ -427,7 +427,7 @@ export async function GET(request: NextRequest) {
         const produtosVendidos = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              dataFinalizacao: { $gte: startDate, $lte: endDate }
+              dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
           {
@@ -435,7 +435,7 @@ export async function GET(request: NextRequest) {
           },
           {
             $group: {
-              _id: '$produtos.produtoId',
+              _id: '$produtos.id',
               quantity: { $sum: '$produtos.quantidade' },
               totalRevenue: { $sum: { $multiply: ['$produtos.quantidade', '$produtos.preco'] } }
             }
@@ -471,7 +471,7 @@ export async function GET(request: NextRequest) {
 
       case 'comandas-alteradas':
         const comandasAlteradas = await db.collection('finalizacoes').find({
-          dataFinalizacao: { $gte: startDate, $lte: endDate },
+          dataCriacao: { $gte: startDate, $lte: endDate },
           alterada: true
         }).toArray()
 
@@ -479,8 +479,8 @@ export async function GET(request: NextRequest) {
           id: comanda._id,
           clienteNome: comanda.clienteNome,
           profissionalNome: comanda.profissionalNome,
-          valorTotal: comanda.valorTotal,
-          dataFinalizacao: comanda.dataFinalizacao,
+          valorTotal: comanda.valorFinal,
+          dataFinalizacao: comanda.dataCriacao,
           motivoAlteracao: comanda.motivoAlteracao || 'Não especificado'
         }))
         break
@@ -584,17 +584,17 @@ export async function GET(request: NextRequest) {
           const financialData = await db.collection('finalizacoes').aggregate([
             {
               $match: {
-                dataFinalizacao: { $gte: startDate, $lte: endDate }
+                dataCriacao: { $gte: startDate, $lte: endDate }
               }
             },
             {
               $group: {
                 _id: {
-                  year: { $year: '$dataFinalizacao' },
-                  month: { $month: '$dataFinalizacao' }
+                  year: { $year: '$dataCriacao' },
+                  month: { $month: '$dataCriacao' }
                 },
-                totalRevenue: { $sum: '$valorTotal' },
-                totalCommissions: { $sum: '$comissoes' },
+                totalRevenue: { $sum: '$valorFinal' },
+                totalCommissions: { $sum: '$totalComissao' },
                 count: { $sum: 1 }
               }
             },
@@ -634,13 +634,13 @@ export async function GET(request: NextRequest) {
       const topClients = await db.collection('finalizacoes').aggregate([
         {
           $match: {
-            dataFinalizacao: { $gte: startDate, $lte: now }
+            dataCriacao: { $gte: startDate, $lte: endDate }
           }
         },
         {
           $group: {
             _id: '$clienteId',
-            totalSpent: { $sum: '$valorTotal' },
+            totalSpent: { $sum: '$valorFinal' },
             visits: { $sum: 1 }
           }
         },
