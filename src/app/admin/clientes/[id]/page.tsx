@@ -19,7 +19,8 @@ import {
   Scissors,
   Palette,
   Sparkles,
-  Loader2
+  Loader2,
+  FileText
 } from 'lucide-react'
 
 interface ClienteData {
@@ -173,7 +174,14 @@ export default function ClienteDetalhesPage() {
             <h1 className="text-3xl font-bold text-gray-900">{client.name}</h1>
             <p className="text-gray-600">Detalhes completos do cliente</p>
           </div>
-          <div className="flex space-x-3">
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href={`/admin/clientes/${client._id}/prontuarios`}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Prontuários
+            </Link>
             <Link
               href={`/admin/clientes/${client._id}/historico`}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
