@@ -67,6 +67,7 @@ interface ReportData {
 export default function RelatoriosPage() {
   const [selectedPeriod, setSelectedPeriod] = useState('6months')
   const [selectedReport, setSelectedReport] = useState('financial')
+  const [selectedCategory, setSelectedCategory] = useState('financeiro')
   const [isLoading, setIsLoading] = useState(false)
   const [reportData, setReportData] = useState<ReportData>({})
   const [loadingData, setLoadingData] = useState(true)
@@ -79,11 +80,42 @@ export default function RelatoriosPage() {
   ]
 
   const reports = [
-    { id: 'financial', name: 'Financeiro', icon: DollarSign },
-    { id: 'clients', name: 'Clientes', icon: Users },
-    { id: 'services', name: 'Serviços', icon: BarChart3 },
-    { id: 'professionals', name: 'Profissionais', icon: Activity },
-    { id: 'appointments', name: 'Agendamentos', icon: Calendar }
+    // Relatórios de Clientes
+    { id: 'clientes-aniversariantes', name: 'Clientes Aniversariantes', icon: Calendar, category: 'clientes' },
+    { id: 'clientes-atendidos', name: 'Clientes Atendidos', icon: Users, category: 'clientes' },
+    { id: 'lista-clientes', name: 'Lista de Dados de Todos os Clientes', icon: Users, category: 'clientes' },
+    { id: 'clientes-credito-debito', name: 'Clientes com Crédito e/ou Débito', icon: DollarSign, category: 'clientes' },
+    { id: 'taxa-retorno', name: 'Taxa de Retorno dos Clientes', icon: TrendingUp, category: 'clientes' },
+    { id: 'clientes-servico-especifico', name: 'Clientes que Fizeram Serviço Específico', icon: BarChart3, category: 'clientes' },
+    { id: 'clientes-faixa-etaria', name: 'Clientes por Faixa Etária', icon: Users, category: 'clientes' },
+    { id: 'retorno-profissional', name: 'Retorno de Clientes por Profissional', icon: Activity, category: 'clientes' },
+    { id: 'clientes-agendamentos', name: 'Clientes com Agendamentos', icon: Calendar, category: 'clientes' },
+    { id: 'clientes-agendamentos-cancelados', name: 'Clientes com Agendamentos Cancelados', icon: Calendar, category: 'clientes' },
+    
+    // Relatórios de Profissionais
+    { id: 'faturamento-profissional', name: 'Faturamento por Profissional', icon: DollarSign, category: 'profissionais' },
+    { id: 'servicos-realizados', name: 'Serviços Realizados no Período', icon: BarChart3, category: 'profissionais' },
+    
+    // Relatórios de Serviços
+    { id: 'servicos-mais-vendidos', name: 'Serviços Mais Vendidos', icon: BarChart3, category: 'servicos' },
+    
+    // Relatórios de Produtos
+    { id: 'produtos-vendidos', name: 'Produtos Vendidos', icon: BarChart3, category: 'produtos' },
+    
+    // Relatórios de Comandas
+    { id: 'comandas-alteradas', name: 'Comandas Alteradas no Período', icon: BarChart3, category: 'comandas' },
+    
+    // Relatórios Financeiros
+    { id: 'financial', name: 'Relatório Financeiro Geral', icon: DollarSign, category: 'financeiro' }
+  ]
+
+  const categories = [
+    { id: 'clientes', name: 'Clientes', icon: Users },
+    { id: 'profissionais', name: 'Profissionais', icon: Activity },
+    { id: 'servicos', name: 'Serviços', icon: BarChart3 },
+    { id: 'produtos', name: 'Produtos', icon: BarChart3 },
+    { id: 'comandas', name: 'Comandas', icon: BarChart3 },
+    { id: 'financeiro', name: 'Financeiro', icon: DollarSign }
   ]
 
   // Carregar dados dos relatórios
@@ -91,12 +123,17 @@ export default function RelatoriosPage() {
     const loadReportData = async () => {
       setLoadingData(true)
       try {
+        console.log('🔄 Carregando relatório:', { selectedReport, selectedPeriod })
         const response = await fetch(`/api/reports?period=${selectedPeriod}&type=${selectedReport}`)
+        console.log('📡 Resposta da API:', response.status, response.ok)
+        
         if (response.ok) {
           const data = await response.json()
+          console.log('📊 Dados recebidos:', data)
           setReportData(data)
         } else {
-          console.error('Erro ao carregar dados dos relatórios')
+          const errorData = await response.json()
+          console.error('Erro ao carregar dados dos relatórios:', errorData)
         }
       } catch (error) {
         console.error('Erro ao carregar dados dos relatórios:', error)
@@ -184,24 +221,63 @@ export default function RelatoriosPage() {
           Tipo de Relatório
         </h2>
         
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {reports.map((report) => {
-            const IconComponent = report.icon
-            return (
-              <button
-                key={report.id}
-                onClick={() => setSelectedReport(report.id)}
-                className={`p-4 rounded-lg border transition-colors ${
-                  selectedReport === report.id
-                    ? 'border-[#D15556] bg-[#D15556] text-white'
-                    : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
-                }`}
-              >
-                <IconComponent className="w-6 h-6 mx-auto mb-2" />
-                <div className="text-sm font-medium">{report.name}</div>
-              </button>
-            )
-          })}
+        {/* Categorias */}
+        <div className="mb-6">
+          <h3 className="text-md font-medium text-[#006D5B] mb-3">Categorias</h3>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => {
+              const IconComponent = category.icon
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    setSelectedCategory(category.id)
+                    // Selecionar o primeiro relatório da categoria
+                    const firstReport = reports.find(r => r.category === category.id)
+                    if (firstReport) {
+                      setSelectedReport(firstReport.id)
+                    }
+                  }}
+                  className={`px-4 py-2 rounded-lg border transition-colors flex items-center ${
+                    selectedCategory === category.id
+                      ? 'border-[#D15556] bg-[#D15556] text-white'
+                      : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
+                  }`}
+                >
+                  <IconComponent className="w-4 h-4 mr-2" />
+                  <span className="text-sm font-medium">{category.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Lista de Relatórios da Categoria Selecionada */}
+        <div>
+          <h3 className="text-md font-medium text-[#006D5B] mb-3">
+            Relatórios de {categories.find(c => c.id === selectedCategory)?.name}
+          </h3>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {reports
+              .filter(report => report.category === selectedCategory)
+              .map((report) => {
+                const IconComponent = report.icon
+                return (
+                  <button
+                    key={report.id}
+                    onClick={() => setSelectedReport(report.id)}
+                    className={`w-full p-3 rounded-lg border transition-colors flex items-center text-left ${
+                      selectedReport === report.id
+                        ? 'border-[#D15556] bg-[#D15556] text-white'
+                        : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
+                    }`}
+                  >
+                    <IconComponent className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <span className="text-sm font-medium">{report.name}</span>
+                  </button>
+                )
+              })}
+          </div>
         </div>
       </div>
 
@@ -269,6 +345,247 @@ export default function RelatoriosPage() {
         <div className="flex justify-center items-center py-12">
           <Loader2 className="w-8 h-8 animate-spin text-[#D15556]" />
           <span className="ml-2 text-gray-600">Carregando dados...</span>
+        </div>
+      )}
+
+      {/* Relatórios de Clientes */}
+      {selectedReport === 'clientes-aniversariantes' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes Aniversariantes do Mês</h3>
+            <div className="space-y-3">
+              {reportData.aniversariantes?.map((cliente, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-[#D15556] rounded-full flex items-center justify-center mr-3">
+                      <span className="text-white font-bold text-sm">{cliente.name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{cliente.name}</div>
+                      <div className="text-sm text-gray-600">{cliente.age} anos</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{cliente.phone}</div>
+                    <div className="text-sm text-gray-600">{cliente.email}</div>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum aniversariante encontrado este mês</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'clientes-atendidos' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes Atendidos no Período</h3>
+            <div className="space-y-3">
+              {reportData.clientesAtendidos?.map((cliente, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-[#D15556] rounded-full flex items-center justify-center mr-3">
+                      <span className="text-white font-bold text-sm">{cliente.name.charAt(0)}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{cliente.name}</div>
+                      <div className="text-sm text-gray-600">{cliente.totalVisits} visitas</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{formatCurrency(cliente.totalSpent)}</div>
+                    <div className="text-sm text-gray-600">Última visita: {new Date(cliente.lastVisit).toLocaleDateString('pt-BR')}</div>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'lista-clientes' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Lista Completa de Clientes</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastro</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {reportData.todosClientes?.map((cliente, index) => (
+                    <tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cliente.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.phone}</td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          cliente.isCompleteProfile ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {cliente.isCompleteProfile ? 'Completo' : 'Incompleto'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(cliente.createdAt).toLocaleDateString('pt-BR')}
+                      </td>
+                    </tr>
+                  )) || <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">Nenhum dado disponível</td></tr>}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'taxa-retorno' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Taxa de Retorno dos Clientes</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-blue-600">{reportData.taxaRetorno?.totalClients || 0}</div>
+                <div className="text-sm text-blue-800">Total de Clientes</div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">{reportData.taxaRetorno?.returningClients || 0}</div>
+                <div className="text-sm text-green-800">Clientes que Retornaram</div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">{reportData.taxaRetorno?.returnRate || 0}%</div>
+                <div className="text-sm text-purple-800">Taxa de Retorno</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'clientes-faixa-etaria' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes por Faixa Etária</h3>
+            <div className="space-y-4">
+              {reportData.faixasEtarias && Object.entries(reportData.faixasEtarias).map(([faixa, quantidade]) => (
+                <div key={faixa} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <span className="font-medium text-gray-900">{faixa} anos</span>
+                  <span className="text-lg font-bold text-[#D15556]">{quantidade} clientes</span>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'faturamento-profissional' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Faturamento por Profissional</h3>
+            <div className="space-y-4">
+              {reportData.faturamentoProfissional?.map((profissional, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white font-bold">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{profissional.name}</div>
+                      <div className="text-sm text-gray-600">{profissional.totalComandas} comandas</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{formatCurrency(profissional.totalRevenue)}</div>
+                    <div className="text-sm text-gray-600">Ticket médio: {formatCurrency(profissional.averageTicket)}</div>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'servicos-realizados' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Serviços Realizados no Período</h3>
+            <div className="space-y-4">
+              {reportData.servicosRealizados?.map((servico, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white font-bold">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{servico.name}</div>
+                      <div className="text-sm text-gray-600">{servico.count} realizados</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{formatCurrency(servico.totalRevenue)}</div>
+                    <div className="text-sm text-gray-600">Preço médio: {formatCurrency(servico.averagePrice)}</div>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'produtos-vendidos' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Produtos Vendidos no Período</h3>
+            <div className="space-y-4">
+              {reportData.produtosVendidos?.map((produto, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                      <span className="text-white font-bold">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-gray-900">{produto.name}</div>
+                      <div className="text-sm text-gray-600">{produto.quantity} unidades</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-semibold text-gray-900">{formatCurrency(produto.totalRevenue)}</div>
+                    <div className="text-sm text-gray-600">Preço médio: {formatCurrency(produto.averagePrice)}</div>
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedReport === 'comandas-alteradas' && !loadingData && (
+        <div className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Comandas Alteradas no Período</h3>
+            <div className="space-y-4">
+              {reportData.comandasAlteradas?.map((comanda, index) => (
+                <div key={index} className="p-4 bg-gray-50 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <div className="font-medium text-gray-900">{comanda.clienteNome}</div>
+                      <div className="text-sm text-gray-600">Profissional: {comanda.profissionalNome}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">{formatCurrency(comanda.valorTotal)}</div>
+                      <div className="text-sm text-gray-600">{new Date(comanda.dataFinalizacao).toLocaleDateString('pt-BR')}</div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <strong>Motivo da alteração:</strong> {comanda.motivoAlteracao}
+                  </div>
+                </div>
+              )) || <p className="text-gray-500 text-center py-4">Nenhuma comanda alterada no período</p>}
+            </div>
+          </div>
         </div>
       )}
 
