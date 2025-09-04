@@ -33,8 +33,19 @@ export async function GET(
       {
         $lookup: {
           from: 'professionals',
-          localField: 'professionalId',
-          foreignField: '_id',
+          let: { profId: '$professionalId' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    { $eq: ['$_id', { $toObjectId: '$$profId' }] },
+                    { $eq: [{ $toString: '$_id' }, '$$profId'] }
+                  ]
+                }
+              }
+            }
+          ],
           as: 'professionalData'
         }
       },

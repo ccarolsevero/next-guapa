@@ -75,6 +75,9 @@ export default function ClienteDetalhesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
+  const [editingNotes, setEditingNotes] = useState(false)
+  const [notesText, setNotesText] = useState('')
+  const [savingNotes, setSavingNotes] = useState(false)
 
   useEffect(() => {
     const fetchClientData = async () => {
@@ -90,6 +93,7 @@ export default function ClienteDetalhesPage() {
         
         const data = await response.json()
         setClient(data)
+        setNotesText(data.notes || '')
       } catch (err) {
         console.error('Erro ao buscar dados do cliente:', err)
         setError(err instanceof Error ? err.message : 'Erro desconhecido')
@@ -121,6 +125,41 @@ export default function ClienteDetalhesPage() {
       case 'DEBIT_CARD': return '💳'
       default: return '💳'
     }
+  }
+
+  const handleSaveNotes = async () => {
+    if (!client) return
+    
+    try {
+      setSavingNotes(true)
+      
+      const response = await fetch(`/api/clients/${client._id}/notes`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ notes: notesText }),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Erro ao salvar observações')
+      }
+      
+      // Atualizar o estado local
+      setClient(prev => prev ? { ...prev, notes: notesText } : null)
+      setEditingNotes(false)
+      
+    } catch (err) {
+      console.error('Erro ao salvar observações:', err)
+      alert('Erro ao salvar observações. Tente novamente.')
+    } finally {
+      setSavingNotes(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setNotesText(client?.notes || '')
+    setEditingNotes(false)
   }
 
   if (loading) {
@@ -249,15 +288,61 @@ export default function ClienteDetalhesPage() {
               </div>
             </div>
             
-            {client.notes && (
-              <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-2 flex items-center">
+            <div className="mt-6 p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-semibold text-gray-900 flex items-center">
                   <Star className="w-4 h-4 text-[#D15556] mr-2" />
                   Observações
                 </h3>
-                <p className="text-gray-700 leading-relaxed">{client.notes}</p>
+                {!editingNotes && (
+                  <button
+                    onClick={() => setEditingNotes(true)}
+                    className="text-[#D15556] hover:text-[#B84444] transition-colors flex items-center text-sm"
+                  >
+                    <Edit className="w-4 h-4 mr-1" />
+                    Editar
+                  </button>
+                )}
               </div>
-            )}
+              
+              {editingNotes ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={notesText}
+                    onChange={(e) => setNotesText(e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent resize-none"
+                    rows={4}
+                    placeholder="Digite suas observações sobre o cliente..."
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleSaveNotes}
+                      disabled={savingNotes}
+                      className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#B84444] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                    >
+                      {savingNotes ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        'Salvar'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-700 leading-relaxed">
+                  {client.notes || 'Nenhuma observação registrada.'}
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
