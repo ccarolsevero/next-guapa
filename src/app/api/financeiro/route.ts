@@ -84,91 +84,30 @@ export async function GET(request: NextRequest) {
     // 1. Buscar comandas finalizadas para calcular faturamento
     console.log('💰 Buscando comandas finalizadas...')
     
-    // Primeiro, vamos ver todas as comandas para entender a estrutura
-    const todasComandas = await db.collection('comandas').find({}).toArray()
-    console.log('📊 Total de comandas no banco:', todasComandas.length)
-    
-    // Verificar status das comandas
-    const statusComandas = await db.collection('comandas').aggregate([
-      {
-        $group: {
-          _id: '$status',
-          count: { $sum: 1 }
-        }
-      }
-    ]).toArray()
-    console.log('📊 Status das comandas:', statusComandas)
-    
-    // Buscar comandas finalizadas
     const comandasFinalizadas = await db.collection('comandas').find({
       status: 'finalizada'
     }).toArray()
     
-    console.log('📊 Comandas finalizadas encontradas:', comandasFinalizadas.length)
+    console.log('📊 Total de comandas finalizadas:', comandasFinalizadas.length)
     
-    // Se não encontrar comandas finalizadas, buscar por outros critérios
-    if (comandasFinalizadas.length === 0) {
-      console.log('🔍 Tentando buscar comandas com outros critérios...')
-      
-          // Buscar comandas com dataFim
-    const comandasComData = await db.collection('comandas').find({
-      dataFim: { $exists: true }
-    }).toArray()
-    console.log('📊 Comandas com dataFim:', comandasComData.length)
-      
-      // Buscar comandas com valorTotal
-      const comandasComValor = await db.collection('comandas').find({
-        valorTotal: { $exists: true, $gt: 0 }
-      }).toArray()
-      console.log('📊 Comandas com valorTotal:', comandasComValor.length)
-      
-      // Usar comandas com valorTotal se não encontrar finalizadas
-      if (comandasComValor.length > 0) {
-        console.log('✅ Usando comandas com valorTotal para cálculos')
-        comandasFinalizadas.push(...comandasComValor)
-      }
-    }
-    
-    // Calcular faturamento total das comandas
+    // Calcular faturamento total
     const totalFaturamento = comandasFinalizadas.reduce((sum: number, comanda: Document) => {
       return sum + (comanda.valorTotal || 0)
     }, 0)
     
-    // Calcular comissões totais das comandas
-    const totalComissoes = comandasFinalizadas.reduce((sum: number, comanda: Document) => {
-      let comissaoTotal = 0
-      
-      // Comissões de serviços (10%)
-      if (comanda.servicos && Array.isArray(comanda.servicos)) {
-        comanda.servicos.forEach((servico: Document) => {
-          comissaoTotal += (servico.preco || 0) * 0.10
-        })
-      }
-      
-      // Comissões de produtos (15%)
-      if (comanda.produtos && Array.isArray(comanda.produtos)) {
-        comanda.produtos.forEach((produto: Document) => {
-          comissaoTotal += (produto.preco || 0) * 0.15
-        })
-      }
-      
-      return sum + comissaoTotal
-    }, 0)
-    
-    // 2. Buscar comissões por profissional das comandas
+    // 2. Calcular comissões por profissional
     console.log('👥 Buscando comissões por profissional...')
-    const comissoesPorProfissional = []
     
-    // Agrupar comissões por profissional
+    const comissoesPorProfissional: any[] = []
     const comissoesPorProf = new Map()
     
     comandasFinalizadas.forEach((comanda: Document) => {
-      // Comissões de serviços
+      // Comissões de serviços (10%)
       if (comanda.servicos && Array.isArray(comanda.servicos)) {
         comanda.servicos.forEach((servico: Document) => {
           const servicoData = servico as any
           const comandaData = comanda as any
-          const profissionalId = comandaData.profissionalId || comandaData._id
+          const profissionalId = comandaData.profissionalId || 'profissional'
           const profissionalNome = comandaData.profissionalNome || 'Profissional não definido'
           const comissao = (servicoData.preco || 0) * 0.10
           
@@ -194,7 +133,7 @@ export async function GET(request: NextRequest) {
         })
       }
       
-      // Comissões de produtos
+      // Comissões de produtos (15%)
       if (comanda.produtos && Array.isArray(comanda.produtos)) {
         comanda.produtos.forEach((produto: Document) => {
           const produtoData = produto as any
@@ -264,15 +203,6 @@ export async function GET(request: NextRequest) {
       })
     }
 
-      console.log('💳 Métodos de pagamento criados:', metodosPagamento)
-    }
-
-
-
-    // Debug: verificar o que está sendo retornado
-    console.log('💳 Métodos de pagamento encontrados:', metodosPagamento)
-    console.log('💳 Estrutura dos métodos:', JSON.stringify(metodosPagamento, null, 2))
-    
     // 4. Buscar pagamentos recentes das finalizações
     const pagamentosRecentes = await db.collection('finalizacoes').aggregate([
       {
@@ -311,10 +241,9 @@ export async function GET(request: NextRequest) {
       }
     ]).toArray()
 
-
-    
     // 5. Calcular totais
     const totalComandas = comandasFinalizadas.length
+    const totalComissoes = comissoesPorProfissional.reduce((sum, comissao) => sum + comissao.totalComissao, 0)
     
     // 6. Calcular total de despesas
     const despesas = await db.collection('despesas').find({
@@ -336,7 +265,7 @@ export async function GET(request: NextRequest) {
       const comandaData = comanda as Comanda
       return {
         month: new Date(comandaData.dataFim || comandaData.createdAt).toLocaleDateString('pt-BR', { month: 'short' }),
-        amount: comandaData.valorTotal || 0 // Assuming valorTotal is the total amount for expenses
+        amount: comandaData.valorTotal || 0
       }
     })
     
