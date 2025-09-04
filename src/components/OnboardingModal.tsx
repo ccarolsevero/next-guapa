@@ -149,7 +149,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
                   errors.name ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Digite seu nome completo"
@@ -167,7 +167,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
                   errors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Digite seu email"
@@ -188,7 +188,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
                   errors.phone ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="(11) 99999-9999"
@@ -206,7 +206,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="date"
                 value={formData.birthDate}
                 onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
               />
             </div>
 
@@ -220,7 +220,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="text"
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 placeholder="Rua, número, bairro, cidade"
               />
             </div>
@@ -235,7 +235,7 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                 type="password"
                 value={formData.newPassword}
                 onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
                   errors.newPassword ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Mínimo 6 caracteres"
@@ -254,9 +254,9 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
                   type="password"
                   value={formData.confirmPassword}
                   onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent ${
-                    errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  }`}
+                                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
+                  errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
+                }`}
                   placeholder="Confirme sua nova senha"
                 />
                 {errors.confirmPassword && <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>}
