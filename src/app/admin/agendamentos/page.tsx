@@ -756,6 +756,19 @@ export default function AgendamentosPage() {
                     <div className="text-xs truncate leading-tight opacity-90">
                       {appointment.service}
                     </div>
+                    {/* Etiqueta selecionada */}
+                    {appointment.customLabels && appointment.customLabels.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {appointment.customLabels.slice(0, 1).map((label: any) => (
+                          <span
+                            key={label.id}
+                            className={`px-1.5 py-0.5 rounded text-xs font-medium ${label.color} opacity-90`}
+                          >
+                            {label.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                     <div className="text-xs truncate leading-tight opacity-90 font-medium">
                       {appointment.clientName}
                     </div>
