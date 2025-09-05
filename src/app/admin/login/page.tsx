@@ -35,17 +35,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-[#EED7B6]/30 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F5F0E8] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <Link href="/" className="text-2xl font-light text-gray-900 tracking-wide hover:text-[#D15556] transition-colors">
-            Espaço Guapa
+          <Link href="/" className="flex items-center justify-center mb-6">
+            <img 
+              src="/assents/logonavbarg.svg" 
+              alt="Espaço Guapa" 
+              className="h-16 sm:h-20 w-auto"
+              style={{ 
+                filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
+              }}
+            />
           </Link>
-          <h2 className="mt-6 text-3xl font-light text-gray-900">Área Administrativa</h2>
+          <h2 className="text-2xl sm:text-3xl font-light text-[#006D5B]">Área Administrativa</h2>
           <p className="mt-2 text-sm text-gray-600">Faça login para acessar o painel</p>
         </div>
         
-        <div className="bg-white border border-gray-100 p-8 shadow-sm">
+        <div className="bg-white border border-gray-100 p-6 sm:p-8 shadow-lg rounded-lg">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -134,7 +141,7 @@ export default function LoginPage() {
         <div className="text-center">
           <Link 
             href="/" 
-            className="text-sm text-[#D15556] hover:text-[#c04546] transition-colors"
+            className="text-sm text-[#D15556] hover:text-[#c04546] transition-colors font-medium"
           >
             ← Voltar para o site
           </Link>

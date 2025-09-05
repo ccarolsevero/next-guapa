@@ -141,11 +141,46 @@ export default function RecomendacoesClientePage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-center h-64">
-          <div className="flex items-center space-x-2">
-            <Loader2 className="w-6 h-6 animate-spin text-[#D15556]" />
-            <span className="text-gray-600">Carregando suas recomendações...</span>
+      <div className="min-h-screen bg-[#F5F0E8]">
+        {/* Header */}
+        <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-2 md:py-4">
+              <div className="flex items-center min-w-0 flex-1">
+                <Link href="/" className="flex items-center">
+                  <img 
+                    src="/assents/logonavbarg.svg" 
+                    alt="Espaço Guapa" 
+                    className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto"
+                    style={{ 
+                      filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
+                    }}
+                  />
+                </Link>
+              </div>
+              <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                <Link
+                  href="/painel-cliente"
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-xs sm:text-sm p-2 rounded-md hover:bg-gray-100"
+                  title="Voltar"
+                >
+                  ← Voltar
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Spacer para compensar navbar fixa */}
+        <div className="h-16 sm:h-20 md:h-24"></div>
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="w-6 h-6 animate-spin text-[#D15556]" />
+              <span className="text-gray-600">Carregando suas recomendações...</span>
+            </div>
           </div>
         </div>
       </div>
@@ -154,12 +189,47 @@ export default function RecomendacoesClientePage() {
 
   if (error) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">
-            <Lightbulb className="w-16 h-16 mx-auto mb-2" />
-            <h2 className="text-xl font-semibold">Erro ao carregar</h2>
-            <p className="text-gray-600">{error}</p>
+      <div className="min-h-screen bg-[#F5F0E8]">
+        {/* Header */}
+        <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-2 md:py-4">
+              <div className="flex items-center min-w-0 flex-1">
+                <Link href="/" className="flex items-center">
+                  <img 
+                    src="/assents/logonavbarg.svg" 
+                    alt="Espaço Guapa" 
+                    className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto"
+                    style={{ 
+                      filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
+                    }}
+                  />
+                </Link>
+              </div>
+              <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+                <Link
+                  href="/painel-cliente"
+                  className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-xs sm:text-sm p-2 rounded-md hover:bg-gray-100"
+                  title="Voltar"
+                >
+                  ← Voltar
+                </Link>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Spacer para compensar navbar fixa */}
+        <div className="h-16 sm:h-20 md:h-24"></div>
+
+        {/* Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+          <div className="text-center">
+            <div className="text-red-600 mb-4">
+              <Lightbulb className="w-16 h-16 mx-auto mb-2" />
+              <h2 className="text-xl font-semibold">Erro ao carregar</h2>
+              <p className="text-gray-600">{error}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -167,17 +237,51 @@ export default function RecomendacoesClientePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#F5F0E8]">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <Lightbulb className="w-8 h-8 text-orange-600 mr-3" />
-          Orientações e Cuidados
-        </h1>
-        <p className="text-gray-600 mt-2">
-          Orientações e cuidados pós-atendimento dos nossos profissionais
-        </p>
-      </div>
+      <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-2 md:py-4">
+            <div className="flex items-center min-w-0 flex-1">
+              <Link href="/" className="flex items-center">
+                <img 
+                  src="/assents/logonavbarg.svg" 
+                  alt="Espaço Guapa" 
+                  className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto"
+                  style={{ 
+                    filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
+                  }}
+                />
+              </Link>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+              <Link
+                href="/painel-cliente"
+                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-xs sm:text-sm p-2 rounded-md hover:bg-gray-100"
+                title="Voltar"
+              >
+                ← Voltar
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Spacer para compensar navbar fixa */}
+      <div className="h-16 sm:h-20 md:h-24"></div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#006D5B] flex items-center">
+            <Lightbulb className="w-6 h-6 sm:w-8 sm:h-8 text-[#D15556] mr-3" />
+            Orientações e Cuidados
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Orientações e cuidados pós-atendimento dos nossos profissionais
+          </p>
+        </div>
 
       {/* Lista de Recomendações */}
       <div className="space-y-6">
@@ -289,6 +393,7 @@ export default function RecomendacoesClientePage() {
             </p>
           </div>
         )}
+      </div>
       </div>
     </div>
   )
