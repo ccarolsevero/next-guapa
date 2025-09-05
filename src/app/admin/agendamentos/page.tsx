@@ -462,7 +462,10 @@ export default function AgendamentosPage() {
     setAppointmentServices(prev => 
       prev.map(service => 
         service.id === serviceId 
-          ? { ...service, [field]: value }
+          ? { 
+              ...service, 
+              [field]: field === 'price' || field === 'duration' ? Number(value) || 0 : value 
+            }
           : service
       )
     )
@@ -491,16 +494,18 @@ export default function AgendamentosPage() {
         professionalId: selectedAppointment.professionalId,
         status: 'em_atendimento',
         servicos: appointmentServices.map(service => ({
+          servicoId: '', // Será preenchido se necessário
           nome: service.service,
+          preco: Number(service.price) || 0, // Garantir que é número
+          quantidade: 1, // Quantidade padrão
           profissional: service.professional,
           duracao: service.duration,
           horarioInicio: service.startTime,
-          horarioFim: service.endTime,
-          preco: service.price
+          horarioFim: service.endTime
         })),
         produtos: [],
         observacoes: selectedAppointment.notes || '',
-        valorTotal: appointmentServices.reduce((total, service) => total + service.price, 0)
+        valorTotal: appointmentServices.reduce((total, service) => total + (Number(service.price) || 0), 0)
       }
 
       console.log('🔄 Criando comanda com dados:', comandaData)
@@ -553,7 +558,7 @@ export default function AgendamentosPage() {
         duration: 60, // Valor padrão
         startTime: selectedAppointment.startTime,
         endTime: selectedAppointment.endTime,
-        price: selectedAppointment.price
+        price: Number(selectedAppointment.price) || 0 // Garantir que é número
       }
       setAppointmentServices([initialService])
     } else {
