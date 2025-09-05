@@ -45,6 +45,29 @@ interface Comanda {
   observacoes?: string
 }
 
+interface Appointment {
+  _id: string
+  clientName: string
+  clientPhone: string
+  clientId: string
+  service: string
+  professional: string
+  professionalId: string
+  date: string
+  startTime: string
+  endTime: string
+  status: 'SCHEDULED' | 'CONFIRMED' | 'PENDING' | 'IN_PROGRESS' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
+  price: number
+  notes?: string
+  customLabels?: Array<{
+    id: number
+    name: string
+    color: string
+  }>
+  createdAt: string
+  updatedAt: string
+}
+
 export default function HistoricoClientePage() {
   const router = useRouter()
   const params = useParams()
@@ -52,6 +75,7 @@ export default function HistoricoClientePage() {
 
   const [client, setClient] = useState<Cliente | null>(null)
   const [comandas, setComandas] = useState<Comanda[]>([])
+  const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedVisit, setSelectedVisit] = useState<Comanda | null>(null)
 
@@ -99,6 +123,23 @@ export default function HistoricoClientePage() {
           const errorData = await comandasResponse.json()
           console.error('❌ Detalhes do erro:', errorData)
         }
+
+        // Buscar agendamentos do cliente
+        const appointmentsResponse = await fetch(`/api/appointments?clientId=${clientId}`)
+        console.log('📡 Resposta da API agendamentos:', appointmentsResponse.status)
+        
+        if (appointmentsResponse.ok) {
+          const appointmentsData = await appointmentsResponse.json()
+          console.log('📦 Dados dos agendamentos recebidos:', appointmentsData)
+          console.log('🔍 Total de agendamentos retornados:', appointmentsData.length || 0)
+          
+          setAppointments(appointmentsData || [])
+          console.log('✅ Agendamentos carregados:', appointmentsData.length || 0)
+        } else {
+          console.error('❌ Erro ao buscar agendamentos:', appointmentsResponse.status)
+          const errorData = await appointmentsResponse.json()
+          console.error('❌ Detalhes do erro:', errorData)
+        }
         
       } catch (error) {
         console.error('❌ Erro ao buscar dados:', error)
@@ -125,6 +166,27 @@ export default function HistoricoClientePage() {
       return new Date(dateB).getTime() - new Date(dateA).getTime()
     })
     return sorted[0]
+  }
+
+  // Filtrar agendamentos cancelados e faltas
+  const getCancelledAppointments = () => {
+    return appointments.filter(apt => apt.status === 'CANCELLED' || apt.status === 'NO_SHOW')
+  }
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'CANCELLED': return 'Cancelado'
+      case 'NO_SHOW': return 'Faltou'
+      default: return status
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'CANCELLED': return 'bg-red-100 text-red-800 border-red-200'
+      case 'NO_SHOW': return 'bg-orange-100 text-orange-800 border-orange-200'
+      default: return 'bg-gray-100 text-gray-800 border-gray-200'
+    }
   }
 
   const formatDate = (dateString: string) => {
@@ -361,6 +423,79 @@ export default function HistoricoClientePage() {
             </div>
           )}
         </div>
+
+        {/* Agendamentos Cancelados/Faltas */}
+        {getCancelledAppointments().length > 0 && (
+          <div className="bg-white border border-gray-100 mt-8">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-medium text-gray-900 flex items-center">
+                <span className="text-red-500 mr-2">⚠️</span>
+                Agendamentos Cancelados/Faltas
+              </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Histórico de agendamentos que foram cancelados ou onde o cliente faltou
+              </p>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Data/Hora
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Serviço
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Profissional
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Valor
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Observações
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {getCancelledAppointments().map((appointment) => (
+                    <tr key={appointment._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-900">
+                          {formatDate(appointment.date)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {appointment.startTime} - {appointment.endTime}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {appointment.service}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {appointment.professional}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        R$ {appointment.price.toFixed(2)}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(appointment.status)}`}>
+                          {getStatusText(appointment.status)}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {appointment.notes || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
