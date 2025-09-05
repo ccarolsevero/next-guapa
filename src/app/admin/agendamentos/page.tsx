@@ -954,20 +954,20 @@ export default function AgendamentosPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#F5F0E8] p-6">
+    <div className="min-h-screen bg-[#F5F0E8] p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="sm:flex sm:items-center sm:justify-between mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 sm:mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-[#006D5B]">Agenda</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#006D5B]">Agenda</h1>
             <p className="mt-2 text-sm text-gray-700">
               Gerencie todos os agendamentos do salão
             </p>
           </div>
-          <div className="mt-4 sm:mt-0 flex space-x-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <Link
               href="/admin/agendamentos/novo"
-              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
+              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center justify-center w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 mr-2" />
               Novo Agendamento
@@ -1155,10 +1155,10 @@ export default function AgendamentosPage() {
 
         {/* Modal de Edição de Agendamento */}
         {showEditModal && selectedAppointment && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mb-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
               {/* Header do Modal */}
-              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex space-x-1">
                   <button
                     onClick={() => setActiveTab('reserva')}
@@ -1192,7 +1192,7 @@ export default function AgendamentosPage() {
               </div>
 
               {/* Conteúdo do Modal */}
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
                 {activeTab === 'reserva' ? (
                   <div className="space-y-6">
                     {/* Informações do Cliente */}
@@ -1307,7 +1307,8 @@ export default function AgendamentosPage() {
 
                     {/* Tabela de Serviços */}
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
-                      <table className="w-full">
+                      <div className="overflow-x-auto">
+                        <table className="w-full min-w-[600px]">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
@@ -1417,7 +1418,8 @@ export default function AgendamentosPage() {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                        </table>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -1552,7 +1554,7 @@ export default function AgendamentosPage() {
               </div>
 
               {/* Footer do Modal */}
-              <div className="flex items-center justify-end space-x-3 p-6 pb-8 border-t border-gray-200">
+              <div className="flex items-center justify-end space-x-3 p-4 sm:p-6 pb-6 sm:pb-8 border-t border-gray-200">
                 <button
                   onClick={closeEditModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
@@ -1572,9 +1574,9 @@ export default function AgendamentosPage() {
 
         {/* Modal de Etiquetas Customizadas */}
         {showCustomLabelModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
-              <div className="p-6 pb-8">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+              <div className="p-4 sm:p-6 pb-6 sm:pb-8">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Criar Nova Etiqueta</h3>
                 
                 <div className="space-y-4">

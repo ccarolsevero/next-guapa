@@ -501,29 +501,30 @@ function PainelClienteContent() {
       {/* Header */}
       <header className="border-b border-[#e6d1b8] fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-1 md:py-0">
-            <div className="flex items-center">
+          <div className="flex justify-between items-center py-2 md:py-4">
+            <div className="flex items-center min-w-0 flex-1">
               <Link href="/" className="flex items-center">
                 <img 
                   src="/assents/logonavbarg.svg" 
                   alt="Espaço Guapa" 
-                  className="h-16 md:h-[120px] w-auto"
+                  className="h-12 sm:h-16 md:h-20 lg:h-24 w-auto"
                   style={{ 
                     filter: 'brightness(0) saturate(100%) invert(27%) sepia(51%) saturate(2878%) hue-rotate(332deg) brightness(86%) contrast(101%)'
                   }}
                 />
               </Link>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-[#d34d4c] font-medium text-sm">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+              <span className="text-[#d34d4c] font-medium text-xs sm:text-sm hidden sm:inline">
                 Olá, {client?.name.split(' ')[0]}!
               </span>
               <button
                 onClick={handleLogout}
-                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-sm"
+                className="text-[#d34d4c] hover:text-[#b83e3d] transition-colors font-medium text-xs sm:text-sm p-2 rounded-md hover:bg-gray-100"
+                title="Sair"
               >
-                <LogOut className="w-4 h-4 inline mr-1" />
-                Sair
+                <LogOut className="w-4 h-4 sm:inline mr-1" />
+                <span className="hidden sm:inline">Sair</span>
               </button>
             </div>
           </div>
@@ -531,91 +532,91 @@ function PainelClienteContent() {
       </header>
 
       {/* Spacer para compensar navbar fixa */}
-      <div className="h-20 md:h-24"></div>
+      <div className="h-16 sm:h-20 md:h-24"></div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {/* Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-lg p-6 sticky top-28">
+            <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 sticky top-24 sm:top-28">
               {/* Perfil do Cliente */}
-              <div className="text-center mb-6">
-                <div className="w-20 h-20 bg-[#D15556] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-10 h-10 text-white" />
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-[#D15556] rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <User className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
-                <h3 className="text-lg font-medium text-[#006D5B] mb-1">
+                <h3 className="text-base sm:text-lg font-medium text-[#006D5B] mb-1 truncate">
                   {clientData.name}
                 </h3>
-                <p className="text-sm text-gray-600">{clientData.email}</p>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">{clientData.email}</p>
               </div>
 
               {/* Menu de Navegação */}
-              <nav className="space-y-2">
+              <nav className="space-y-1 sm:space-y-2">
                 <button
                   onClick={() => setActiveTab('dashboard')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'dashboard'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Calendar className="w-5 h-5 inline mr-3" />
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Dashboard
                 </button>
                 <button
                   onClick={() => setActiveTab('appointments')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'appointments'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Clock className="w-5 h-5 inline mr-3" />
+                  <Clock className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Agendamentos
                 </button>
                 <button
                   onClick={() => setActiveTab('orders')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'orders'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Package className="w-5 h-5 inline mr-3" />
+                  <Package className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Pedidos
                 </button>
                 <button
                   onClick={() => setActiveTab('history')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'history'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Eye className="w-5 h-5 inline mr-3" />
+                  <Eye className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Histórico
                 </button>
                 <button
                   onClick={() => setActiveTab('recommendations')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'recommendations'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Star className="w-5 h-5 inline mr-3" />
+                  <Star className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Recomendações
                 </button>
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'profile'
                       ? 'bg-[#D15556] text-white'
                       : 'text-[#006D5B] hover:bg-[#EED7B6]'
                   }`}
                 >
-                  <Settings className="w-5 h-5 inline mr-3" />
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
                   Perfil
                 </button>
               </nav>

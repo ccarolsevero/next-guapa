@@ -124,40 +124,43 @@ export default function AdminLayout({
       <div className="lg:pl-64">
         {/* Top header */}
         <div className="sticky top-0 z-40 border-b" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)', borderColor: '#e6d1b8' }}>
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex items-center">
+          <div className="flex items-center justify-between px-4 sm:px-6 py-4">
+            <div className="flex items-center min-w-0 flex-1">
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden p-2 rounded-md hover:bg-gray-100"
+                className="lg:hidden p-2 rounded-md hover:bg-gray-100 mr-2"
                 style={{ color: '#d34d4c' }}
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <h2 className="ml-4 lg:ml-0 text-lg font-medium" style={{ color: '#d34d4c' }}>
+              <h2 className="text-base sm:text-lg font-medium truncate" style={{ color: '#d34d4c' }}>
                 {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
               </h2>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center text-sm text-gray-700">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+              <div className="hidden sm:flex items-center text-sm text-gray-700">
                 <User className="w-4 h-4 mr-2" />
-                Admin
+                <span>Admin</span>
               </div>
               <button
                 onClick={handleLogout}
-                className="flex items-center text-sm transition-colors"
+                className="flex items-center text-sm transition-colors p-2 rounded-md hover:bg-gray-100"
                 style={{ color: '#d34d4c' }}
+                title="Sair"
               >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sair
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Sair</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Page content */}
-        <main className="flex-1">
-          {children}
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>

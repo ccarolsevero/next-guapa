@@ -1210,8 +1210,8 @@ export default function ComandaDetalhesPage() {
 
       {/* Modal de Edição */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white max-w-4xl w-full max-h-[90vh] overflow-y-auto rounded-lg">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 sm:p-4 z-50">
+          <div className="bg-white max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto rounded-lg">
             <div className="p-6 border-b border-gray-100">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-medium text-gray-900">Editar Comanda</h3>
