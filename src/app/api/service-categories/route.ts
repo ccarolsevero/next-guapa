@@ -1,17 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Service from '@/models/Service'
+import { MongoClient } from 'mongodb'
 
 // GET - Listar categorias de serviços
 export async function GET(request: NextRequest) {
+  const client = new MongoClient(process.env.MONGODB_URI!)
+  
   try {
-    await connectDB()
+    await client.connect()
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
     
     const { searchParams } = new URL(request.url)
     const isActive = searchParams.get('isActive')
     
     // Buscar todas as categorias únicas de serviços
-    const services = await Service.find({ isActive: true }).select('category').lean()
+    const services = await servicesCollection.find({ isActive: true }).toArray()
     
     // Extrair categorias únicas
     const uniqueCategories = [...new Set(services.map(service => service.category).filter(Boolean))]
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
     // Contar serviços por categoria
     const categoriesWithCount = await Promise.all(
       uniqueCategories.map(async (categoryName) => {
-        const serviceCount = await Service.countDocuments({ 
+        const serviceCount = await servicesCollection.countDocuments({ 
           category: categoryName,
           isActive: true 
         })
@@ -45,13 +48,19 @@ export async function GET(request: NextRequest) {
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
+  } finally {
+    await client.close()
   }
 }
 
 // POST - Criar nova categoria de serviço (adicionando um serviço com essa categoria)
 export async function POST(request: NextRequest) {
+  const client = new MongoClient(process.env.MONGODB_URI!)
+  
   try {
-    await connectDB()
+    await client.connect()
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
     
     const body = await request.json()
     const { name, description } = body
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verificar se categoria já existe
-    const existingService = await Service.findOne({ 
+    const existingService = await servicesCollection.findOne({ 
       category: { $regex: new RegExp(`^${name}$`, 'i') } 
     })
     
@@ -78,15 +87,19 @@ export async function POST(request: NextRequest) {
     
     // Para categorias de serviços, vamos criar um serviço temporário para "registrar" a categoria
     // Isso é necessário porque não temos uma coleção separada de categorias de serviços
-    const tempService = await Service.create({
+    const tempService = {
       name: `[CATEGORIA] ${name}`,
       description: description || `Categoria: ${name}`,
       price: 0,
       category: name.trim(),
       duration: 60, // Duração mínima válida
       isActive: false, // Serviço inativo, só para registrar a categoria
-      order: 0
-    })
+      order: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    
+    const result = await servicesCollection.insertOne(tempService)
     
     return NextResponse.json({
       _id: name,
@@ -103,5 +116,7 @@ export async function POST(request: NextRequest) {
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
+  } finally {
+    await client.close()
   }
 }
