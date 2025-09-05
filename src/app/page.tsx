@@ -551,7 +551,7 @@ export default function HomePage() {
                 </p>
                 <div className="text-center md:text-left mb-8 md:mb-0">
                   <Link 
-                    href="/login-cliente"
+                    href={isLoggedIn ? "/agendamento" : "/login-cliente"}
                     className="bg-[#D15556] text-white px-6 md:px-8 py-3 md:py-4 rounded-lg hover:bg-[#c04546] transition-all duration-300 transform hover:scale-105 font-medium tracking-wide shadow-md hover:shadow-lg inline-block"
                   >
                     Agendar Horário
@@ -915,7 +915,7 @@ export default function HomePage() {
                 </div>
                 
                 <Link 
-                  href="/login-cliente"
+                  href={isLoggedIn ? "/agendamento" : "/login-cliente"}
                   className="inline-flex items-center px-8 py-4 bg-[#d34d4c] text-white font-medium hover:bg-[#b83e3d] transition-all duration-300 transform hover:scale-105 rounded-lg shadow-md hover:shadow-lg"
                 >
                   <Calendar className="w-5 h-5 mr-2" />
