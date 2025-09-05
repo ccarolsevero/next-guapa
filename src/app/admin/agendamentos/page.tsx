@@ -172,6 +172,7 @@ export default function AgendamentosPage() {
     price: number
   }>>([])
   const [availableServices, setAvailableServices] = useState<any[]>([])
+  const [existingComanda, setExistingComanda] = useState<any>(null)
 
   // Buscar dados da API
   useEffect(() => {
@@ -228,6 +229,25 @@ export default function AgendamentosPage() {
       }
     } catch (error) {
       console.error('Erro ao buscar serviços:', error)
+    }
+  }
+
+  const checkExistingComanda = async (appointment: Appointment) => {
+    try {
+      const response = await fetch(`/api/comandas?clientId=${appointment.clientId}&professionalId=${appointment.professionalId}`)
+      if (response.ok) {
+        const data = await response.json()
+        // Verificar se existe comanda em atendimento para este cliente e profissional
+        const activeComanda = data.comandas?.find((comanda: any) => 
+          comanda.status === 'em_atendimento' && 
+          comanda.clientId._id === appointment.clientId &&
+          comanda.professionalId._id === appointment.professionalId
+        )
+        setExistingComanda(activeComanda || null)
+      }
+    } catch (error) {
+      console.error('Erro ao verificar comanda existente:', error)
+      setExistingComanda(null)
     }
   }
 
@@ -324,6 +344,9 @@ export default function AgendamentosPage() {
     
     // Buscar dados completos do cliente
     await fetchClientData(appointment.clientPhone)
+    
+    // Verificar se já existe uma comanda para este agendamento
+    await checkExistingComanda(appointment)
     
     // Carregar etiquetas salvas se existirem
     if ((appointment as any).customLabels) {
@@ -529,6 +552,9 @@ export default function AgendamentosPage() {
           'Comanda aberta com sucesso!',
           'A comanda foi criada com os dados do agendamento.'
         )
+        
+        // Atualizar estado da comanda existente
+        setExistingComanda(result.comanda)
         
         // Fechar modal e atualizar lista
         setSelectedAppointment(null)
@@ -1194,15 +1220,28 @@ export default function AgendamentosPage() {
                             </a>
                           </div>
                         </div>
-                        <button
-                          onClick={handleOpenComanda}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                          </svg>
-                          <span>Abrir Comanda</span>
-                        </button>
+                        {existingComanda ? (
+                          <Link
+                            href={`/admin/comandas/${existingComanda._id}`}
+                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            <span>Ver Comanda</span>
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={handleOpenComanda}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                            </svg>
+                            <span>Abrir Comanda</span>
+                          </button>
+                        )}
                       </div>
                       {clientData?.birthDate && (
                         <div className="text-sm text-gray-600 mb-2">
