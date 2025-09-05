@@ -128,7 +128,31 @@ export async function POST(request: NextRequest) {
       console.log('⚠️ Comanda não tem clienteId nem clienteNome')
     }
 
-    // 4. Salvar dados da finalização em uma nova coleção
+    // 4. Obter nome do profissional
+    console.log('👨‍💼 Obtendo nome do profissional...')
+    let profissionalNome = 'Profissional não encontrado'
+    
+    try {
+      const profissionalId = finalizacaoData.profissionalId || comanda.profissionalId
+      console.log('🔍 Buscando profissional no banco com ID:', profissionalId)
+      
+      if (profissionalId) {
+        const profissional = await db.collection('professionals').findOne({ _id: new ObjectId(profissionalId) })
+        
+        if (profissional) {
+          profissionalNome = profissional.name || profissional.nome || profissional.fullName || 'Nome não definido'
+          console.log('✅ Profissional encontrado no banco:', profissionalNome)
+        } else {
+          console.log('⚠️ Profissional não encontrado no banco')
+        }
+      } else {
+        console.log('⚠️ Comanda não tem profissionalId')
+      }
+    } catch (error) {
+      console.log('⚠️ Erro ao buscar profissional no banco:', error)
+    }
+
+    // 5. Salvar dados da finalização em uma nova coleção
     console.log('💳 Salvando dados da finalização...')
     
     // Preparar dados da finalização
@@ -137,6 +161,7 @@ export async function POST(request: NextRequest) {
       clienteId: finalizacaoData.clienteId || comanda.clienteId,
       clienteNome: clienteNome,
       profissionalId: finalizacaoData.profissionalId || comanda.profissionalId,
+      profissionalNome: profissionalNome,
       valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
       metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'Não definido',
       desconto: finalizacaoData.desconto || 0,
@@ -153,7 +178,7 @@ export async function POST(request: NextRequest) {
     const finalizacaoResult = await db.collection('finalizacoes').insertOne(dadosFinalizacao)
     console.log('✅ Finalização salva:', finalizacaoResult.insertedId)
 
-    // 4. Atualizar faturamento do dia (criar ou atualizar registro)
+    // 6. Atualizar faturamento do dia (criar ou atualizar registro)
     console.log('🔄 Atualizando faturamento do dia...')
     const hoje = new Date()
     const dataInicio = new Date(hoje.getFullYear(), hoje.getMonth(), hoje.getDate())
@@ -186,7 +211,7 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Resultado da atualização do faturamento:', faturamentoResult)
 
-    // 5. Salvar comissões dos profissionais
+    // 7. Salvar comissões dos profissionais
     if (finalizacaoData.detalhesComissao && Array.isArray(finalizacaoData.detalhesComissao) && finalizacaoData.detalhesComissao.length > 0) {
       console.log('💰 Salvando comissões:', finalizacaoData.detalhesComissao.length)
       
@@ -244,7 +269,7 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ Nenhuma comissão para salvar - detalhesComissao:', finalizacaoData.detalhesComissao)
     }
 
-    // 6. Atualizar histórico do cliente
+    // 8. Atualizar histórico do cliente
     try {
       console.log('🔄 Atualizando histórico do cliente:', dadosFinalizacao.clienteId)
       

@@ -1572,9 +1572,9 @@ export default function AgendamentosPage() {
 
         {/* Modal de Etiquetas Customizadas */}
         {showCustomLabelModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
-              <div className="p-6">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-hidden">
+              <div className="p-6 pb-8">
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Criar Nova Etiqueta</h3>
                 
                 <div className="space-y-4">
@@ -1609,7 +1609,7 @@ export default function AgendamentosPage() {
                   </div>
                 </div>
                 
-                <div className="flex justify-end space-x-3 mt-6">
+                <div className="flex justify-end space-x-3 mt-6 mb-4">
                   <button
                     onClick={() => setShowCustomLabelModal(false)}
                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"

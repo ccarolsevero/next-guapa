@@ -72,18 +72,37 @@ export async function GET(request: NextRequest) {
     
     console.log('🛒 Pedidos encontrados:', pedidos.length)
     
-    // Processar agendamentos
-    const appointments = agendamentos.map(apt => ({
-      id: apt._id.toString(),
-      service: apt.service || 'Serviço não especificado',
-      professional: apt.professional || 'Profissional não especificado',
-      date: apt.date || new Date().toISOString().split('T')[0],
-      time: apt.startTime || '00:00',
-      status: apt.status || 'pending',
-      price: apt.price || 0,
-      rating: apt.rating,
-      review: apt.review,
-      reviewed: apt.reviewed || false
+    // Processar agendamentos - buscar nomes dos profissionais
+    const appointments = await Promise.all(agendamentos.map(async (apt) => {
+      let professionalName = 'Profissional não especificado'
+      
+      // Se já tem o nome do profissional no agendamento, usar ele
+      if (apt.professional) {
+        professionalName = apt.professional
+      } else if (apt.professionalId) {
+        // Se não tem o nome, buscar pelo ID
+        try {
+          const professional = await db.collection('professionals').findOne({ _id: new ObjectId(apt.professionalId) })
+          if (professional) {
+            professionalName = professional.name || professional.nome || professional.fullName || 'Nome não definido'
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao buscar profissional:', error)
+        }
+      }
+      
+      return {
+        id: apt._id.toString(),
+        service: apt.service || 'Serviço não especificado',
+        professional: professionalName,
+        date: apt.date || new Date().toISOString().split('T')[0],
+        time: apt.startTime || '00:00',
+        status: apt.status || 'pending',
+        price: apt.price || 0,
+        rating: apt.rating,
+        review: apt.review,
+        reviewed: apt.reviewed || false
+      }
     }))
     
     // Processar comandas como histórico
