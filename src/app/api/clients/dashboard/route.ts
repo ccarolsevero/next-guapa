@@ -72,9 +72,9 @@ export async function GET(request: NextRequest) {
     
     console.log('📋 Comandas ativas encontradas:', comandasAtivas.length)
     
-    // Buscar pedidos do cliente
+    // Buscar pedidos do cliente pelo email
     const pedidos = await db.collection('orders').find({
-      clientId: clientId
+      'customerInfo.email': cliente.email
     }).sort({ createdAt: -1 }).toArray()
     
     console.log('🛒 Pedidos encontrados:', pedidos.length)

@@ -101,6 +101,36 @@ async function testarFinalizacoes() {
       });
     });
     
+    // Verificar pedidos para o cliente específico
+    const pedidosCliente = await db.collection('orders').find({
+      clientId: '68b7706576f2048aa96ecf6c'
+    }).toArray();
+    
+    console.log('🛒 Pedidos do cliente:', pedidosCliente.length);
+    
+    if (pedidosCliente.length > 0) {
+      console.log('🛒 Primeiro pedido:', {
+        _id: pedidosCliente[0]._id,
+        clientId: pedidosCliente[0].clientId,
+        total: pedidosCliente[0].total,
+        status: pedidosCliente[0].status,
+        createdAt: pedidosCliente[0].createdAt
+      });
+    }
+    
+    // Verificar se há pedidos em geral
+    const todosPedidos = await db.collection('orders').find({}).toArray();
+    console.log('🛒 Total de pedidos no sistema:', todosPedidos.length);
+    
+    if (todosPedidos.length > 0) {
+      console.log('🛒 Primeiro pedido do sistema:', {
+        _id: todosPedidos[0]._id,
+        clientId: todosPedidos[0].clientId,
+        total: todosPedidos[0].total,
+        status: todosPedidos[0].status
+      });
+    }
+    
   } catch (error) {
     console.error('❌ Erro:', error);
   } finally {
