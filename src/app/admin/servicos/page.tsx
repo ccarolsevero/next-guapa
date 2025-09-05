@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp } from 'lucide-react'
+import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp, Tag } from 'lucide-react'
 
 interface Service {
   _id: string
@@ -22,7 +22,14 @@ interface Service {
 
 
 
-const categories = ["Todos", "Consultoria e Avaliação", "Cortes", "Colorimetria", "Tratamentos"]
+interface Category {
+  _id: string
+  name: string
+  description?: string
+  isActive: boolean
+  order: number
+}
+
 const professionals = [
   { id: "bruna", name: "Bruna" },
   { id: "cicera", name: "Cicera Canovas" }
@@ -30,11 +37,15 @@ const professionals = [
 
 export default function ServicosPage() {
   const [services, setServices] = useState<Service[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todos')
   const [selectedProfessional, setSelectedProfessional] = useState('Todos')
   const [showInactive, setShowInactive] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryDescription, setNewCategoryDescription] = useState('')
 
   // Carregar serviços da API
   const loadServices = async () => {
@@ -54,8 +65,67 @@ export default function ServicosPage() {
     }
   }
 
+  // Carregar categorias de serviços da API
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/service-categories?isActive=true')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar categorias de serviços')
+      }
+      const data = await response.json()
+      setCategories(data)
+    } catch (error) {
+      console.error('Erro ao carregar categorias de serviços:', error)
+      // Fallback para categorias padrão se a API falhar
+      setCategories([
+        { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+        { _id: '2', name: 'Cortes', isActive: true, order: 2 },
+        { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+        { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+      ])
+    }
+  }
+
+  // Criar nova categoria de serviço
+  const createCategory = async () => {
+    if (!newCategoryName.trim()) {
+      alert('Nome da categoria é obrigatório')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/service-categories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newCategoryName.trim(),
+          description: newCategoryDescription.trim()
+        }),
+      })
+
+      if (response.ok) {
+        // Recarregar categorias
+        await loadCategories()
+        // Fechar modal e limpar campos
+        setShowCategoryModal(false)
+        setNewCategoryName('')
+        setNewCategoryDescription('')
+        alert('Categoria de serviço criada com sucesso!')
+      } else {
+        const error = await response.json()
+        alert(`Erro ao criar categoria: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Erro ao criar categoria:', error)
+      alert('Erro ao criar categoria')
+    }
+  }
+
   useEffect(() => {
     loadServices()
+    loadCategories()
   }, [])
 
   const filteredServices = services.filter(service => {
@@ -114,6 +184,13 @@ export default function ServicosPage() {
         </div>
         <div className="mt-4 sm:mt-0">
           <div className="flex space-x-3">
+            <button
+              onClick={() => setShowCategoryModal(true)}
+              className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4d] transition-colors flex items-center"
+            >
+              <Tag className="w-4 h-4 mr-2" />
+              Nova Categoria
+            </button>
             <Link
               href="/admin/servicos/editar/novo"
               className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
@@ -327,6 +404,66 @@ export default function ServicosPage() {
           </table>
         </div>
       </div>
+
+      {/* Modal para criar nova categoria */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Nova Categoria de Serviço
+            </h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome da Categoria *
+                </label>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Ex: Tratamentos Capilares"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#006D5B] focus:border-[#006D5B]"
+                  style={{ color: '#000000' }}
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  value={newCategoryDescription}
+                  onChange={(e) => setNewCategoryDescription(e.target.value)}
+                  placeholder="Descrição da categoria..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#006D5B] focus:border-[#006D5B]"
+                  style={{ color: '#000000' }}
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowCategoryModal(false)
+                  setNewCategoryName('')
+                  setNewCategoryDescription('')
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={createCategory}
+                className="px-4 py-2 bg-[#006D5B] text-white rounded-lg hover:bg-[#005a4d] transition-colors"
+              >
+                Criar Categoria
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

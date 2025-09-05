@@ -17,8 +17,14 @@ import {
   Users
 } from 'lucide-react'
 
-// Mock data para categorias
-const categories = ["Consultoria", "Cortes", "Coloração", "Combo", "Finalização", "Tratamentos", "Hidratação", "Reconstrução"]
+// Interface para categorias
+interface Category {
+  _id: string
+  name: string
+  description?: string
+  isActive: boolean
+  order: number
+}
 
 // Interface para profissionais do banco
 interface Professional {
@@ -78,6 +84,7 @@ export default function EditarServicoPage() {
   const [activeTab, setActiveTab] = useState('servico')
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [availableServices, setAvailableServices] = useState<Service[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [service, setService] = useState<Service>({
     id: '',
     name: '',
@@ -134,9 +141,38 @@ export default function EditarServicoPage() {
     }
   }
 
+  const loadCategories = async () => {
+    try {
+      const response = await fetch('/api/service-categories?isActive=true')
+      if (response.ok) {
+        const data = await response.json()
+        setCategories(data)
+      } else {
+        console.error('Erro ao carregar categorias de serviços')
+        // Fallback para categorias padrão
+        setCategories([
+          { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+          { _id: '2', name: 'Cortes', isActive: true, order: 2 },
+          { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+          { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+        ])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias de serviços:', error)
+      // Fallback para categorias padrão
+      setCategories([
+        { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+        { _id: '2', name: 'Cortes', isActive: true, order: 2 },
+        { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+        { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+      ])
+    }
+  }
+
   useEffect(() => {
-    // Carregar profissionais primeiro
+    // Carregar profissionais e categorias
     loadProfessionals()
+    loadCategories()
   }, [])
 
   useEffect(() => {
@@ -334,7 +370,7 @@ export default function EditarServicoPage() {
                   >
                     <option value="">Selecione uma categoria</option>
                     {categories.map(category => (
-                      <option key={category} value={category}>{category}</option>
+                      <option key={category._id} value={category.name}>{category.name}</option>
                     ))}
                   </select>
                 </div>
