@@ -83,10 +83,9 @@ export async function POST(request: NextRequest) {
       description: description || `Categoria: ${name}`,
       price: 0,
       category: name.trim(),
-      duration: 0,
+      duration: 60, // Duração mínima válida
       isActive: false, // Serviço inativo, só para registrar a categoria
-      order: 0,
-      professionalId: 'temp'
+      order: 0
     })
     
     return NextResponse.json({
