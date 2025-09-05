@@ -15,9 +15,11 @@ export async function GET(request: NextRequest) {
     
     // Buscar todas as categorias únicas de serviços (ativos e inativos)
     const allServices = await servicesCollection.find({}).toArray()
+    console.log('📋 Total de serviços encontrados:', allServices.length)
     
     // Extrair categorias únicas
     const uniqueCategories = [...new Set(allServices.map(service => service.category).filter(Boolean))]
+    console.log('📋 Categorias únicas encontradas:', uniqueCategories)
     
     // Contar serviços por categoria
     const categoriesWithCount = await Promise.all(
