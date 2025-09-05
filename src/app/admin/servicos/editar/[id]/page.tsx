@@ -143,7 +143,7 @@ export default function EditarServicoPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/service-categories?isActive=true')
+      const response = await fetch('/api/service-categories-v2?isActive=true')
       if (response.ok) {
         const data = await response.json()
         setCategories(data)

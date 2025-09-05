@@ -70,7 +70,7 @@ export default function ServicosPage() {
   const loadCategories = async () => {
     try {
       setCategoriesLoading(true)
-      const response = await fetch('/api/service-categories?isActive=true')
+      const response = await fetch('/api/service-categories-v2?isActive=true')
       if (!response.ok) {
         throw new Error('Erro ao carregar categorias de serviços')
       }
