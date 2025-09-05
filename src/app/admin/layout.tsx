@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, Settings, 
   LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe
 } from 'lucide-react'
+import { ToastProvider } from '@/contexts/ToastContext'
 
 export default function AdminLayout({
   children,
@@ -52,7 +53,8 @@ export default function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ToastProvider>
+      <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
@@ -159,6 +161,7 @@ export default function AdminLayout({
         </main>
       </div>
     </div>
+    </ToastProvider>
   )
 }
 

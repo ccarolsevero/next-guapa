@@ -21,6 +21,7 @@ import {
   AlertTriangle,
   Clock3
 } from 'lucide-react'
+import { useToast } from '@/contexts/ToastContext'
 
 interface Appointment {
   _id: string
@@ -118,6 +119,7 @@ const statusColors = {
 }
 
 export default function AgendamentosPage() {
+  const { showSuccess, showError } = useToast()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
@@ -144,11 +146,22 @@ export default function AgendamentosPage() {
   const [newLabelName, setNewLabelName] = useState('')
   const [newLabelColor, setNewLabelColor] = useState('bg-gray-500')
   const [clientData, setClientData] = useState<any>(null)
+  const [appointmentServices, setAppointmentServices] = useState<Array<{
+    id: string
+    service: string
+    professional: string
+    duration: number
+    startTime: string
+    endTime: string
+    price: number
+  }>>([])
+  const [availableServices, setAvailableServices] = useState<any[]>([])
 
   // Buscar dados da API
   useEffect(() => {
     fetchAppointments()
     fetchProfessionals()
+    fetchServices()
   }, [selectedDate, filterStatus])
 
   const fetchAppointments = async () => {
@@ -185,6 +198,20 @@ export default function AgendamentosPage() {
       }
     } catch (error) {
       console.error('Erro ao buscar profissionais:', error)
+    }
+  }
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('/api/services')
+      if (response.ok) {
+        const data = await response.json()
+        setAvailableServices(data)
+      } else {
+        console.error('Erro ao buscar serviços')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar serviços:', error)
     }
   }
 
@@ -362,14 +389,32 @@ export default function AgendamentosPage() {
         // Atualizar a lista de agendamentos
         await fetchAppointments()
         
+        // Mostrar toast de sucesso
+        showSuccess(
+          'Agendamento salvo com sucesso!',
+          'As informações da reserva foram atualizadas.'
+        )
+        
         // Não fechar o modal automaticamente para mostrar as alterações
         console.log('Agendamento atualizado com sucesso!')
       } else {
         const error = await response.json()
         console.error('❌ Erro ao atualizar agendamento:', error)
+        
+        // Mostrar toast de erro
+        showError(
+          'Erro ao salvar agendamento',
+          error.message || 'Ocorreu um erro inesperado. Tente novamente.'
+        )
       }
     } catch (error) {
       console.error('Erro ao salvar agendamento:', error)
+      
+      // Mostrar toast de erro
+      showError(
+        'Erro ao salvar agendamento',
+        'Ocorreu um erro inesperado. Verifique sua conexão e tente novamente.'
+      )
     }
   }
 
@@ -378,6 +423,66 @@ export default function AgendamentosPage() {
       label.id === labelId ? { ...label, selected: !label.selected } : label
     ))
   }
+
+  // Funções para gerenciar serviços do agendamento
+  const addService = () => {
+    const newService = {
+      id: Date.now().toString(),
+      service: '',
+      professional: '',
+      duration: 60,
+      startTime: '',
+      endTime: '',
+      price: 0
+    }
+    setAppointmentServices(prev => [...prev, newService])
+  }
+
+  const removeService = (serviceId: string) => {
+    setAppointmentServices(prev => prev.filter(service => service.id !== serviceId))
+  }
+
+  const updateService = (serviceId: string, field: string, value: any) => {
+    setAppointmentServices(prev => 
+      prev.map(service => 
+        service.id === serviceId 
+          ? { ...service, [field]: value }
+          : service
+      )
+    )
+  }
+
+  const calculateEndTime = (startTime: string, duration: number) => {
+    if (!startTime) return ''
+    try {
+      const [hours, minutes] = startTime.split(':').map(Number)
+      const startDate = new Date()
+      startDate.setHours(hours, minutes, 0, 0)
+      const endDate = new Date(startDate.getTime() + duration * 60000)
+      return `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+    } catch (error) {
+      return ''
+    }
+  }
+
+  // Inicializar serviços quando um agendamento é selecionado
+  useEffect(() => {
+    if (selectedAppointment) {
+      // Inicializar com o serviço atual do agendamento
+      const initialService = {
+        id: '1',
+        service: selectedAppointment.service,
+        professional: selectedAppointment.professional,
+        duration: 60, // Valor padrão
+        startTime: selectedAppointment.startTime,
+        endTime: selectedAppointment.endTime,
+        price: selectedAppointment.price
+      }
+      setAppointmentServices([initialService])
+    } else {
+      setAppointmentServices([])
+    }
+  }, [selectedAppointment])
 
   const handleCreateCustomLabel = () => {
     if (newLabelName.trim()) {
@@ -954,7 +1059,7 @@ export default function AgendamentosPage() {
         {/* Modal de Edição de Agendamento */}
         {showEditModal && selectedAppointment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mb-4">
               {/* Header do Modal */}
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 <div className="flex space-x-1">
@@ -1088,60 +1193,116 @@ export default function AgendamentosPage() {
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Início</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fim</th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Valor (R$)</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ações</th>
                           </tr>
                         </thead>
                         <tbody>
-                          <tr>
-                            <td className="px-4 py-3">
-                              <select className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium">
-                                <option>{selectedAppointment.service}</option>
-                              </select>
-                            </td>
-                            <td className="px-4 py-3">
-                              <select className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium">
-                                <option>{selectedAppointment.professional}</option>
-                              </select>
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="number"
-                                value={selectedAppointment.duration}
-                                className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="time"
-                                value={editingAppointment.startTime || selectedAppointment.startTime}
-                                onChange={(e) => setEditingAppointment({...editingAppointment, startTime: e.target.value})}
-                                className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="time"
-                                value={selectedAppointment.endTime}
-                                className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
-                              />
-                            </td>
-                            <td className="px-4 py-3">
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={selectedAppointment.price}
-                                className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
-                              />
-                            </td>
-                          </tr>
+                          {appointmentServices.map((service, index) => (
+                            <tr key={service.id}>
+                              <td className="px-4 py-3">
+                                <select 
+                                  value={service.service}
+                                  onChange={(e) => {
+                                    const selectedService = availableServices.find(s => s.name === e.target.value)
+                                    updateService(service.id, 'service', e.target.value)
+                                    if (selectedService) {
+                                      updateService(service.id, 'price', selectedService.price)
+                                      updateService(service.id, 'duration', selectedService.duration)
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                >
+                                  <option value="">Selecione um serviço</option>
+                                  {availableServices.map((s) => (
+                                    <option key={s._id} value={s.name}>
+                                      {s.name} - R$ {s.price.toFixed(2)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <select 
+                                  value={service.professional}
+                                  onChange={(e) => updateService(service.id, 'professional', e.target.value)}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                >
+                                  <option value="">Selecione um profissional</option>
+                                  {professionals.map((prof) => (
+                                    <option key={prof._id} value={prof.name}>
+                                      {prof.name}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  value={service.duration}
+                                  onChange={(e) => {
+                                    const duration = parseInt(e.target.value) || 0
+                                    updateService(service.id, 'duration', duration)
+                                    if (service.startTime) {
+                                      const endTime = calculateEndTime(service.startTime, duration)
+                                      updateService(service.id, 'endTime', endTime)
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="time"
+                                  value={service.startTime}
+                                  onChange={(e) => {
+                                    updateService(service.id, 'startTime', e.target.value)
+                                    if (service.duration) {
+                                      const endTime = calculateEndTime(e.target.value, service.duration)
+                                      updateService(service.id, 'endTime', endTime)
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="time"
+                                  value={service.endTime}
+                                  onChange={(e) => updateService(service.id, 'endTime', e.target.value)}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={service.price}
+                                  onChange={(e) => updateService(service.id, 'price', parseFloat(e.target.value) || 0)}
+                                  className="w-full px-3 py-2 border-2 border-gray-400 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-gray-900 font-medium"
+                                />
+                              </td>
+                              <td className="px-4 py-3">
+                                {appointmentServices.length > 1 && (
+                                  <button
+                                    onClick={() => removeService(service.id)}
+                                    className="text-red-600 hover:text-red-800 p-1"
+                                    title="Remover serviço"
+                                  >
+                                    <Trash className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
                         </tbody>
                       </table>
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
+                      <button 
+                        onClick={addService}
+                        className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-gray-200 transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
                         <span>Adicionar serviço</span>
                       </button>
                       <label className="flex items-center text-sm text-gray-600">
@@ -1268,7 +1429,7 @@ export default function AgendamentosPage() {
               </div>
 
               {/* Footer do Modal */}
-              <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200">
+              <div className="flex items-center justify-end space-x-3 p-6 pb-8 border-t border-gray-200">
                 <button
                   onClick={closeEditModal}
                   className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
