@@ -100,24 +100,9 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Para categorias de serviços, vamos criar um serviço temporário para "registrar" a categoria
-    // Isso é necessário porque não temos uma coleção separada de categorias de serviços
-    const tempService = {
-      name: `[CATEGORIA] ${name.trim()}`,
-      description: description || `Categoria: ${name.trim()}`,
-      price: 0,
-      category: name.trim(),
-      duration: 60, // Duração mínima válida
-      isActive: false, // Serviço inativo, só para registrar a categoria
-      order: 0,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-    
-    console.log('📝 Tentando criar serviço temporário:', tempService)
-    
-    const result = await servicesCollection.insertOne(tempService)
-    console.log('✅ Serviço criado com sucesso:', result.insertedId)
+    // Por enquanto, vamos apenas retornar sucesso sem criar um serviço temporário
+    // A categoria será "registrada" quando o primeiro serviço for criado com essa categoria
+    console.log('✅ Categoria validada e aprovada:', name.trim())
     
     return NextResponse.json({
       _id: name.trim(),
