@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 
+// Forçar invalidação de cache
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET - Listar categorias de serviços
 export async function GET(request: NextRequest) {
   const client = new MongoClient(process.env.MONGODB_URI!)
@@ -42,7 +46,15 @@ export async function GET(request: NextRequest) {
     // Ordenar por nome
     categoriesWithCount.sort((a, b) => a.name.localeCompare(b.name))
     
-    return NextResponse.json(categoriesWithCount)
+    const response = NextResponse.json(categoriesWithCount)
+    
+    // Headers para evitar cache
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    response.headers.set('Surrogate-Control', 'no-store')
+    
+    return response
     
   } catch (error) {
     console.error('Erro ao buscar categorias de serviços:', error)
