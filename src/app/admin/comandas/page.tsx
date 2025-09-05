@@ -98,8 +98,10 @@ export default function ComandasPage() {
   }, [])
 
   const filteredComandas = comandas.filter(comanda => {
-    const matchesSearch = comanda.clientId.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         comanda.professionalId.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const clientName = comanda.clientId?.name || ''
+    const professionalName = comanda.professionalId?.name || ''
+    const matchesSearch = clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         professionalName.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = statusFilter === 'todos' || comanda.status === statusFilter
     
     return matchesSearch && matchesStatus
@@ -107,7 +109,7 @@ export default function ComandasPage() {
 
   const getTotalComandas = () => comandas.length
   const getComandasAtivas = () => comandas.filter(c => c.status === 'em_atendimento').length
-  const getTotalFaturado = () => comandas.filter(c => c.status === 'finalizada').reduce((sum, c) => sum + c.valorTotal, 0)
+  const getTotalFaturado = () => comandas.filter(c => c.status === 'finalizada').reduce((sum, c) => sum + (c.valorTotal || 0), 0)
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -260,22 +262,22 @@ export default function ComandasPage() {
                 <tr key={comanda._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{comanda.clientId.name}</div>
-                      <div className="text-sm text-gray-500">{comanda.clientId.phone}</div>
+                      <div className="text-sm font-medium text-gray-900">{comanda.clientId?.name || 'Cliente não encontrado'}</div>
+                      <div className="text-sm text-gray-500">{comanda.clientId?.phone || 'Telefone não informado'}</div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.professionalId.name}</td>
-                  <td className="px-6 py-4 text-sm text-gray-900">{formatDate(comanda.dataInicio)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.professionalId?.name || 'Profissional não encontrado'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-900">{comanda.dataInicio ? formatDate(comanda.dataInicio) : 'Data não informada'}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[comanda.status]}`}>
-                      {statusLabels[comanda.status]}
+                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusColors[comanda.status] || 'bg-gray-100 text-gray-800'}`}>
+                      {statusLabels[comanda.status] || 'Status desconhecido'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-900">
-                    {comanda.servicos.length + comanda.produtos.length} itens
+                    {(comanda.servicos?.length || 0) + (comanda.produtos?.length || 0)} itens
                   </td>
                   <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                    R$ {comanda.valorTotal.toFixed(2)}
+                    R$ {(comanda.valorTotal || 0).toFixed(2)}
                   </td>
                   <td className="px-6 py-4 text-sm font-medium">
                     <div className="flex space-x-2">
