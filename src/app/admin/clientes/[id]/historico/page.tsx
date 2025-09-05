@@ -270,7 +270,7 @@ export default function HistoricoClientePage() {
 
       <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Estatísticas Gerais */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white p-6 border border-gray-100">
             <div className="flex items-center">
               <div className="p-3 bg-gray-50 border border-gray-100">
@@ -311,13 +311,27 @@ export default function HistoricoClientePage() {
 
           <div className="bg-white p-6 border border-gray-100">
             <div className="flex items-center">
+              <div className="p-3 bg-red-50 border border-red-100">
+                <X className="w-6 h-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Cancelamentos</p>
+                <p className="text-2xl font-light text-red-600">
+                  {appointments.filter(apt => apt.status === 'CANCELLED').length}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 border border-gray-100">
+            <div className="flex items-center">
               <div className="p-3 bg-orange-50 border border-orange-100">
                 <Clock className="w-6 h-6 text-orange-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Última Visita</p>
-                <p className="text-2xl font-light text-gray-900">
-                  {getLastVisit() ? formatDate(getLastVisit()!.dataInicio) : 'Nunca'}
+                <p className="text-sm font-medium text-gray-600">Faltas</p>
+                <p className="text-2xl font-light text-orange-600">
+                  {appointments.filter(apt => apt.status === 'NO_SHOW').length}
                 </p>
               </div>
             </div>

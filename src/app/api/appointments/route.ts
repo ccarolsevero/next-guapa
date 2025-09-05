@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date')
     const professionalId = searchParams.get('professionalId')
     const status = searchParams.get('status')
+    const clientId = searchParams.get('clientId')
     
     let query: any = {}
     
@@ -34,6 +35,11 @@ export async function GET(request: NextRequest) {
     // Filtrar por status
     if (status && status !== 'all') {
       query.status = status
+    }
+    
+    // Filtrar por cliente
+    if (clientId) {
+      query.clientId = clientId
     }
     
     const appointments = await Appointment.find(query)
