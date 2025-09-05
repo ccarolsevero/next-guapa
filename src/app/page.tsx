@@ -244,14 +244,6 @@ export default function HomePage() {
     }
   }
 
-  // Debug temporário - remover depois
-  console.log('HomePage - isLoggedIn:', isLoggedIn, 'client:', client, 'authLoading:', authLoading)
-  
-  // Verificar localStorage diretamente
-  if (typeof window !== 'undefined') {
-    console.log('localStorage isClientLoggedIn:', localStorage.getItem('isClientLoggedIn'))
-    console.log('localStorage loggedInClient:', localStorage.getItem('loggedInClient'))
-  }
 
   // Se ainda está carregando, mostrar loading
   if (loading || authLoading) {
@@ -565,11 +557,6 @@ export default function HomePage() {
                   >
                     Agendar Horário
                   </Link>
-                  {/* Debug temporário */}
-                  <div className="mt-4 text-sm text-white">
-                    <p>Debug: isLoggedIn = {isLoggedIn ? 'true' : 'false'}</p>
-                    <p>Debug: client = {client ? client.name : 'null'}</p>
-                  </div>
                 </div>
               </div>
               
