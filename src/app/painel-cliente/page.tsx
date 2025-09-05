@@ -730,7 +730,7 @@ function PainelClienteContent() {
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <h2 className="text-2xl font-light text-[#006D5B]">
-                    Meus Agendamentos
+                    Próximos Agendamentos
                   </h2>
                   <div className="flex space-x-3">
                     <button
@@ -766,7 +766,16 @@ function PainelClienteContent() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {appointments.map((appointment) => (
+                        {appointments
+                          .filter(appointment => {
+                            // Filtrar apenas agendamentos futuros (data >= hoje)
+                            const appointmentDate = new Date(appointment.date)
+                            const today = new Date()
+                            today.setHours(0, 0, 0, 0)
+                            
+                            return appointmentDate >= today
+                          })
+                          .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {appointment.service}
@@ -831,12 +840,22 @@ function PainelClienteContent() {
                           <th className="px-6 py-3 text-left text-sm font-medium">Profissional</th>
                           <th className="px-6 py-3 text-left text-sm font-medium">Data</th>
                           <th className="px-6 py-3 text-left text-sm font-medium">Valor</th>
+                          <th className="px-6 py-3 text-left text-sm font-medium">Status</th>
                           <th className="px-6 py-3 text-left text-sm font-medium">Avaliação</th>
                           <th className="px-6 py-3 text-left text-sm font-medium">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {appointments.filter(apt => apt.status === 'completed').map((appointment) => (
+                        {appointments
+                          .filter(appointment => {
+                            // Filtrar apenas agendamentos passados (data < hoje)
+                            const appointmentDate = new Date(appointment.date)
+                            const today = new Date()
+                            today.setHours(0, 0, 0, 0)
+                            
+                            return appointmentDate < today
+                          })
+                          .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {appointment.service}
@@ -849,6 +868,11 @@ function PainelClienteContent() {
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-600">
                               R$ {appointment.price.toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(appointment.status)}`}>
+                                {getStatusText(appointment.status)}
+                              </span>
                             </td>
                             <td className="px-6 py-4 text-sm">
                               {appointment.reviewed ? (
