@@ -771,9 +771,12 @@ function PainelClienteContent() {
                             // Filtrar apenas agendamentos futuros (data >= hoje)
                             const appointmentDate = new Date(appointment.date)
                             const today = new Date()
-                            today.setHours(0, 0, 0, 0)
                             
-                            return appointmentDate >= today
+                            // Comparar apenas a data (ignorar horário)
+                            const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate())
+                            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                            
+                            return appointmentDateOnly >= todayOnly
                           })
                           .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
@@ -851,9 +854,12 @@ function PainelClienteContent() {
                             // Filtrar apenas agendamentos passados (data < hoje)
                             const appointmentDate = new Date(appointment.date)
                             const today = new Date()
-                            today.setHours(0, 0, 0, 0)
                             
-                            return appointmentDate < today
+                            // Comparar apenas a data (ignorar horário)
+                            const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate())
+                            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                            
+                            return appointmentDateOnly < todayOnly
                           })
                           .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
