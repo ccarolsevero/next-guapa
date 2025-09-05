@@ -73,16 +73,19 @@ export default function ServicosPage() {
         throw new Error('Erro ao carregar categorias de serviços')
       }
       const data = await response.json()
+      console.log('📋 Categorias carregadas:', data)
       setCategories(data)
     } catch (error) {
       console.error('Erro ao carregar categorias de serviços:', error)
       // Fallback para categorias padrão se a API falhar
-      setCategories([
+      const fallbackCategories = [
         { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
         { _id: '2', name: 'Cortes', isActive: true, order: 2 },
         { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
         { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
-      ])
+      ]
+      console.log('📋 Usando categorias fallback:', fallbackCategories)
+      setCategories(fallbackCategories)
     }
   }
 
@@ -223,8 +226,9 @@ export default function ServicosPage() {
               className="px-4 py-3 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
               style={{ color: '#000000' }}
             >
+              <option value="Todos">Todos</option>
               {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category._id} value={category.name}>{category.name}</option>
               ))}
             </select>
           </div>
