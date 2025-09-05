@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp, Tag } from 'lucide-react'
+import { Plus, Edit, Trash, Search, Filter, DollarSign, Clock, TrendingUp, Tag, X, Trash2 } from 'lucide-react'
 
 interface Service {
   _id: string
@@ -45,6 +45,7 @@ export default function ServicosPage() {
   const [selectedProfessional, setSelectedProfessional] = useState('Todos')
   const [showInactive, setShowInactive] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [showCategoriesListModal, setShowCategoriesListModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryDescription, setNewCategoryDescription] = useState('')
 
@@ -130,6 +131,41 @@ export default function ServicosPage() {
     }
   }
 
+  // Deletar categoria de serviço
+  const deleteCategory = async (categoryName: string) => {
+    if (!confirm(`Tem certeza que deseja deletar a categoria "${categoryName}"?\n\nEsta ação não pode ser desfeita.`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/service-categories', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: categoryName
+        }),
+      })
+
+      if (response.ok) {
+        console.log('✅ Categoria deletada:', categoryName)
+        
+        // Recarregar categorias
+        await loadCategories()
+        
+        alert('Categoria deletada com sucesso!')
+      } else {
+        const error = await response.json()
+        console.error('❌ Erro ao deletar categoria:', error)
+        alert(`Erro ao deletar categoria: ${error.error || 'Erro desconhecido'}`)
+      }
+    } catch (error) {
+      console.error('❌ Erro ao deletar categoria:', error)
+      alert('Erro ao deletar categoria. Tente novamente.')
+    }
+  }
+
   useEffect(() => {
     loadServices()
     loadCategories()
@@ -191,13 +227,22 @@ export default function ServicosPage() {
         </div>
         <div className="mt-4 sm:mt-0">
           <div className="flex space-x-3">
-            <button
-              onClick={() => setShowCategoryModal(true)}
-              className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4d] transition-colors flex items-center"
-            >
-              <Tag className="w-4 h-4 mr-2" />
-              Nova Categoria
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCategoryModal(true)}
+                className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4d] transition-colors flex items-center"
+              >
+                <Tag className="w-4 h-4 mr-2" />
+                Nova Categoria
+              </button>
+              <button
+                onClick={() => setShowCategoriesListModal(true)}
+                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
+              >
+                <Tag className="w-4 h-4 mr-2" />
+                Gerenciar Categorias
+              </button>
+            </div>
             <Link
               href="/admin/servicos/editar/novo"
               className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
@@ -472,6 +517,79 @@ export default function ServicosPage() {
                 className="px-4 py-2 bg-[#006D5B] text-white rounded-lg hover:bg-[#005a4d] transition-colors"
               >
                 Criar Categoria
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Gerenciamento de Categorias */}
+      {showCategoriesListModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Gerenciar Categorias de Serviços
+              </h3>
+              <button
+                onClick={() => setShowCategoriesListModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              {categoriesLoading ? (
+                <div className="text-center py-4">
+                  <div className="text-gray-500">Carregando categorias...</div>
+                </div>
+              ) : categories.length === 0 ? (
+                <div className="text-center py-4">
+                  <div className="text-gray-500">Nenhuma categoria encontrada</div>
+                </div>
+              ) : (
+                categories.map((category) => (
+                  <div
+                    key={category._id}
+                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{category.name}</h4>
+                      {category.description && (
+                        <p className="text-sm text-gray-500 mt-1">{category.description}</p>
+                      )}
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="text-xs text-gray-500">
+                          {category.serviceCount} serviço{category.serviceCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          category.isActive 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {category.isActive ? 'Ativa' : 'Inativa'}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => deleteCategory(category.name)}
+                      className="ml-4 px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                      title="Deletar categoria"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowCategoriesListModal(false)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Fechar
               </button>
             </div>
           </div>

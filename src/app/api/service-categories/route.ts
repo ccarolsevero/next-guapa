@@ -67,6 +67,87 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// DELETE - Deletar categoria de serviço
+export async function DELETE(request: NextRequest) {
+  let client: MongoClient | null = null
+  
+  try {
+    // Verificar se MONGODB_URI está definida
+    if (!process.env.MONGODB_URI) {
+      console.error('MONGODB_URI não está definida')
+      return NextResponse.json(
+        { error: 'Configuração do banco de dados não encontrada' },
+        { status: 500 }
+      )
+    }
+    
+    client = new MongoClient(process.env.MONGODB_URI)
+    await client.connect()
+    console.log('✅ Conectado ao MongoDB')
+    
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
+    
+    const body = await request.json()
+    const { name } = body
+    
+    console.log('🗑️ Tentando deletar categoria:', name)
+    
+    // Validações
+    if (!name || !name.trim()) {
+      return NextResponse.json(
+        { error: 'Nome da categoria é obrigatório' },
+        { status: 400 }
+      )
+    }
+    
+    // Verificar se existem serviços ativos com essa categoria
+    const activeServicesCount = await servicesCollection.countDocuments({ 
+      category: name.trim(),
+      isActive: true 
+    })
+    
+    if (activeServicesCount > 0) {
+      return NextResponse.json(
+        { error: `Não é possível deletar a categoria "${name.trim()}" pois existem ${activeServicesCount} serviço(s) ativo(s) associado(s) a ela.` },
+        { status: 409 }
+      )
+    }
+    
+    // Deletar todos os serviços (ativos e inativos) com essa categoria
+    const deleteResult = await servicesCollection.deleteMany({ 
+      category: name.trim() 
+    })
+    
+    console.log('✅ Categoria deletada:', name.trim(), 'Serviços removidos:', deleteResult.deletedCount)
+    
+    return NextResponse.json({
+      message: `Categoria "${name.trim()}" deletada com sucesso`,
+      deletedServices: deleteResult.deletedCount
+    })
+    
+  } catch (error) {
+    console.error('❌ Erro ao deletar categoria:', error)
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+    return NextResponse.json(
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
+      { status: 500 }
+    )
+  } finally {
+    if (client) {
+      try {
+        await client.close()
+        console.log('✅ Conexão MongoDB fechada')
+      } catch (closeError) {
+        console.error('❌ Erro ao fechar conexão:', closeError)
+      }
+    }
+  }
+}
+
 // POST - Criar nova categoria de serviço (adicionando um serviço com essa categoria)
 export async function POST(request: NextRequest) {
   let client: MongoClient | null = null
