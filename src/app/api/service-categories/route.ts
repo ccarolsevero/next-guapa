@@ -13,11 +13,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const isActive = searchParams.get('isActive')
     
-    // Buscar todas as categorias únicas de serviços
-    const services = await servicesCollection.find({ isActive: true }).toArray()
+    // Buscar todas as categorias únicas de serviços (ativos e inativos)
+    const allServices = await servicesCollection.find({}).toArray()
     
     // Extrair categorias únicas
-    const uniqueCategories = [...new Set(services.map(service => service.category).filter(Boolean))]
+    const uniqueCategories = [...new Set(allServices.map(service => service.category).filter(Boolean))]
     
     // Contar serviços por categoria
     const categoriesWithCount = await Promise.all(
@@ -100,9 +100,24 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Por enquanto, vamos apenas retornar sucesso sem criar um serviço temporário
-    // A categoria será "registrada" quando o primeiro serviço for criado com essa categoria
-    console.log('✅ Categoria validada e aprovada:', name.trim())
+    // Criar um serviço temporário inativo para "registrar" a categoria
+    // Isso permite que a categoria apareça na lista mesmo sem serviços ativos
+    const tempService = {
+      name: `[CATEGORIA] ${name.trim()}`,
+      description: description || `Categoria: ${name.trim()}`,
+      price: 0,
+      category: name.trim(),
+      duration: 60,
+      isActive: false, // Serviço inativo, só para registrar a categoria
+      order: 0,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    
+    console.log('📝 Criando serviço temporário para registrar categoria:', tempService)
+    
+    const result = await servicesCollection.insertOne(tempService)
+    console.log('✅ Serviço temporário criado com sucesso:', result.insertedId)
     
     return NextResponse.json({
       _id: name.trim(),
