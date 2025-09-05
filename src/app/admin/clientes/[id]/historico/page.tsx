@@ -406,7 +406,7 @@ export default function HistoricoClientePage() {
                           </div>
                           {comanda.servicos.map((servico, index) => (
                             <div key={index} className="ml-6 text-sm text-gray-700">
-                              • {servico.nome} (R$ {servico.preco.toFixed(2)} x {servico.quantidade})
+                              • {servico.nome} (R$ {(servico.preco || 0).toFixed(2)} x {servico.quantidade || 0})
                             </div>
                           ))}
                           
@@ -418,7 +418,7 @@ export default function HistoricoClientePage() {
                               </div>
                               {comanda.produtos.map((produto, index) => (
                                 <div key={index} className="ml-6 text-sm text-gray-700">
-                                  • {produto.nome} (R$ {produto.preco.toFixed(2)} x {produto.quantidade})
+                                  • {produto.nome} (R$ {(produto.preco || 0).toFixed(2)} x {produto.quantidade || 0})
                                 </div>
                               ))}
                             </>
@@ -426,7 +426,7 @@ export default function HistoricoClientePage() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        R$ {comanda.valorTotal.toFixed(2)}
+                        R$ {(comanda.valorTotal || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
@@ -509,7 +509,7 @@ export default function HistoricoClientePage() {
                         {appointment.professional}
                       </td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        R$ {appointment.price.toFixed(2)}
+                        R$ {(appointment.price || 0).toFixed(2)}
                       </td>
                       <td className="px-6 py-4">
                         <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(appointment.status)}`}>
