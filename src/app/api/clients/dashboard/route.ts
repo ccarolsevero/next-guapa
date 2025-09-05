@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const uri = process.env.MONGODB_URI!
     client = new MongoClient(uri)
     await client.connect()
-    const db = client.db(process.env.DB_NAME || 'guapa')
+    const db = client.db('guapa')
     
     console.log('✅ Conectado ao MongoDB')
     
@@ -58,12 +58,19 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Buscar comandas finalizadas do cliente
-    const comandas = await db.collection('finalizacoes').find({
+    // Buscar comandas finalizadas do cliente (histórico)
+    const comandasFinalizadas = await db.collection('finalizacoes').find({
       clienteId: clientId
     }).sort({ dataFinalizacao: -1 }).toArray()
     
-    console.log('📋 Comandas finalizadas encontradas:', comandas.length)
+    console.log('📋 Comandas finalizadas encontradas:', comandasFinalizadas.length)
+    
+    // Buscar comandas ativas do cliente (em_atendimento)
+    const comandasAtivas = await db.collection('comandas').find({
+      'clientId._id': new ObjectId(clientId)
+    }).sort({ dataInicio: -1 }).toArray()
+    
+    console.log('📋 Comandas ativas encontradas:', comandasAtivas.length)
     
     // Buscar pedidos do cliente
     const pedidos = await db.collection('orders').find({
@@ -105,15 +112,45 @@ export async function GET(request: NextRequest) {
       }
     }))
     
-    // Processar comandas como histórico
-    const historico = comandas.map(comanda => ({
+    // Processar comandas finalizadas como histórico
+    const historico = await Promise.all(comandasFinalizadas.map(async (comanda) => {
+      let professionalName = comanda.profissionalNome || 'Profissional não especificado'
+      
+      // Se não tem o nome do profissional, buscar pelo ID
+      if (!comanda.profissionalNome && comanda.profissionalId) {
+        try {
+          const profissional = await db.collection('professionals').findOne({ _id: new ObjectId(comanda.profissionalId) })
+          if (profissional) {
+            professionalName = profissional.name || profissional.nome || profissional.fullName || 'Nome não definido'
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao buscar profissional:', error)
+        }
+      }
+      
+      return {
+        id: comanda._id.toString(),
+        service: comanda.servicos?.map((s: any) => s.nome).join(' + ') || 'Serviço não especificado',
+        professional: professionalName,
+        date: comanda.dataFinalizacao ? new Date(comanda.dataFinalizacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        time: comanda.horarioFinalizacao || '00:00',
+        status: 'completed',
+        price: comanda.valorFinal || 0,
+        rating: comanda.rating,
+        review: comanda.review,
+        reviewed: comanda.reviewed || false
+      }
+    }))
+    
+    // Processar comandas ativas (em atendimento)
+    const comandasEmAtendimento = comandasAtivas.map(comanda => ({
       id: comanda._id.toString(),
       service: comanda.servicos?.map((s: any) => s.nome).join(' + ') || 'Serviço não especificado',
-      professional: comanda.profissionalNome || 'Profissional não especificado',
-      date: comanda.dataFinalizacao ? new Date(comanda.dataFinalizacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-      time: comanda.horarioFinalizacao || '00:00',
-      status: 'completed',
-      price: comanda.valorFinal || 0,
+      professional: comanda.profissionalId?.name || 'Profissional não especificado',
+      date: comanda.dataInicio ? new Date(comanda.dataInicio).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      time: comanda.servicos?.[0]?.horarioInicio || '00:00',
+      status: 'in_progress',
+      price: comanda.valorTotal || 0,
       rating: comanda.rating,
       review: comanda.review,
       reviewed: comanda.reviewed || false
@@ -128,8 +165,8 @@ export async function GET(request: NextRequest) {
       createdAt: pedido.createdAt ? new Date(pedido.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
     }))
     
-    // Combinar agendamentos e histórico
-    const allAppointments = [...appointments, ...historico].sort((a, b) => 
+    // Combinar agendamentos, comandas em atendimento e histórico
+    const allAppointments = [...appointments, ...comandasEmAtendimento, ...historico].sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     )
     
