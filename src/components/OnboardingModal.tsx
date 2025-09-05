@@ -41,6 +41,10 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
       newErrors.phone = 'Telefone é obrigatório'
     }
 
+    if (!formData.birthDate.trim()) {
+      newErrors.birthDate = 'Data de nascimento é obrigatória'
+    }
+
     if (formData.newPassword && formData.newPassword.length < 6) {
       newErrors.newPassword = 'A senha deve ter pelo menos 6 caracteres'
     }
@@ -200,14 +204,17 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
             <div>
               <label className="block text-sm font-medium text-[#006D5B] mb-2">
                 <Calendar className="w-4 h-4 inline mr-2" />
-                Data de Nascimento
+                Data de Nascimento *
               </label>
               <input
                 type="date"
                 value={formData.birthDate}
                 onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
+                  errors.birthDate ? 'border-red-300' : 'border-gray-300'
+                }`}
               />
+              {errors.birthDate && <p className="text-red-600 text-sm mt-1">{errors.birthDate}</p>}
             </div>
 
             {/* Endereço */}
