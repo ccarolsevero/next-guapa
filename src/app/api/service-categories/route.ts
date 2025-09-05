@@ -55,15 +55,29 @@ export async function GET(request: NextRequest) {
 
 // POST - Criar nova categoria de serviço (adicionando um serviço com essa categoria)
 export async function POST(request: NextRequest) {
-  const client = new MongoClient(process.env.MONGODB_URI!)
+  let client: MongoClient | null = null
   
   try {
+    // Verificar se MONGODB_URI está definida
+    if (!process.env.MONGODB_URI) {
+      console.error('MONGODB_URI não está definida')
+      return NextResponse.json(
+        { error: 'Configuração do banco de dados não encontrada' },
+        { status: 500 }
+      )
+    }
+    
+    client = new MongoClient(process.env.MONGODB_URI)
     await client.connect()
+    console.log('✅ Conectado ao MongoDB')
+    
     const db = client.db('guapa')
     const servicesCollection = db.collection('services')
     
     const body = await request.json()
     const { name, description } = body
+    
+    console.log('📝 Dados recebidos:', { name, description })
     
     // Validações
     if (!name || !name.trim()) {
@@ -75,10 +89,11 @@ export async function POST(request: NextRequest) {
     
     // Verificar se categoria já existe
     const existingService = await servicesCollection.findOne({ 
-      category: { $regex: new RegExp(`^${name}$`, 'i') } 
+      category: { $regex: new RegExp(`^${name.trim()}$`, 'i') } 
     })
     
     if (existingService) {
+      console.log('❌ Categoria já existe:', existingService)
       return NextResponse.json(
         { error: 'Categoria já existe' },
         { status: 409 }
@@ -88,8 +103,8 @@ export async function POST(request: NextRequest) {
     // Para categorias de serviços, vamos criar um serviço temporário para "registrar" a categoria
     // Isso é necessário porque não temos uma coleção separada de categorias de serviços
     const tempService = {
-      name: `[CATEGORIA] ${name}`,
-      description: description || `Categoria: ${name}`,
+      name: `[CATEGORIA] ${name.trim()}`,
+      description: description || `Categoria: ${name.trim()}`,
       price: 0,
       category: name.trim(),
       duration: 60, // Duração mínima válida
@@ -99,10 +114,13 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date()
     }
     
+    console.log('📝 Tentando criar serviço temporário:', tempService)
+    
     const result = await servicesCollection.insertOne(tempService)
+    console.log('✅ Serviço criado com sucesso:', result.insertedId)
     
     return NextResponse.json({
-      _id: name,
+      _id: name.trim(),
       name: name.trim(),
       description: description?.trim() || '',
       isActive: true,
@@ -111,12 +129,23 @@ export async function POST(request: NextRequest) {
     }, { status: 201 })
     
   } catch (error) {
-    console.error('Erro ao criar categoria de serviço:', error)
+    console.error('❌ Erro ao criar categoria de serviço:', error)
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
       { status: 500 }
     )
   } finally {
-    await client.close()
+    if (client) {
+      try {
+        await client.close()
+        console.log('✅ Conexão MongoDB fechada')
+      } catch (closeError) {
+        console.error('❌ Erro ao fechar conexão:', closeError)
+      }
+    }
   }
 }
