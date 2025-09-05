@@ -126,7 +126,7 @@ interface Professional {
 }
 
 export default function HomePage() {
-  const { client, isLoggedIn, logout } = useAuth()
+  const { client, isLoggedIn, logout, loading: authLoading } = useAuth()
   const [showOrderModal, setShowOrderModal] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -244,8 +244,17 @@ export default function HomePage() {
     }
   }
 
+  // Debug temporário - remover depois
+  console.log('HomePage - isLoggedIn:', isLoggedIn, 'client:', client, 'authLoading:', authLoading)
+  
+  // Verificar localStorage diretamente
+  if (typeof window !== 'undefined') {
+    console.log('localStorage isClientLoggedIn:', localStorage.getItem('isClientLoggedIn'))
+    console.log('localStorage loggedInClient:', localStorage.getItem('loggedInClient'))
+  }
+
   // Se ainda está carregando, mostrar loading
-  if (loading) {
+  if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#022b28' }}>
         <div className="text-center">
