@@ -7,24 +7,37 @@ import Client from '@/models/Client'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = body
+    const { email, phone, password } = body
 
     // Validar campos obrigatórios
-    if (!email || !password) {
+    if ((!email && !phone) || !password) {
       return NextResponse.json(
-        { error: 'Email e senha são obrigatórios' },
+        { error: 'Email/telefone e senha são obrigatórios' },
         { status: 400 }
       )
     }
 
     await connectDB()
     
-    // Buscar cliente pelo email
-    const client = await Client.findOne({ email })
+    // Buscar cliente por email OU telefone
+    let client
+    if (email) {
+      client = await Client.findOne({ email })
+    } else if (phone) {
+      // Normalizar o telefone (remover caracteres especiais)
+      const normalizedPhone = phone.replace(/\D/g, '')
+      client = await Client.findOne({ 
+        $or: [
+          { phone: phone },
+          { phone: normalizedPhone },
+          { phone: { $regex: normalizedPhone.replace(/^55/, '') } } // Remove código do país se presente
+        ]
+      })
+    }
 
     if (!client) {
       return NextResponse.json(
-        { error: 'Email ou senha incorretos' },
+        { error: 'Email/telefone ou senha incorretos' },
         { status: 401 }
       )
     }
@@ -34,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     if (!isPasswordValid) {
       return NextResponse.json(
-        { error: 'Email ou senha incorretos' },
+        { error: 'Email/telefone ou senha incorretos' },
         { status: 401 }
       )
     }
