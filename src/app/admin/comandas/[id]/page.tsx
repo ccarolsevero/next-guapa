@@ -781,7 +781,7 @@ export default function ComandaDetalhesPage() {
                   <div key={service.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{service.nome}</div>
-                      <div className="text-sm text-gray-700 font-medium">R$ {service.preco.toFixed(2)}</div>
+                      <div className="text-sm text-gray-700 font-medium">R$ {(service.preco || 0).toFixed(2)}</div>
                     </div>
                     <div className="flex items-center space-x-2">
                       <button
@@ -798,7 +798,7 @@ export default function ComandaDetalhesPage() {
                         <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
-                        <div className="font-semibold text-gray-900">R$ {(service.preco * service.quantidade).toFixed(2)}</div>
+                        <div className="font-semibold text-gray-900">R$ {((service.preco || 0) * (service.quantidade || 0)).toFixed(2)}</div>
                       </div>
                     </div>
                   </div>
@@ -908,7 +908,7 @@ export default function ComandaDetalhesPage() {
                   <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{product.nome}</div>
-                      <div className="text-sm text-gray-700 font-medium">R$ {product.preco.toFixed(2)}</div>
+                      <div className="text-sm text-gray-700 font-medium">R$ {(product.preco || 0).toFixed(2)}</div>
                       <div className="text-xs text-gray-600 mt-1">
                         Vendido por: 
                         <button
@@ -964,7 +964,7 @@ export default function ComandaDetalhesPage() {
                         <Plus className="w-4 h-4 text-gray-700" />
                       </button>
                       <div className="text-right ml-4">
-                        <div className="font-semibold text-gray-900">R$ {(product.preco * product.quantidade).toFixed(2)}</div>
+                        <div className="font-semibold text-gray-900">R$ {((product.preco || 0) * (product.quantidade || 0)).toFixed(2)}</div>
                       </div>
                     </div>
                   </div>
@@ -1168,11 +1168,11 @@ export default function ComandaDetalhesPage() {
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-700 font-medium">Serviços:</span>
-                  <span className="text-gray-900 font-semibold">R$ {comanda?.servicos.reduce((sum: number, s: any) => sum + (s.preco * s.quantidade), 0).toFixed(2)}</span>
+                  <span className="text-gray-900 font-semibold">R$ {(comanda?.servicos?.reduce((sum: number, s: any) => sum + ((s.preco || 0) * (s.quantidade || 0)), 0) || 0).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-700 font-medium">Produtos:</span>
-                  <span className="text-gray-900 font-semibold">R$ {comanda?.produtos.reduce((sum: number, p: any) => sum + (p.preco * p.quantidade), 0).toFixed(2)}</span>
+                  <span className="text-gray-900 font-semibold">R$ {(comanda?.produtos?.reduce((sum: number, p: any) => sum + ((p.preco || 0) * (p.quantidade || 0)), 0) || 0).toFixed(2)}</span>
                 </div>
                 <div className="border-t pt-3">
                   <div className="flex justify-between text-lg font-medium">

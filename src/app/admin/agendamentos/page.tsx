@@ -627,29 +627,7 @@ export default function AgendamentosPage() {
             <div className="text-sm font-medium text-gray-900 p-2 flex items-center justify-center">Horário</div>
             {professionals.map((professional) => (
               <div key={professional._id} className="text-center p-2">
-                <div className={`flex flex-col items-center p-3 rounded-lg shadow-sm ${
-                  professional.name === 'Bruna Canovas' ? 'bg-[#d34d4c] text-white' :
-                  professional.name === 'Vitória Uliani' ? 'bg-[#f2dcbc] text-[#022b28]' :
-                  professional.name === 'Cicera Canovas' ? 'bg-[#022b28] text-white' :
-                  professional.name === 'Ellen Souza' ? 'bg-[#8c5459] text-white' :
-                  'bg-gray-600 text-white'
-                }`}>
-                  {/* Foto do profissional */}
-                  <div className="w-8 h-8 rounded-full bg-white/20 mb-2 flex items-center justify-center overflow-hidden">
-                    {professional.name === 'Bruna Canovas' ? (
-                      <img src="/assents/fotobruna.jpeg" alt="Bruna" className="w-full h-full object-cover" />
-                    ) : professional.name === 'Cicera Canovas' ? (
-                      <img src="/assents/ciceraperfil.jpeg" alt="Cicera" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-white/30 flex items-center justify-center text-xs font-bold">
-                        {professional.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-xs font-medium text-center leading-tight">
-                    {/* Nome removido conforme solicitado */}
-                  </div>
-                </div>
+                {/* Bloco removido conforme solicitado */}
               </div>
             ))}
           </div>
