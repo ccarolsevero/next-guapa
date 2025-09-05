@@ -497,6 +497,7 @@ export default function AgendamentosPage() {
           servicoId: '', // Será preenchido se necessário
           nome: service.service,
           preco: Number(service.price) || 0, // Garantir que é número
+          price: Number(service.price) || 0, // Campo adicional para compatibilidade
           quantidade: 1, // Quantidade padrão
           profissional: service.professional,
           duracao: service.duration,
@@ -509,6 +510,8 @@ export default function AgendamentosPage() {
       }
 
       console.log('🔄 Criando comanda com dados:', comandaData)
+      console.log('🔍 appointmentServices:', appointmentServices)
+      console.log('🔍 selectedAppointment:', selectedAppointment)
 
       const response = await fetch('/api/comandas', {
         method: 'POST',
