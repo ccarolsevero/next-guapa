@@ -58,12 +58,22 @@ export async function GET(request: NextRequest) {
       })
     }
     
-    // Buscar comandas finalizadas do cliente (histórico)
-    const comandasFinalizadas = await db.collection('finalizacoes').find({
+    // Buscar comandas finalizadas do cliente (histórico) - tanto na coleção finalizacoes quanto comandas
+    const comandasFinalizadasFinalizacoes = await db.collection('finalizacoes').find({
       clienteId: clientId
     }).sort({ dataFinalizacao: -1 }).toArray()
     
-    console.log('📋 Comandas finalizadas encontradas:', comandasFinalizadas.length)
+    const comandasFinalizadasComandas = await db.collection('comandas').find({
+      'clientId._id': new ObjectId(clientId),
+      status: 'finalizada'
+    }).sort({ dataFinalizacao: -1 }).toArray()
+    
+    // Combinar as duas fontes de comandas finalizadas
+    const comandasFinalizadas = [...comandasFinalizadasFinalizacoes, ...comandasFinalizadasComandas]
+    
+    console.log('📋 Comandas finalizadas (finalizacoes):', comandasFinalizadasFinalizacoes.length)
+    console.log('📋 Comandas finalizadas (comandas):', comandasFinalizadasComandas.length)
+    console.log('📋 Total comandas finalizadas:', comandasFinalizadas.length)
     
     // Buscar comandas ativas do cliente (em_atendimento)
     const comandasAtivas = await db.collection('comandas').find({
@@ -131,14 +141,19 @@ export async function GET(request: NextRequest) {
         }
       }
       
+      // Determinar a data de finalização baseada na estrutura da comanda
+      let finalizacaoDate = comanda.dataFinalizacao || comanda.dataInicio || new Date()
+      let finalizacaoTime = comanda.horarioFinalizacao || comanda.servicos?.[0]?.horarioInicio || '00:00'
+      let valorFinal = comanda.valorFinal || comanda.valorTotal || 0
+      
       return {
         id: comanda._id.toString(),
         service: comanda.servicos?.map((s: any) => s.nome).join(' + ') || 'Serviço não especificado',
         professional: professionalName,
-        date: comanda.dataFinalizacao ? new Date(comanda.dataFinalizacao).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-        time: comanda.horarioFinalizacao || '00:00',
+        date: new Date(finalizacaoDate).toISOString().split('T')[0],
+        time: finalizacaoTime,
         status: 'completed',
-        price: comanda.valorFinal || 0,
+        price: valorFinal,
         rating: comanda.rating,
         review: comanda.review,
         reviewed: comanda.reviewed || false
