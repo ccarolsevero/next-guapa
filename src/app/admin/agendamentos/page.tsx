@@ -21,7 +21,7 @@ import {
   AlertTriangle,
   Clock3
 } from 'lucide-react'
-import { useToast } from '@/contexts/ToastContext'
+// import { useToast } from '@/contexts/ToastContext'
 
 interface Appointment {
   _id: string
@@ -120,9 +120,22 @@ const statusColors = {
 }
 
 export default function AgendamentosPage() {
-  const toast = useToast()
-  const showSuccess = toast?.showSuccess || (() => {})
-  const showError = toast?.showError || (() => {})
+  // Toast functions - só disponíveis no cliente
+  const showSuccess = (title: string, message?: string) => {
+    if (typeof window !== 'undefined') {
+      // Usar react-hot-toast diretamente no cliente
+      const { toast } = require('react-hot-toast')
+      toast.success(message ? `${title}: ${message}` : title)
+    }
+  }
+  
+  const showError = (title: string, message?: string) => {
+    if (typeof window !== 'undefined') {
+      // Usar react-hot-toast diretamente no cliente
+      const { toast } = require('react-hot-toast')
+      toast.error(message ? `${title}: ${message}` : title)
+    }
+  }
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
