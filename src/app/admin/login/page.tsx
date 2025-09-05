@@ -69,7 +69,8 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-[#D15556] focus:border-[#D15556] focus:outline-none transition-colors bg-white text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-lg focus:ring-[#D15556] focus:border-[#D15556] focus:outline-none transition-colors bg-white text-black placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   placeholder="admin@espacoguapa.com"
                 />
               </div>
@@ -90,7 +91,8 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-[#D15556] focus:border-[#D15556] focus:outline-none transition-colors bg-white text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-10 py-3 border border-gray-200 rounded-lg focus:ring-[#D15556] focus:border-[#D15556] focus:outline-none transition-colors bg-white text-black placeholder-gray-500"
+                  style={{ color: '#000000' }}
                   placeholder="••••••"
                 />
                 <button
