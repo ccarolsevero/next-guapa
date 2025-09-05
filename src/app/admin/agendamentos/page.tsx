@@ -68,6 +68,21 @@ const getProfessionalColor = (professionalName: string) => {
   return colors[professionalName] || 'bg-gray-200 text-gray-900 border-gray-400'
 }
 
+// Cores baseadas no status
+const getStatusColor = (status: string) => {
+  const statusColors: Record<string, string> = {
+    'SCHEDULED': 'bg-teal-100 text-teal-800 border-teal-200', // Agendado
+    'CONFIRMED': 'bg-blue-100 text-blue-800 border-blue-200', // Confirmado
+    'PENDING': 'bg-yellow-100 text-yellow-800 border-yellow-200', // Aguardando
+    'PAID': 'bg-red-100 text-red-800 border-red-200', // Pago
+    'CANCELLED': 'bg-gray-100 text-gray-800 border-gray-200', // Cancelado
+    'NO_SHOW': 'bg-gray-200 text-gray-900 border-gray-300', // Faltou
+    'IN_PROGRESS': 'bg-green-100 text-green-800 border-green-200', // Em Atendimento (caso ainda exista)
+    'COMPLETED': 'bg-purple-100 text-purple-800 border-purple-200' // Finalizado (caso ainda exista)
+  }
+  return statusColors[status] || 'bg-gray-200 text-gray-900 border-gray-400'
+}
+
 // Calcular duração em intervalos de 15 minutos
 const getDurationInSlots = (startTime: string, endTime: string) => {
   if (!startTime || !endTime) return 1
@@ -737,7 +752,7 @@ export default function AgendamentosPage() {
               return (
                 <div
                   key={appointment._id}
-                  className={`p-3 rounded-lg border-2 shadow-md cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] ${getProfessionalColor(appointment.professional)}`}
+                  className={`p-3 rounded-lg border-2 shadow-md cursor-pointer transition-all hover:shadow-lg hover:scale-[1.02] ${getStatusColor(appointment.status)}`}
                   style={{
                     gridRow: `${startIndex + 2} / span ${durationSlots}`, // +2 porque row 1 é o header
                     gridColumn: professionalIndex + 2
