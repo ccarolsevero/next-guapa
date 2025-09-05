@@ -193,6 +193,13 @@ export default function AgendamentosPage() {
       const response = await fetch(`/api/appointments?${params}`)
       if (response.ok) {
         const data = await response.json()
+        console.log('📋 Agendamentos carregados:', data)
+        // Log específico para customLabels
+        data.forEach((apt: any, index: number) => {
+          if (apt.customLabels && apt.customLabels.length > 0) {
+            console.log(`🏷️ Agendamento ${index + 1} (${apt.clientName}) tem ${apt.customLabels.length} etiquetas:`, apt.customLabels)
+          }
+        })
         setAppointments(data)
       } else {
         console.error('Erro ao buscar agendamentos')
@@ -759,6 +766,7 @@ export default function AgendamentosPage() {
                     {/* Etiquetas selecionadas */}
                     {appointment.customLabels && appointment.customLabels.length > 0 && (
                       <div className="flex flex-wrap gap-1">
+                        {console.log(`🎯 Renderizando etiquetas para ${appointment.clientName}:`, appointment.customLabels)}
                         {appointment.customLabels.map((label: any) => (
                           <span
                             key={label.id}
