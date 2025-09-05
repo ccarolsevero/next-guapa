@@ -17,6 +17,18 @@ const appointments = [
     date: "2025-09-06T00:00:00.000Z", 
     status: "CANCELLED",
     service: "Avaliação Capilar"
+  },
+  {
+    id: "4",
+    date: "2025-09-04T00:00:00.000Z", 
+    status: "COMPLETED",
+    service: "Tratamento Capilar"
+  },
+  {
+    id: "5",
+    date: "2025-09-03T00:00:00.000Z", 
+    status: "NO_SHOW",
+    service: "Corte"
   }
 ];
 
@@ -28,16 +40,27 @@ appointments.forEach(apt => {
 console.log('\n📅 Data de hoje:', new Date().toISOString());
 console.log('📅 Data de hoje (local):', new Date().toLocaleDateString());
 
-// Teste do filtro para próximos agendamentos
+// Teste de conversão de datas UTC para local
+console.log('\n🕐 Teste de fuso horário:');
+const testDate = "2025-09-17T00:00:00.000Z";
+const utcDate = new Date(testDate);
+const localDate = new Date(utcDate.getFullYear(), utcDate.getMonth(), utcDate.getDate());
+
+console.log(`Data UTC: ${testDate}`);
+console.log(`Data local: ${localDate.toLocaleDateString()}`);
+console.log(`UTC getDate(): ${utcDate.getDate()}`);
+console.log(`Local getDate(): ${localDate.getDate()}`);
+console.log(`UTC getMonth(): ${utcDate.getMonth()}`);
+console.log(`Local getMonth(): ${localDate.getMonth()}`);
+
+// Teste do filtro para próximos agendamentos (corrigido para fuso horário)
 const proximosAgendamentos = appointments.filter(appointment => {
-  const appointmentDate = new Date(appointment.date);
+  // Usar apenas a parte da data (YYYY-MM-DD) para evitar problemas de fuso horário
+  const appointmentDateStr = appointment.date.split('T')[0]; // "2025-09-17"
   const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // "2025-09-05"
   
-  // Comparar apenas a data (ignorar horário)
-  const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate());
-  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  
-  return appointmentDateOnly >= todayOnly;
+  return appointmentDateStr >= todayStr;
 });
 
 console.log('\n🔮 Próximos agendamentos (futuros):');
@@ -45,16 +68,14 @@ proximosAgendamentos.forEach(apt => {
   console.log(`- ${apt.date} (${apt.status}) - ${apt.service}`);
 });
 
-// Teste do filtro para histórico
+// Teste do filtro para histórico (corrigido para fuso horário)
 const historico = appointments.filter(appointment => {
-  const appointmentDate = new Date(appointment.date);
+  // Usar apenas a parte da data (YYYY-MM-DD) para evitar problemas de fuso horário
+  const appointmentDateStr = appointment.date.split('T')[0]; // "2025-09-04"
   const today = new Date();
+  const todayStr = today.toISOString().split('T')[0]; // "2025-09-05"
   
-  // Comparar apenas a data (ignorar horário)
-  const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate());
-  const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  
-  return appointmentDateOnly < todayOnly;
+  return appointmentDateStr < todayStr;
 });
 
 console.log('\n📚 Histórico (passados):');

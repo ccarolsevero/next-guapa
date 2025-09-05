@@ -769,14 +769,12 @@ function PainelClienteContent() {
                         {appointments
                           .filter(appointment => {
                             // Filtrar apenas agendamentos futuros (data >= hoje)
-                            const appointmentDate = new Date(appointment.date)
+                            // Usar apenas a parte da data (YYYY-MM-DD) para evitar problemas de fuso horário
+                            const appointmentDateStr = appointment.date.split('T')[0] // "2025-09-17"
                             const today = new Date()
+                            const todayStr = today.toISOString().split('T')[0] // "2025-09-05"
                             
-                            // Comparar apenas a data (ignorar horário)
-                            const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate())
-                            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-                            
-                            return appointmentDateOnly >= todayOnly
+                            return appointmentDateStr >= todayStr
                           })
                           .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
@@ -852,14 +850,12 @@ function PainelClienteContent() {
                         {appointments
                           .filter(appointment => {
                             // Filtrar apenas agendamentos passados (data < hoje)
-                            const appointmentDate = new Date(appointment.date)
+                            // Usar apenas a parte da data (YYYY-MM-DD) para evitar problemas de fuso horário
+                            const appointmentDateStr = appointment.date.split('T')[0] // "2025-09-04"
                             const today = new Date()
+                            const todayStr = today.toISOString().split('T')[0] // "2025-09-05"
                             
-                            // Comparar apenas a data (ignorar horário)
-                            const appointmentDateOnly = new Date(appointmentDate.getFullYear(), appointmentDate.getMonth(), appointmentDate.getDate())
-                            const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-                            
-                            return appointmentDateOnly < todayOnly
+                            return appointmentDateStr < todayStr
                           })
                           .map((appointment) => (
                           <tr key={appointment.id} className="hover:bg-gray-50">
