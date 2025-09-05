@@ -39,6 +39,7 @@ export default function ServicosPage() {
   const [services, setServices] = useState<Service[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('Todos')
   const [selectedProfessional, setSelectedProfessional] = useState('Todos')
@@ -68,6 +69,7 @@ export default function ServicosPage() {
   // Carregar categorias de serviços da API
   const loadCategories = async () => {
     try {
+      setCategoriesLoading(true)
       const response = await fetch('/api/service-categories?isActive=true')
       if (!response.ok) {
         throw new Error('Erro ao carregar categorias de serviços')
@@ -86,6 +88,8 @@ export default function ServicosPage() {
       ]
       console.log('📋 Usando categorias fallback:', fallbackCategories)
       setCategories(fallbackCategories)
+    } finally {
+      setCategoriesLoading(false)
     }
   }
 
@@ -225,11 +229,16 @@ export default function ServicosPage() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="px-4 py-3 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
               style={{ color: '#000000' }}
+              disabled={categoriesLoading}
             >
               <option value="Todos">Todos</option>
-              {categories.map(category => (
-                <option key={category._id} value={category.name}>{category.name}</option>
-              ))}
+              {categoriesLoading ? (
+                <option value="">Carregando categorias...</option>
+              ) : (
+                categories.map(category => (
+                  <option key={category._id} value={category.name}>{category.name}</option>
+                ))
+              )}
             </select>
           </div>
           
