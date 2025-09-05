@@ -12,7 +12,8 @@ import {
   Star,
   User,
   Scissors,
-  ShoppingBag
+  ShoppingBag,
+  X
 } from 'lucide-react'
 
 interface Cliente {
