@@ -81,6 +81,7 @@ function PainelClienteContent() {
   const [passwordLoading, setPasswordLoading] = useState(false)
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [recommendations, setRecommendations] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -122,6 +123,18 @@ function PainelClienteContent() {
         setClientData(data.client)
         setAppointments(data.appointments)
         setOrders(data.orders)
+        
+        // Buscar recomendações do cliente
+        try {
+          const recomendacoesResponse = await fetch(`/api/recomendacoes?clientId=${clientId}`)
+          if (recomendacoesResponse.ok) {
+            const recomendacoesData = await recomendacoesResponse.json()
+            setRecommendations(recomendacoesData.recomendacoes || [])
+            console.log('📊 Recomendações carregadas:', recomendacoesData.recomendacoes?.length || 0)
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao carregar recomendações:', error)
+        }
         
         // Verificar se precisa completar onboarding
         console.log('🔍 Verificando onboarding:', {
@@ -958,38 +971,53 @@ function PainelClienteContent() {
                         Orientações dos Atendimentos
                       </h3>
                       
-                      {appointments.filter(apt => apt.status === 'completed').length > 0 ? (
+                      {recommendations.length > 0 ? (
                         <div className="space-y-4">
-                          {appointments
-                            .filter(apt => apt.status === 'completed')
-                            .map((appointment, index) => (
-                              <div key={index} className="border border-gray-200 rounded-lg p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                  <div>
-                                    <h4 className="font-medium text-[#006D5B]">
-                                      {appointment.service}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                      Profissional: {appointment.professional}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {formatDate(appointment.date)} às {appointment.time}
-                                    </p>
-                                  </div>
-                                  <span className="text-sm text-gray-500">
-                                    R$ {appointment.price.toFixed(2)}
-                                  </span>
-                                </div>
-                                
-                                {/* Aqui viriam as recomendações reais do banco */}
-                                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                                  <p className="text-sm text-blue-800">
-                                    <strong>Orientações:</strong> Produtos específicos para seu tipo de cabelo, 
-                                    cuidados diários e próximos passos para manutenção dos resultados.
+                          {recommendations.slice(0, 2).map((recommendation) => (
+                            <div key={recommendation._id} className="border border-gray-200 rounded-lg p-4">
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <h4 className="font-medium text-[#006D5B]">
+                                    {recommendation.titulo}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    Profissional: {recommendation.professional?.name || 'Profissional não especificado'}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {new Date(recommendation.dataRecomendacao).toLocaleDateString('pt-BR')}
                                   </p>
                                 </div>
+                                <div className="flex flex-col space-y-1">
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    recommendation.status === 'ativa' ? 'bg-green-100 text-green-800' : 
+                                    recommendation.status === 'concluida' ? 'bg-blue-100 text-blue-800' : 
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {recommendation.status === 'ativa' ? 'Ativa' : 
+                                     recommendation.status === 'concluida' ? 'Concluída' : 'Cancelada'}
+                                  </span>
+                                  <span className={`px-2 py-1 text-xs rounded-full ${
+                                    recommendation.prioridade === 'alta' ? 'bg-red-100 text-red-800' :
+                                    recommendation.prioridade === 'media' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-green-100 text-green-800'
+                                  }`}>
+                                    {recommendation.prioridade}
+                                  </span>
+                                </div>
                               </div>
-                            ))}
+                              
+                              <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                                <p className="text-sm text-blue-800">
+                                  <strong>Orientações:</strong> {recommendation.descricao}
+                                </p>
+                                {recommendation.observacoes && (
+                                  <p className="text-sm text-blue-700 mt-2">
+                                    <strong>Observações:</strong> {recommendation.observacoes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">
@@ -1012,6 +1040,11 @@ function PainelClienteContent() {
                       >
                         <Star className="w-5 h-5 mr-2" />
                         Ver Todas as Orientações
+                        {recommendations.length > 2 && (
+                          <span className="ml-2 bg-white text-[#D15556] px-2 py-1 rounded-full text-xs font-bold">
+                            +{recommendations.length - 2}
+                          </span>
+                        )}
                       </Link>
                     </div>
                   </div>

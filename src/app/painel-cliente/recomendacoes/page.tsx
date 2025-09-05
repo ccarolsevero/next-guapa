@@ -50,20 +50,32 @@ export default function RecomendacoesClientePage() {
         setLoading(true)
         setError(null)
         
-        // Buscar ID do cliente do localStorage ou contexto de autenticação
-        const clienteId = localStorage.getItem('clienteId') // Ajustar conforme sua implementação de auth
+        // Verificar se o cliente está logado
+        const isLoggedIn = localStorage.getItem('isClientLoggedIn')
+        const loggedInClient = localStorage.getItem('loggedInClient')
         
-        if (!clienteId) {
-          throw new Error('Cliente não autenticado')
+        if (!isLoggedIn || !loggedInClient) {
+          window.location.href = '/login-cliente'
+          return
+        }
+
+        const clientInfo = JSON.parse(loggedInClient)
+        const clientId = clientInfo.id || clientInfo._id
+        
+        if (!clientId) {
+          throw new Error('ID do cliente não encontrado')
         }
         
-        const response = await fetch(`/api/recomendacoes?clientId=${clienteId}`)
+        console.log('🔍 Buscando recomendações para clientId:', clientId)
+        
+        const response = await fetch(`/api/recomendacoes?clientId=${clientId}`)
         
         if (!response.ok) {
           throw new Error('Erro ao carregar recomendações')
         }
         
         const data = await response.json()
+        console.log('📊 Recomendações recebidas:', data.recomendacoes.length)
         setRecomendacoes(data.recomendacoes)
       } catch (err) {
         console.error('Erro ao buscar recomendações:', err)
