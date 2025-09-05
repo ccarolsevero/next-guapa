@@ -727,6 +727,9 @@ export default function AgendamentosPage() {
                     <div className="text-xs truncate leading-tight opacity-90">
                       {appointment.service}
                     </div>
+                    <div className="text-xs truncate leading-tight opacity-90 font-medium">
+                      {appointment.clientName}
+                    </div>
                   </div>
                 </div>
               )
