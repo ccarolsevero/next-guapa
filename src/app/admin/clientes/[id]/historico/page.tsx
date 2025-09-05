@@ -125,20 +125,32 @@ export default function HistoricoClientePage() {
         }
 
         // Buscar agendamentos do cliente
-        const appointmentsResponse = await fetch(`/api/appointments?clientId=${clientId}`)
-        console.log('📡 Resposta da API agendamentos:', appointmentsResponse.status)
-        
-        if (appointmentsResponse.ok) {
-          const appointmentsData = await appointmentsResponse.json()
-          console.log('📦 Dados dos agendamentos recebidos:', appointmentsData)
-          console.log('🔍 Total de agendamentos retornados:', appointmentsData.length || 0)
+        try {
+          const appointmentsResponse = await fetch(`/api/appointments?clientId=${clientId}`)
+          console.log('📡 Resposta da API agendamentos:', appointmentsResponse.status)
           
-          setAppointments(appointmentsData || [])
-          console.log('✅ Agendamentos carregados:', appointmentsData.length || 0)
-        } else {
-          console.error('❌ Erro ao buscar agendamentos:', appointmentsResponse.status)
-          const errorData = await appointmentsResponse.json()
-          console.error('❌ Detalhes do erro:', errorData)
+          if (appointmentsResponse.ok) {
+            const appointmentsData = await appointmentsResponse.json()
+            console.log('📦 Dados dos agendamentos recebidos:', appointmentsData)
+            console.log('🔍 Total de agendamentos retornados:', appointmentsData.length || 0)
+            
+            setAppointments(appointmentsData || [])
+            console.log('✅ Agendamentos carregados:', appointmentsData.length || 0)
+          } else {
+            console.error('❌ Erro ao buscar agendamentos:', appointmentsResponse.status)
+            try {
+              const errorData = await appointmentsResponse.json()
+              console.error('❌ Detalhes do erro:', errorData)
+            } catch (jsonError) {
+              console.error('❌ Erro ao processar resposta de erro:', jsonError)
+            }
+            // Definir array vazio em caso de erro para não quebrar a página
+            setAppointments([])
+          }
+        } catch (fetchError) {
+          console.error('❌ Erro na requisição de agendamentos:', fetchError)
+          // Definir array vazio em caso de erro para não quebrar a página
+          setAppointments([])
         }
         
       } catch (error) {
@@ -170,6 +182,9 @@ export default function HistoricoClientePage() {
 
   // Filtrar agendamentos cancelados e faltas
   const getCancelledAppointments = () => {
+    if (!appointments || !Array.isArray(appointments)) {
+      return []
+    }
     return appointments.filter(apt => apt.status === 'CANCELLED' || apt.status === 'NO_SHOW')
   }
 
@@ -317,7 +332,7 @@ export default function HistoricoClientePage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Cancelamentos</p>
                 <p className="text-2xl font-light text-red-600">
-                  {appointments.filter(apt => apt.status === 'CANCELLED').length}
+                  {appointments && Array.isArray(appointments) ? appointments.filter(apt => apt.status === 'CANCELLED').length : 0}
                 </p>
               </div>
             </div>
@@ -331,7 +346,7 @@ export default function HistoricoClientePage() {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Faltas</p>
                 <p className="text-2xl font-light text-orange-600">
-                  {appointments.filter(apt => apt.status === 'NO_SHOW').length}
+                  {appointments && Array.isArray(appointments) ? appointments.filter(apt => apt.status === 'NO_SHOW').length : 0}
                 </p>
               </div>
             </div>
