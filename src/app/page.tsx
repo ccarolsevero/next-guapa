@@ -565,6 +565,11 @@ export default function HomePage() {
                   >
                     Agendar Horário
                   </Link>
+                  {/* Debug temporário */}
+                  <div className="mt-4 text-sm text-white">
+                    <p>Debug: isLoggedIn = {isLoggedIn ? 'true' : 'false'}</p>
+                    <p>Debug: client = {client ? client.name : 'null'}</p>
+                  </div>
                 </div>
               </div>
               
