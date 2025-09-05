@@ -68,19 +68,19 @@ const getProfessionalColor = (professionalName: string) => {
   return colors[professionalName] || 'bg-gray-200 text-gray-900 border-gray-400'
 }
 
-// Cores baseadas no status
+// Cores baseadas no status (paleta do site)
 const getStatusColor = (status: string) => {
   const statusColors: Record<string, string> = {
-    'SCHEDULED': 'bg-teal-100 text-teal-800 border-teal-200', // Agendado
-    'CONFIRMED': 'bg-blue-100 text-blue-800 border-blue-200', // Confirmado
-    'PENDING': 'bg-yellow-100 text-yellow-800 border-yellow-200', // Aguardando
-    'PAID': 'bg-red-100 text-red-800 border-red-200', // Pago
-    'CANCELLED': 'bg-gray-100 text-gray-800 border-gray-200', // Cancelado
-    'NO_SHOW': 'bg-gray-200 text-gray-900 border-gray-300', // Faltou
-    'IN_PROGRESS': 'bg-green-100 text-green-800 border-green-200', // Em Atendimento (caso ainda exista)
-    'COMPLETED': 'bg-purple-100 text-purple-800 border-purple-200' // Finalizado (caso ainda exista)
+    'SCHEDULED': 'bg-green-50 text-[#006D5B] border-green-200', // Agendado - verde claro
+    'CONFIRMED': 'bg-green-100 text-[#006D5B] border-green-300', // Confirmado - verde médio
+    'PENDING': 'bg-amber-50 text-amber-800 border-amber-200', // Aguardando - amarelo claro
+    'PAID': 'bg-red-50 text-[#D15556] border-red-200', // Pago - vermelho claro
+    'CANCELLED': 'bg-gray-50 text-gray-700 border-gray-200', // Cancelado - cinza claro
+    'NO_SHOW': 'bg-gray-100 text-gray-800 border-gray-300', // Faltou - cinza médio
+    'IN_PROGRESS': 'bg-green-100 text-[#006D5B] border-green-300', // Em Atendimento (caso ainda exista)
+    'COMPLETED': 'bg-red-100 text-[#D15556] border-red-300' // Finalizado (caso ainda exista)
   }
-  return statusColors[status] || 'bg-gray-200 text-gray-900 border-gray-400'
+  return statusColors[status] || 'bg-gray-100 text-gray-800 border-gray-300'
 }
 
 // Calcular duração em intervalos de 15 minutos
