@@ -1402,7 +1402,17 @@ export default function ComandaDetalhesPage() {
                       <span className="text-sm font-medium text-gray-600">Forma de Pagamento:</span>
                       <p className="text-gray-900">
                         {comanda?.metodoPagamento ? 
-                          comanda.metodoPagamento.charAt(0).toUpperCase() + comanda.metodoPagamento.slice(1) 
+                          (() => {
+                            const metodos = {
+                              'pix': 'PIX',
+                              'credit': 'Cartão de Crédito',
+                              'debit': 'Cartão de Débito',
+                              'cash': 'Dinheiro',
+                              'transfer': 'Transferência',
+                              'dinheiro': 'Dinheiro'
+                            }
+                            return metodos[comanda.metodoPagamento] || comanda.metodoPagamento.charAt(0).toUpperCase() + comanda.metodoPagamento.slice(1)
+                          })()
                           : 'Não informado'}
                       </p>
                     </div>
