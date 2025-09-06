@@ -566,7 +566,8 @@ export default function MetasComissaoPage() {
                       value={formData.dataInicio}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                     />
                   </div>
 
@@ -580,7 +581,8 @@ export default function MetasComissaoPage() {
                       value={formData.dataFim}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                     />
                   </div>
                 </div>
