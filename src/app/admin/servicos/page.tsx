@@ -131,6 +131,45 @@ export default function ServicosPage() {
     }
   }
 
+  // Toggle ativar/desativar categoria
+  const toggleCategoryStatus = async (categoryName: string, currentStatus: boolean) => {
+    const newStatus = !currentStatus
+    const action = newStatus ? 'ativar' : 'desativar'
+    
+    if (!confirm(`Tem certeza que deseja ${action} a categoria "${categoryName}"?`)) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/service-categories', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: categoryName,
+          isActive: newStatus
+        }),
+      })
+
+      if (response.ok) {
+        console.log(`✅ Categoria ${action}da:`, categoryName)
+        
+        // Recarregar categorias
+        await loadCategories()
+        
+        alert(`Categoria ${action}da com sucesso!`)
+      } else {
+        const error = await response.json()
+        console.error(`❌ Erro ao ${action} categoria:`, error)
+        alert(`Erro ao ${action} categoria: ${error.error || 'Erro desconhecido'}`)
+      }
+    } catch (error) {
+      console.error(`❌ Erro ao ${action} categoria:`, error)
+      alert(`Erro ao ${action} categoria. Tente novamente.`)
+    }
+  }
+
   // Deletar categoria de serviço
   const deleteCategory = async (categoryName: string) => {
     if (!confirm(`Tem certeza que deseja deletar a categoria "${categoryName}"?\n\nEsta ação não pode ser desfeita.`)) {
@@ -572,13 +611,33 @@ export default function ServicosPage() {
                         </span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => deleteCategory(category.name)}
-                      className="ml-4 px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
-                      title="Deletar categoria"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {/* Toggle Ativar/Desativar */}
+                      <button
+                        onClick={() => toggleCategoryStatus(category.name, category.isActive)}
+                        className={`px-3 py-1 rounded transition-colors ${
+                          category.isActive
+                            ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-50'
+                            : 'text-green-600 hover:text-green-800 hover:bg-green-50'
+                        }`}
+                        title={category.isActive ? 'Desativar categoria' : 'Ativar categoria'}
+                      >
+                        {category.isActive ? (
+                          <span className="text-xs font-medium">Desativar</span>
+                        ) : (
+                          <span className="text-xs font-medium">Ativar</span>
+                        )}
+                      </button>
+                      
+                      {/* Botão Deletar */}
+                      <button
+                        onClick={() => deleteCategory(category.name)}
+                        className="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                        title="Deletar categoria"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 ))
               )}

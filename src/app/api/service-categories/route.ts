@@ -148,6 +148,83 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
+// PATCH - Atualizar status de categoria de serviço
+export async function PATCH(request: NextRequest) {
+  let client: MongoClient | null = null
+  
+  try {
+    // Verificar se MONGODB_URI está definida
+    if (!process.env.MONGODB_URI) {
+      console.error('MONGODB_URI não está definida')
+      return NextResponse.json(
+        { error: 'Configuração do banco de dados não encontrada' },
+        { status: 500 }
+      )
+    }
+    
+    client = new MongoClient(process.env.MONGODB_URI)
+    await client.connect()
+    console.log('✅ Conectado ao MongoDB')
+    
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
+    
+    const body = await request.json()
+    const { name, isActive } = body
+    
+    console.log('🔄 Atualizando status da categoria:', { name, isActive })
+    
+    // Validações
+    if (!name || !name.trim()) {
+      return NextResponse.json(
+        { error: 'Nome da categoria é obrigatório' },
+        { status: 400 }
+      )
+    }
+    
+    if (typeof isActive !== 'boolean') {
+      return NextResponse.json(
+        { error: 'Status isActive deve ser um valor booleano' },
+        { status: 400 }
+      )
+    }
+    
+    // Atualizar todos os serviços com essa categoria
+    const updateResult = await servicesCollection.updateMany(
+      { category: name.trim() },
+      { $set: { isActive: isActive, updatedAt: new Date() } }
+    )
+    
+    console.log('✅ Status da categoria atualizado:', name.trim(), 'Serviços afetados:', updateResult.modifiedCount)
+    
+    return NextResponse.json({
+      message: `Categoria "${name.trim()}" ${isActive ? 'ativada' : 'desativada'} com sucesso`,
+      modifiedServices: updateResult.modifiedCount,
+      isActive: isActive
+    })
+    
+  } catch (error) {
+    console.error('❌ Erro ao atualizar status da categoria:', error)
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack trace')
+    return NextResponse.json(
+      { 
+        error: 'Erro interno do servidor',
+        details: error instanceof Error ? error.message : 'Erro desconhecido'
+      },
+      { status: 500 }
+    )
+  } finally {
+    if (client) {
+      try {
+        await client.close()
+        console.log('✅ Conexão MongoDB fechada')
+      } catch (closeError) {
+        console.error('❌ Erro ao fechar conexão:', closeError)
+      }
+    }
+  }
+}
+
 // POST - Criar nova categoria de serviço (adicionando um serviço com essa categoria)
 export async function POST(request: NextRequest) {
   let client: MongoClient | null = null
