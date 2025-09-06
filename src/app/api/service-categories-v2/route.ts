@@ -25,18 +25,25 @@ export async function GET(request: NextRequest) {
     const uniqueCategories = [...new Set(allServices.map(service => service.category).filter(Boolean))]
     console.log('📋 Categorias únicas encontradas:', uniqueCategories)
     
-    // Contar serviços por categoria
+    // Contar serviços por categoria e verificar status
     const categoriesWithCount = await Promise.all(
       uniqueCategories.map(async (categoryName) => {
         const serviceCount = await servicesCollection.countDocuments({ 
           category: categoryName,
           isActive: true 
         })
+        
+        // Verificar se a categoria tem pelo menos um serviço ativo
+        const hasActiveServices = await servicesCollection.findOne({ 
+          category: categoryName,
+          isActive: true 
+        })
+        
         return {
           _id: categoryName, // Usar o nome como ID temporário
           name: categoryName,
           description: '',
-          isActive: true,
+          isActive: !!hasActiveServices, // true se tem serviços ativos, false caso contrário
           order: 0,
           serviceCount
         }

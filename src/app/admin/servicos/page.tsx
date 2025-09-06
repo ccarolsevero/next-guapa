@@ -631,37 +631,35 @@ export default function ServicosPage() {
                         <span className="text-xs text-gray-500">
                           {category.serviceCount} serviço{category.serviceCount !== 1 ? 's' : ''}
                         </span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          category.isActive 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {category.isActive ? 'Ativa' : 'Inativa'}
-                        </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {/* Toggle Ativar/Desativar */}
-                      <button
-                        onClick={() => toggleCategoryStatus(category.name, category.isActive)}
-                        className={`px-3 py-1 rounded transition-colors ${
-                          category.isActive
-                            ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-50'
-                            : 'text-green-600 hover:text-green-800 hover:bg-green-50'
-                        }`}
-                        title={category.isActive ? 'Desativar categoria' : 'Ativar categoria'}
-                      >
-                        {category.isActive ? (
-                          <span className="text-xs font-medium">Desativar</span>
-                        ) : (
-                          <span className="text-xs font-medium">Ativar</span>
-                        )}
-                      </button>
+                    <div className="flex items-center gap-3">
+                      {/* Toggle Switch */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-500">
+                          {category.isActive ? 'Ativa' : 'Inativa'}
+                        </span>
+                        <button
+                          onClick={() => toggleCategoryStatus(category.name, category.isActive)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${
+                            category.isActive
+                              ? 'bg-green-500 focus:ring-green-500'
+                              : 'bg-gray-300 focus:ring-gray-500'
+                          }`}
+                          title={category.isActive ? 'Desativar categoria' : 'Ativar categoria'}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform ${
+                              category.isActive ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
                       
                       {/* Botão Deletar */}
                       <button
                         onClick={() => deleteCategory(category.name)}
-                        className="px-3 py-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition-colors"
                         title="Deletar categoria"
                       >
                         <Trash2 className="w-4 h-4" />
