@@ -457,7 +457,6 @@ export default function CategoriasPage() {
                 </button>
               </div>
             </form>
-            </div>
           </div>
         </div>
       )}
