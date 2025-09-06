@@ -9,7 +9,10 @@ interface Meta {
   nome: string
   descricao: string
   tipo: 'produto' | 'servico' | 'venda_total'
+  tipoMeta: 'valor' | 'quantidade' // Novo campo para definir se é por valor ou quantidade
   valorMeta: number
+  quantidadeMeta: number // Novo campo para metas por quantidade
+  unidade: string // Unidade da quantidade (ex: "unidades", "kg", "litros")
   comissaoNormal: number // Comissão padrão (%)
   comissaoMeta: number // Comissão quando atinge a meta (%)
   periodo: 'mensal' | 'semanal' | 'diario'
@@ -35,7 +38,10 @@ export default function MetasComissaoPage() {
     nome: '',
     descricao: '',
     tipo: 'produto',
+    tipoMeta: 'valor',
     valorMeta: 0,
+    quantidadeMeta: 0,
+    unidade: 'unidades',
     comissaoNormal: 0,
     comissaoMeta: 0,
     periodo: 'mensal',
@@ -139,7 +145,10 @@ export default function MetasComissaoPage() {
       nome: '',
       descricao: '',
       tipo: 'produto',
+      tipoMeta: 'valor',
       valorMeta: 0,
+      quantidadeMeta: 0,
+      unidade: 'unidades',
       comissaoNormal: 0,
       comissaoMeta: 0,
       periodo: 'mensal',
@@ -262,7 +271,7 @@ export default function MetasComissaoPage() {
                     Tipo
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Valor Meta
+                    Valor/Quantidade
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Comissão Normal
@@ -293,7 +302,11 @@ export default function MetasComissaoPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      R$ {meta.valorMeta.toFixed(2)}
+                      {meta.tipoMeta === 'valor' ? (
+                        <>R$ {meta.valorMeta.toFixed(2)}</>
+                      ) : (
+                        <>{meta.quantidadeMeta} {meta.unidade}</>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {meta.comissaoNormal}%
@@ -369,7 +382,8 @@ export default function MetasComissaoPage() {
                       value={formData.nome}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                       placeholder="Ex: Meta de Vendas Janeiro"
                     />
                   </div>
@@ -383,13 +397,51 @@ export default function MetasComissaoPage() {
                       value={formData.tipo}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                     >
                       <option value="produto">Venda de Produtos</option>
                       <option value="servico">Venda de Serviços</option>
                       <option value="venda_total">Venda Total</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Tipo de Medição *
+                    </label>
+                    <select
+                      name="tipoMeta"
+                      value={formData.tipoMeta}
+                      onChange={handleInputChange}
+                      required
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
+                    >
+                      <option value="valor">Por Valor (R$)</option>
+                      <option value="quantidade">Por Quantidade</option>
+                    </select>
+                  </div>
+
+                  {formData.tipoMeta === 'quantidade' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Unidade *
+                      </label>
+                      <input
+                        type="text"
+                        name="unidade"
+                        value={formData.unidade}
+                        onChange={handleInputChange}
+                        required
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                        style={{ color: '#000000' }}
+                        placeholder="Ex: unidades, kg, litros"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -401,28 +453,50 @@ export default function MetasComissaoPage() {
                     value={formData.descricao}
                     onChange={handleInputChange}
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                    style={{ color: '#000000' }}
                     placeholder="Descreva os detalhes da meta..."
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Valor da Meta (R$) *
-                    </label>
-                    <input
-                      type="number"
-                      name="valorMeta"
-                      value={formData.valorMeta}
-                      onChange={handleInputChange}
-                      required
-                      min="0"
-                      step="0.01"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="0.00"
-                    />
-                  </div>
+                  {formData.tipoMeta === 'valor' ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Valor da Meta (R$) *
+                      </label>
+                      <input
+                        type="number"
+                        name="valorMeta"
+                        value={formData.valorMeta}
+                        onChange={handleInputChange}
+                        required
+                        min="0"
+                        step="0.01"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                        style={{ color: '#000000' }}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Quantidade da Meta *
+                      </label>
+                      <input
+                        type="number"
+                        name="quantidadeMeta"
+                        value={formData.quantidadeMeta}
+                        onChange={handleInputChange}
+                        required
+                        min="0"
+                        step="1"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                        style={{ color: '#000000' }}
+                        placeholder="0"
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -437,7 +511,8 @@ export default function MetasComissaoPage() {
                       min="0"
                       max="100"
                       step="0.01"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                       placeholder="0.00"
                     />
                   </div>
@@ -455,7 +530,8 @@ export default function MetasComissaoPage() {
                       min="0"
                       max="100"
                       step="0.01"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                       placeholder="0.00"
                     />
                   </div>
@@ -471,7 +547,8 @@ export default function MetasComissaoPage() {
                       value={formData.periodo}
                       onChange={handleInputChange}
                       required
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                      style={{ color: '#000000' }}
                     >
                       <option value="diario">Diário</option>
                       <option value="semanal">Semanal</option>

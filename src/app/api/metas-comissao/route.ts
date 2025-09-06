@@ -29,9 +29,24 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     
     // Validação básica
-    if (!body.nome || !body.tipo || !body.valorMeta || !body.comissaoNormal || !body.comissaoMeta) {
+    if (!body.nome || !body.tipo || !body.tipoMeta || !body.comissaoNormal || !body.comissaoMeta) {
       return NextResponse.json(
         { error: 'Campos obrigatórios não preenchidos' },
+        { status: 400 }
+      )
+    }
+
+    // Validação específica baseada no tipo de meta
+    if (body.tipoMeta === 'valor' && !body.valorMeta) {
+      return NextResponse.json(
+        { error: 'Valor da meta é obrigatório para metas por valor' },
+        { status: 400 }
+      )
+    }
+
+    if (body.tipoMeta === 'quantidade' && (!body.quantidadeMeta || !body.unidade)) {
+      return NextResponse.json(
+        { error: 'Quantidade e unidade são obrigatórios para metas por quantidade' },
         { status: 400 }
       )
     }
@@ -42,7 +57,8 @@ export async function POST(request: NextRequest) {
 
     const meta = {
       ...body,
-      valorMeta: parseFloat(body.valorMeta),
+      valorMeta: body.valorMeta ? parseFloat(body.valorMeta) : 0,
+      quantidadeMeta: body.quantidadeMeta ? parseInt(body.quantidadeMeta) : 0,
       comissaoNormal: parseFloat(body.comissaoNormal),
       comissaoMeta: parseFloat(body.comissaoMeta),
       createdAt: new Date(),
