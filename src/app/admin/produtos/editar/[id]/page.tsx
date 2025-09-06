@@ -296,9 +296,6 @@ export default function EditarProdutoPage() {
                   style={{ color: '#000000' }}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Preço que você pagou pelo produto (para cálculo de margem de lucro)
-                </p>
               </div>
 
               <div>
@@ -316,9 +313,6 @@ export default function EditarProdutoPage() {
                   style={{ color: '#000000' }}
                   placeholder="0.00"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Valor fixo de comissão para funcionárias (será usado nos relatórios)
-                </p>
               </div>
 
               <div>
