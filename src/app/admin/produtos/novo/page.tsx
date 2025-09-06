@@ -12,6 +12,8 @@ export default function NovoProdutoPage() {
     name: '',
     description: '',
     price: '',
+    costPrice: '',
+    commissionValue: '',
     discount: '',
     category: 'Geral',
     imageUrl: '',
@@ -31,6 +33,8 @@ export default function NovoProdutoPage() {
         ...formData,
         price: parseFloat(formData.price),
         originalPrice: parseFloat(formData.price), // Usar o preço como preço original
+        costPrice: formData.costPrice ? parseFloat(formData.costPrice) : 0,
+        commissionValue: formData.commissionValue ? parseFloat(formData.commissionValue) : 0,
         discount: formData.discount ? parseFloat(formData.discount) : 0,
         stock: parseInt(formData.stock) || 0,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
@@ -132,7 +136,7 @@ export default function NovoProdutoPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Preço *
+                  Preço de Venda *
                 </label>
                 <input
                   type="number"
@@ -144,7 +148,48 @@ export default function NovoProdutoPage() {
                   step="0.01"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
                   style={{ color: '#000000' }}
+                  placeholder="0.00"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Preço de Custo
+                </label>
+                <input
+                  type="number"
+                  name="costPrice"
+                  value={formData.costPrice}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Preço que você pagou pelo produto (para cálculo de margem de lucro)
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Valor da Comissão
+                </label>
+                <input
+                  type="number"
+                  name="commissionValue"
+                  value={formData.commissionValue}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Valor fixo de comissão para funcionárias (será usado nos relatórios)
+                </p>
               </div>
 
 

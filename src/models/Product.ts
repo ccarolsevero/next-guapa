@@ -19,6 +19,16 @@ const productSchema = new mongoose.Schema({
     type: Number,
     min: 0
   },
+  costPrice: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  commissionValue: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
   discount: {
     type: Number,
     min: 0,
@@ -93,6 +103,23 @@ productSchema.methods.getFinalPrice = function() {
 // Método para verificar se tem estoque
 productSchema.methods.hasStock = function() {
   return this.stock > 0
+}
+
+// Método para calcular margem de lucro
+productSchema.methods.getProfitMargin = function() {
+  if (this.costPrice > 0) {
+    const finalPrice = this.getFinalPrice()
+    return ((finalPrice - this.costPrice) / finalPrice) * 100
+  }
+  return 0
+}
+
+// Método para calcular lucro em valor
+productSchema.methods.getProfitValue = function() {
+  if (this.costPrice > 0) {
+    return this.getFinalPrice() - this.costPrice
+  }
+  return 0
 }
 
 export default mongoose.models.Product || mongoose.model('Product', productSchema)
