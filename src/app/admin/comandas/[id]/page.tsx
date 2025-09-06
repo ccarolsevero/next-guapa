@@ -17,7 +17,8 @@ import {
   X,
   ShoppingBag,
   Scissors,
-  Star
+  Star,
+  FileText
 } from 'lucide-react'
 
 export default function ComandaDetalhesPage() {
@@ -65,6 +66,7 @@ export default function ComandaDetalhesPage() {
   const [editingComanda, setEditingComanda] = useState<any>(null)
   const [editLoading, setEditLoading] = useState(false)
   const [isComandaFinalizada, setIsComandaFinalizada] = useState(false)
+  const [showDetalhesModal, setShowDetalhesModal] = useState(false)
 
   const updateTotal = () => {
     if (!comanda) {
@@ -1243,12 +1245,21 @@ export default function ComandaDetalhesPage() {
               </div>
 
               <div className="mt-6 space-y-2">
-                <Link
-                  href={`/admin/atendimentos/finalizar/${comanda?.id}`}
-                  className="w-full bg-black text-white py-3 px-4 hover:bg-gray-800 transition-colors font-medium tracking-wide text-center block"
-                >
-                  Finalizar Atendimento
-                </Link>
+                {!isComandaFinalizada ? (
+                  <Link
+                    href={`/admin/atendimentos/finalizar/${comanda?.id}`}
+                    className="w-full bg-black text-white py-3 px-4 hover:bg-gray-800 transition-colors font-medium tracking-wide text-center block"
+                  >
+                    Finalizar Atendimento
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setShowDetalhesModal(true)}
+                    className="w-full bg-green-600 text-white py-3 px-4 hover:bg-green-700 transition-colors font-medium tracking-wide text-center block"
+                  >
+                    Detalhes da Comanda
+                  </button>
+                )}
                 <Link
                   href={`/admin/comandas/${comanda?.id}/editar`}
                   className="w-full border border-gray-300 text-gray-700 py-3 px-4 hover:bg-gray-50 transition-colors font-medium text-center block"
@@ -1260,6 +1271,192 @@ export default function ComandaDetalhesPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal de Detalhes da Comanda Finalizada */}
+      {showDetalhesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Detalhes da Comanda Finalizada</h2>
+                <button
+                  onClick={() => setShowDetalhesModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Informações do Cliente */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <User className="w-5 h-5 mr-2" />
+                    Informações do Cliente
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Nome:</span>
+                      <p className="text-gray-900">{comanda?.clienteNome}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Profissional:</span>
+                      <p className="text-gray-900">{comanda?.profissionalNome}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Telefone:</span>
+                      <p className="text-gray-900">{comanda?.clienteTelefone}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Data de Início:</span>
+                      <p className="text-gray-900">
+                        {comanda?.dataInicio ? new Date(comanda.dataInicio).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Não disponível'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Serviços */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <Scissors className="w-5 h-5 mr-2" />
+                    Serviços Realizados
+                  </h3>
+                  {comanda?.servicos && comanda.servicos.length > 0 ? (
+                    <div className="space-y-2">
+                      {comanda.servicos.map((servico: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                          <div>
+                            <span className="font-medium text-gray-900">{servico.nome}</span>
+                            <span className="text-gray-600 ml-2">(x{servico.quantidade})</span>
+                          </div>
+                          <span className="font-semibold text-green-600">
+                            R$ {(servico.preco * servico.quantidade).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Nenhum serviço registrado</p>
+                  )}
+                </div>
+
+                {/* Produtos */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <ShoppingBag className="w-5 h-5 mr-2" />
+                    Produtos Vendidos
+                  </h3>
+                  {comanda?.produtos && comanda.produtos.length > 0 ? (
+                    <div className="space-y-2">
+                      {comanda.produtos.map((produto: any, index: number) => (
+                        <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
+                          <div>
+                            <span className="font-medium text-gray-900">{produto.nome}</span>
+                            <span className="text-gray-600 ml-2">(x{produto.quantidade})</span>
+                            {produto.vendidoPor && (
+                              <span className="text-sm text-gray-500 ml-2">
+                                - Vendido por: {produto.vendidoPor}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-semibold text-green-600">
+                            R$ {(produto.preco * produto.quantidade).toFixed(2)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Nenhum produto vendido</p>
+                  )}
+                </div>
+
+                {/* Informações de Finalização */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                    <DollarSign className="w-5 h-5 mr-2" />
+                    Informações de Finalização
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Data de Finalização:</span>
+                      <p className="text-gray-900">
+                        {comanda?.dataFinalizacao ? new Date(comanda.dataFinalizacao).toLocaleString('pt-BR', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) : 'Não disponível'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Forma de Pagamento:</span>
+                      <p className="text-gray-900">
+                        {comanda?.metodoPagamento ? 
+                          comanda.metodoPagamento.charAt(0).toUpperCase() + comanda.metodoPagamento.slice(1) 
+                          : 'Não informado'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Valor Original:</span>
+                      <p className="text-gray-900">R$ {comanda?.valorTotal?.toFixed(2) || '0,00'}</p>
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-gray-600">Valor Final:</span>
+                      <p className="text-gray-900 font-semibold">
+                        R$ {comanda?.valorFinal?.toFixed(2) || comanda?.valorTotal?.toFixed(2) || '0,00'}
+                      </p>
+                    </div>
+                    {comanda?.desconto && comanda.desconto > 0 && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">Desconto:</span>
+                        <p className="text-red-600">- R$ {comanda.desconto.toFixed(2)}</p>
+                      </div>
+                    )}
+                    {comanda?.creditAmount && comanda.creditAmount > 0 && (
+                      <div>
+                        <span className="text-sm font-medium text-gray-600">Crédito/Sinal:</span>
+                        <p className="text-blue-600">- R$ {comanda.creditAmount.toFixed(2)}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Observações */}
+                {comanda?.observacoes && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                      <FileText className="w-5 h-5 mr-2" />
+                      Observações
+                    </h3>
+                    <p className="text-gray-700 bg-white p-3 rounded border">
+                      {comanda.observacoes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={() => setShowDetalhesModal(false)}
+                  className="bg-gray-600 text-white px-6 py-2 hover:bg-gray-700 transition-colors font-medium rounded"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Edição */}
       {showEditModal && (
