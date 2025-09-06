@@ -1,445 +1,856 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
-import { Users, Calendar, DollarSign, TrendingUp, Star, Clock, MapPin, Phone, User, Package, Scissors, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { 
+  Users, 
+  Calendar, 
+  DollarSign, 
+  Bell, 
+  Clock, 
+  Package, 
+  User, 
+  ChevronDown, 
+  ChevronUp,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  ShoppingCart,
+  Scissors,
+  Plus,
+  X,
+  Printer,
+  CreditCard,
+  Banknote,
+  CheckCircle,
+  Minus
+} from 'lucide-react'
+import { useNotifications } from '../../../hooks/useNotifications'
+import NotificationAlert from '../../../components/NotificationAlert'
 
-// Mock data
-const stats = [
-  {
-    name: 'Agendamentos Hoje',
-    value: '12',
-    change: '+2',
-    changeType: 'increase',
-    icon: Calendar
-  },
-  {
-    name: 'Clientes Ativos',
-    value: '156',
-    change: '+8',
-    changeType: 'increase',
-    icon: Users
-  },
-  {
-    name: 'Faturamento Mensal',
-    value: 'R$ 15.420',
-    change: '+12%',
-    changeType: 'increase',
-    icon: DollarSign
-  },
-  {
-    name: 'Avaliação Média',
-    value: '4.8',
-    change: '+0.2',
-    changeType: 'increase',
-    icon: Star
+// Interfaces para tipagem
+interface Professional {
+  id: string
+  name: string
+  role: string
+}
+
+interface CashierData {
+  date: string
+  professionalId: string
+  revenueData: {
+    professionalId: string
+    professionalName: string
+    totalRevenue: number
+    totalServices: number
+    totalProducts: number
+    count: number
+  }[]
+  totals: {
+    totalRevenue: number
+    totalServices: number
+    totalProducts: number
+    totalCount: number
   }
-]
+  professionals: Professional[]
+}
 
-const recentAppointments = [
-  {
-    id: 1,
-    clientName: 'Maria Silva',
-    service: 'Corte + Hidratação',
-    time: '14:00',
-    professional: 'Ana Carolina',
-    status: 'confirmado'
-  },
-  {
-    id: 2,
-    clientName: 'João Santos',
-    service: 'Barba',
-    time: '15:30',
-    professional: 'Carlos Eduardo',
-    status: 'pendente'
-  },
-  {
-    id: 3,
-    clientName: 'Ana Costa',
-    service: 'Coloração',
-    time: '16:00',
-    professional: 'Mariana Silva',
-    status: 'confirmado'
-  },
-  {
-    id: 4,
-    clientName: 'Pedro Oliveira',
-    service: 'Corte',
-    time: '17:30',
-    professional: 'Carlos Eduardo',
-    status: 'confirmado'
-  }
-]
+interface Notification {
+  id: string
+  type: 'appointment' | 'product_reservation'
+  title: string
+  message: string
+  time: string
+  data: any
+}
 
-const topServices = [
-  { name: 'Corte Feminino', bookings: 45, revenue: 2250 },
-  { name: 'Coloração', bookings: 32, revenue: 2560 },
-  { name: 'Hidratação', bookings: 28, revenue: 1400 },
-  { name: 'Barba', bookings: 25, revenue: 750 }
-]
+interface NotificationsData {
+  notifications: Notification[]
+  unreadCount: number
+  lastUpdate: string
+}
 
-const vipClients = [
-  { name: 'Maria Silva', visits: 15, totalSpent: 1200, lastVisit: '2 dias atrás' },
-  { name: 'Ana Costa', visits: 12, totalSpent: 980, lastVisit: '1 semana atrás' },
-  { name: 'João Santos', visits: 10, totalSpent: 750, lastVisit: '3 dias atrás' }
-]
+interface Cashier {
+  _id: string
+  responsibleId: string
+  status: 'OPEN' | 'CLOSED'
+  openedAt: string
+  closedAt?: string
+  initialCash: number
+  finalCash?: number
+  responsible?: Professional
+  movements?: CashierMovement[]
+  paymentTotals?: PaymentTotal[]
+  totalWithdrawals?: number
+  totalSupplies?: number
+}
 
-// Mock data para comissionamento por profissional
-const professionalCommissions = [
-  {
-    id: 1,
-    name: 'Bruna',
-    role: 'Cabeleireira Visagista',
-    avatar: '/avatar-bruna.jpg',
-    services: {
-      total: 2840.00,
-      count: 23,
-      items: [
-        { name: 'Corte Feminino', count: 8, revenue: 1056.00 },
-        { name: 'Coloração', count: 6, revenue: 1152.00 },
-        { name: 'Hidratação', count: 5, revenue: 600.00 },
-        { name: 'Back To Natural', count: 4, revenue: 32.00 }
-      ]
-    },
-    products: {
-      total: 420.00,
-      count: 12,
-      items: [
-        { name: 'Shampoo Keune', count: 5, revenue: 225.00 },
-        { name: 'Condicionador Keune', count: 4, revenue: 168.00 },
-        { name: 'Máscara Keune', count: 3, revenue: 195.00 }
-      ]
-    },
-    commission: {
-      services: 568.00, // 20% de comissão sobre serviços
-      products: 84.00,  // 20% de comissão sobre produtos
-      total: 652.00
-    }
-  },
-  {
-    id: 2,
-    name: 'Cicera Canovas',
-    role: 'Tricoterapeuta',
-    avatar: '/avatar-cicera.jpg',
-    services: {
-      total: 1860.00,
-      count: 18,
-      items: [
-        { name: 'Tratamento Keune SPA', count: 8, revenue: 960.00 },
-        { name: 'Tratamento Reconstrução', count: 5, revenue: 700.00 },
-        { name: 'Tratamento Nutrição', count: 3, revenue: 390.00 },
-        { name: 'Avaliação Capilar', count: 2, revenue: 120.00 }
-      ]
-    },
-    products: {
-      total: 280.00,
-      count: 8,
-      items: [
-        { name: 'Tratamento Keune', count: 4, revenue: 160.00 },
-        { name: 'Óleo Capilar', count: 2, revenue: 90.00 },
-        { name: 'Protetor Térmico', count: 2, revenue: 76.00 }
-      ]
-    },
-    commission: {
-      services: 372.00, // 20% de comissão sobre serviços
-      products: 56.00,  // 20% de comissão sobre produtos
-      total: 428.00
-    }
-  }
-]
+interface CashierMovement {
+  _id: string
+  cashierId: string
+  type: 'WITHDRAWAL' | 'SUPPLY'
+  amount: number
+  description: string
+  createdAt: string
+  createdBy: string
+}
+
+interface PaymentTotal {
+  _id: string
+  total: number
+  count: number
+}
 
 export default function DashboardPage() {
-  const [expandedProfessional, setExpandedProfessional] = useState<number | null>(null)
+  const [selectedProfessional, setSelectedProfessional] = useState<string>('all')
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [cashierData, setCashierData] = useState<CashierData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showProfessionalDropdown, setShowProfessionalDropdown] = useState(false)
+  
+  // Usar o hook de notificações
+  const { 
+    notifications, 
+    unreadCount, 
+    playNotificationSound, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotifications()
+  
+  // Estados para alertas
+  const [activeAlerts, setActiveAlerts] = useState<any[]>([])
+  
+  // Estados do caixa
+  const [openCashiers, setOpenCashiers] = useState<Cashier[]>([])
+  const [selectedCashier, setSelectedCashier] = useState<Cashier | null>(null)
+  const [showOpenCashierModal, setShowOpenCashierModal] = useState(false)
+  const [showCloseCashierModal, setShowCloseCashierModal] = useState(false)
+  const [showMovementModal, setShowMovementModal] = useState(false)
+  const [movementType, setMovementType] = useState<'WITHDRAWAL' | 'SUPPLY'>('WITHDRAWAL')
+  const [movementAmount, setMovementAmount] = useState('')
+  const [movementDescription, setMovementDescription] = useState('')
+  const [initialCash, setInitialCash] = useState('')
 
-  const toggleProfessional = (id: number) => {
-    setExpandedProfessional(expandedProfessional === id ? null : id)
+  // Buscar dados da caixa
+  const fetchCashierData = async () => {
+    try {
+      const response = await fetch(`/api/dashboard/cashier?professionalId=${selectedProfessional}&date=${selectedDate}`)
+      if (response.ok) {
+        const data = await response.json()
+        setCashierData(data)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar dados da caixa:', error)
+    }
+  }
+
+  // Buscar caixas abertos
+  const fetchOpenCashiers = async () => {
+    try {
+      const response = await fetch('/api/cashier')
+      if (response.ok) {
+        const data = await response.json()
+        setOpenCashiers(data)
+      }
+    } catch (error) {
+      console.error('Erro ao buscar caixas abertos:', error)
+    }
+  }
+
+  // Abrir novo caixa
+  const openCashier = async () => {
+    try {
+      const response = await fetch('/api/cashier', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          responsibleId: selectedProfessional,
+          initialCash: parseFloat(initialCash) || 0
+        })
+      })
+
+      if (response.ok) {
+        setShowOpenCashierModal(false)
+        setInitialCash('')
+        fetchOpenCashiers()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erro ao abrir caixa')
+      }
+    } catch (error) {
+      console.error('Erro ao abrir caixa:', error)
+      alert('Erro ao abrir caixa')
+    }
+  }
+
+  // Fechar caixa
+  const closeCashier = async () => {
+    if (!selectedCashier) return
+
+    try {
+      const response = await fetch(`/api/cashier/${selectedCashier._id}/close`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          finalCash: 0, // Será calculado automaticamente
+          finalCheck: 0,
+          notes: 'Caixa fechado'
+        })
+      })
+
+      if (response.ok) {
+        setShowCloseCashierModal(false)
+        setSelectedCashier(null)
+        fetchOpenCashiers()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erro ao fechar caixa')
+      }
+    } catch (error) {
+      console.error('Erro ao fechar caixa:', error)
+      alert('Erro ao fechar caixa')
+    }
+  }
+
+  // Adicionar movimentação (sangria/suprimento)
+  const addMovement = async () => {
+    if (!selectedCashier || !movementAmount || !movementDescription) return
+
+    try {
+      const response = await fetch(`/api/cashier/${selectedCashier._id}/movements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: movementType,
+          amount: parseFloat(movementAmount),
+          description: movementDescription
+        })
+      })
+
+      if (response.ok) {
+        setShowMovementModal(false)
+        setMovementAmount('')
+        setMovementDescription('')
+        fetchOpenCashiers()
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Erro ao adicionar movimentação')
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar movimentação:', error)
+      alert('Erro ao adicionar movimentação')
+    }
+  }
+
+  // Função para mostrar alerta visual
+  const showAlert = (notification: any) => {
+    const alertId = Date.now().toString()
+    setActiveAlerts(prev => [...prev, { ...notification, alertId }])
+    
+    // Remover alerta após 5 segundos
+    setTimeout(() => {
+      setActiveAlerts(prev => prev.filter(alert => alert.alertId !== alertId))
+    }, 5000)
+  }
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      await Promise.all([fetchCashierData(), fetchOpenCashiers()])
+      setLoading(false)
+    }
+    loadData()
+  }, [selectedProfessional, selectedDate])
+
+  const formatTime = (timeString: string) => {
+    return new Date(timeString).toLocaleString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'appointment':
+        return <Calendar className="w-4 h-4 text-blue-500" />
+      case 'product_reservation':
+        return <ShoppingCart className="w-4 h-4 text-green-500" />
+      default:
+        return <Bell className="w-4 h-4 text-gray-500" />
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D15556]"></div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
         <h1 className="text-3xl font-light text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Bem-vindo ao painel administrativo do Espaço Guapa</p>
+            <p className="text-gray-600 mt-2">Painel de controle e caixa do Espaço Guapa</p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
-          const Icon = stat.icon
-          return (
-            <div key={stat.name} className="bg-white border border-gray-100 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
-                  <p className="text-2xl font-light text-gray-900 mt-1">{stat.value}</p>
-                </div>
-                <div className={`w-12 h-12 bg-[#EED7B6] rounded-none flex items-center justify-center`}>
-                  <Icon className="w-6 h-6 text-[#D15556]" />
-                </div>
-              </div>
-              <div className="mt-4 flex items-center">
-                <span className={`text-sm font-medium ${
-                  stat.changeType === 'increase' ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {stat.change}
+          {/* Notificações */}
+          <div className="relative">
+            <button
+              onClick={() => setShowNotifications(!showNotifications)}
+              className="relative p-2 text-gray-600 hover:text-[#D15556] transition-colors"
+            >
+              <Bell className="w-6 h-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                  {unreadCount}
                 </span>
-                <span className="text-sm text-gray-600 ml-1">vs mês passado</span>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Appointments */}
-        <div className="bg-white border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
+              )}
+            </button>
+            
+            {/* Dropdown de Notificações */}
+            {showNotifications && (
+              <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-medium text-gray-900">Agendamentos Recentes</h2>
-              <Link href="/admin/agendamentos" className="text-[#D15556] hover:text-[#c04546] transition-colors text-sm font-medium">
-                Ver todos
-              </Link>
-            </div>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {recentAppointments.map((appointment) => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 border border-gray-100 hover:border-[#EED7B6] transition-colors">
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-900">{appointment.clientName}</h3>
-                    <p className="text-sm text-gray-600">{appointment.service}</p>
-                    <div className="flex items-center mt-1 text-xs text-gray-500">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {appointment.time} • {appointment.professional}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-none ${
-                      appointment.status === 'confirmado' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {appointment.status}
-                    </span>
-                    <Link href={`/admin/agendamentos/${appointment.id}`} className="text-[#D15556] hover:text-[#c04546] transition-colors">
-                      <span className="text-xs font-medium">Ver</span>
-                    </Link>
+                    <h3 className="font-medium text-gray-900">Notificações</h3>
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <EyeOff className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Top Services */}
-        <div className="bg-white border border-gray-100">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-medium text-gray-900">Serviços Mais Populares</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              {topServices.map((service, index) => (
-                <div key={service.name} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <span className="w-8 h-8 bg-[#EED7B6] text-[#D15556] text-sm font-medium flex items-center justify-center mr-4">
-                      {index + 1}
-                    </span>
-                    <div>
-                      <h3 className="font-medium text-gray-900">{service.name}</h3>
-                      <p className="text-sm text-gray-600">{service.bookings} agendamentos</p>
+                <div className="p-2">
+                  {notifications.length > 0 ? (
+                    notifications.map((notification) => (
+                      <div key={notification.id} className="p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0">
+                        <div className="flex items-start space-x-3">
+                          {getNotificationIcon(notification.type)}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                            <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{formatTime(notification.time)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 text-center text-gray-500">
+                      <Bell className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+                      <p>Nenhuma notificação</p>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-[#D15556]">R$ {service.revenue}</p>
-                    <p className="text-sm text-gray-600">faturamento</p>
-                  </div>
+                  )}
                 </div>
-              ))}
             </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* VIP Clients */}
-      <div className="mt-8 bg-white border border-gray-100">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Caixas em Aberto */}
+        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-lg">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-medium text-gray-900">Clientes VIP</h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {vipClients.map((client) => (
-              <div key={client.name} className="text-center p-4 border border-gray-100 hover:border-[#EED7B6] transition-colors">
-                <div className="w-16 h-16 bg-[#EED7B6] rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Users className="w-8 h-8 text-[#D15556]" />
-                </div>
-                <h3 className="font-medium text-gray-900 mb-2">{client.name}</h3>
-                <div className="space-y-1 text-sm text-gray-600">
-                  <p>{client.visits} visitas</p>
-                  <p>R$ {client.totalSpent} gastos</p>
-                  <p>Última visita: {client.lastVisit}</p>
-                </div>
-                <Link href="/admin/clientes" className="mt-4 inline-block text-[#D15556] hover:text-[#c04546] transition-colors text-sm font-medium">
-                  Ver perfil
-                </Link>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Comissionamento por Profissional */}
-      <div className="mt-8 bg-white border border-gray-100">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-medium text-gray-900">Comissionamento por Profissional</h2>
-          <p className="text-sm text-gray-600 mt-1">Vendas e comissões do mês atual</p>
-        </div>
-        <div className="p-6">
-          <div className="space-y-6">
-            {professionalCommissions.map((professional) => (
-              <div key={professional.id} className="border border-gray-100 rounded-lg">
-                {/* Header do Profissional */}
-                <div 
-                  className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => toggleProfessional(professional.id)}
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-medium text-gray-900">Caixas em Aberto</h2>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    fetchOpenCashiers()
+                    playNotificationSound()
+                  }}
+                  className="p-2 text-gray-400 hover:text-[#D15556] transition-colors"
                 >
-                  <div className="flex items-center justify-between">
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setShowOpenCashierModal(true)}
+                  className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Abrir Caixa</span>
+                </button>
+              </div>
+            </div>
+      </div>
+
+        <div className="p-6">
+            {openCashiers.length > 0 ? (
+              <div className="space-y-4">
+                {openCashiers.map((cashier) => (
+                  <div key={cashier._id} className="border border-gray-200 rounded-lg p-6">
+                    {/* Header do Caixa */}
+                    <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
                         <User className="w-6 h-6 text-[#D15556]" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{professional.name}</h3>
-                        <p className="text-sm text-gray-600">{professional.role}</p>
+                          <h3 className="font-medium text-gray-900">{cashier.responsible?.name || 'Profissional'}</h3>
+                          <p className="text-sm text-gray-600">{cashier.responsible?.role || 'Profissional'}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => {
+                            setSelectedCashier(cashier)
+                            setShowMovementModal(true)
+                          }}
+                          className="px-3 py-1 text-sm bg-[#EED7B6] text-[#D15556] rounded-lg hover:bg-[#D15556] hover:text-white transition-colors flex items-center space-x-1"
+                        >
+                          <DollarSign className="w-3 h-3" />
+                          <span>Movimentação</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedCashier(cashier)
+                            setShowCloseCashierModal(true)
+                          }}
+                          className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors flex items-center space-x-1"
+                        >
+                          <CheckCircle className="w-3 h-3" />
+                          <span>Fechar Caixa</span>
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-6">
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Comissão Total</p>
-                        <p className="text-lg font-medium text-[#D15556]">R$ {professional.commission.total.toFixed(2)}</p>
+
+                    {/* Informações do Caixa */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 text-sm">
+                      <div>
+                        <p className="text-gray-800 font-medium">Abertura:</p>
+                        <p className="text-gray-900 font-semibold">{new Date(cashier.openedAt).toLocaleString('pt-BR')}</p>
                       </div>
-                      {expandedProfessional === professional.id ? (
-                        <ChevronUp className="w-5 h-5 text-gray-400" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-gray-400" />
-                      )}
+                      <div>
+                        <p className="text-gray-800 font-medium">Valor Inicial (Dinheiro):</p>
+                        <p className="text-gray-900 font-semibold">R$ {cashier.initialCash.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-800 font-medium">Status:</p>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          Aberto
+                        </span>
+                      </div>
                     </div>
-                  </div>
+
+                    {/* Sangrias e Suprimentos */}
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-gray-800 mb-3">Sangrias e Suprimentos</h4>
+                      {cashier.movements && cashier.movements.length > 0 ? (
+                        <div className="space-y-2">
+                          {cashier.movements.map((movement) => (
+                            <div key={movement._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                              <div className="flex items-center space-x-3">
+                                {movement.type === 'WITHDRAWAL' ? (
+                                  <Minus className="w-4 h-4 text-red-500" />
+                                ) : (
+                                  <Plus className="w-4 h-4 text-green-500" />
+                                )}
+                                <div>
+                                  <p className="text-sm font-semibold text-gray-900">
+                                    {movement.type === 'WITHDRAWAL' ? 'Sangria' : 'Suprimento'}
+                                  </p>
+                                  <p className="text-xs text-gray-800">{movement.description}</p>
+                                </div>
                 </div>
-
-                {/* Detalhes Expandidos */}
-                {expandedProfessional === professional.id && (
-                  <div className="border-t border-gray-100 p-4 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {/* Serviços */}
-                      <div className="bg-white p-4 rounded-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium text-gray-900 flex items-center">
-                            <Scissors className="w-4 h-4 mr-2" />
-                            Serviços
-                          </h4>
                           <div className="text-right">
-                            <p className="text-sm text-gray-600">Total</p>
-                            <p className="font-medium text-[#D15556]">R$ {professional.services.total.toFixed(2)}</p>
-                          </div>
+                                <p className={`text-sm font-medium ${
+                                  movement.type === 'WITHDRAWAL' ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {movement.type === 'WITHDRAWAL' ? '-' : '+'}R$ {movement.amount.toFixed(2)}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(movement.createdAt).toLocaleString('pt-BR')}
+                                </p>
                         </div>
-                        <div className="space-y-2 mb-4">
-                          {professional.services.items.map((service, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span className="text-gray-600">{service.name} ({service.count}x)</span>
-                              <span className="font-medium">R$ {service.revenue.toFixed(2)}</span>
                             </div>
                           ))}
                         </div>
-                        <div className="flex justify-between text-sm font-medium border-t pt-2">
-                          <span>Comissão (20%):</span>
-                          <span className="text-[#D15556]">R$ {professional.commission.services.toFixed(2)}</span>
-                        </div>
+                      ) : (
+                        <p className="text-gray-700 text-sm font-medium">Nenhuma movimentação</p>
+                      )}
                       </div>
 
-                      {/* Produtos */}
-                      <div className="bg-white p-4 rounded-lg border border-gray-100">
-                        <div className="flex items-center justify-between mb-4">
-                          <h4 className="font-medium text-gray-900 flex items-center">
-                            <Package className="w-4 h-4 mr-2" />
-                            Produtos
-                          </h4>
-                          <div className="text-right">
-                            <p className="text-sm text-gray-600">Total</p>
-                            <p className="font-medium text-[#D15556]">R$ {professional.products.total.toFixed(2)}</p>
-                          </div>
-                        </div>
-                        <div className="space-y-2 mb-4">
-                          {professional.products.items.map((product, index) => (
-                            <div key={index} className="flex justify-between text-sm">
-                              <span className="text-gray-600">{product.name} ({product.count}x)</span>
-                              <span className="font-medium">R$ {product.revenue.toFixed(2)}</span>
+                    {/* Total em Caixa */}
+                    <div className="bg-gradient-to-r from-[#EED7B6] to-[#D15556] p-4 rounded-lg text-white">
+                      <h4 className="font-medium mb-3">Total em Caixa</h4>
+                      
+                      {/* Cálculo das movimentações */}
+                      {(() => {
+                        const totalWithdrawals = cashier.movements?.filter(m => m.type === 'WITHDRAWAL').reduce((sum, m) => sum + m.amount, 0) || 0
+                        const totalSupplies = cashier.movements?.filter(m => m.type === 'SUPPLY').reduce((sum, m) => sum + m.amount, 0) || 0
+                        const currentCash = cashier.initialCash + totalSupplies - totalWithdrawals
+                        
+                        return (
+                          <>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                              <div>
+                                <p className="opacity-90">Dinheiro Inicial:</p>
+                                <p className="font-semibold">R$ {cashier.initialCash.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="opacity-90">+ Suprimentos:</p>
+                                <p className="font-semibold text-green-200">+R$ {totalSupplies.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="opacity-90">- Sangrias:</p>
+                                <p className="font-semibold text-red-200">-R$ {totalWithdrawals.toFixed(2)}</p>
+                              </div>
+                              <div>
+                                <p className="opacity-90">Dinheiro Atual:</p>
+                                <p className="font-semibold">R$ {currentCash.toFixed(2)}</p>
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                        <div className="flex justify-between text-sm font-medium border-t pt-2">
-                          <span>Comissão (20%):</span>
-                          <span className="text-[#D15556]">R$ {professional.commission.products.toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Resumo Total */}
-                    <div className="mt-4 p-4 bg-[#EED7B6]/20 rounded-lg">
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                        <div>
-                          <p className="text-sm text-gray-600">Total de Vendas</p>
-                          <p className="text-lg font-medium text-gray-900">
-                            R$ {(professional.services.total + professional.products.total).toFixed(2)}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Total de Itens</p>
-                          <p className="text-lg font-medium text-gray-900">
-                            {professional.services.count + professional.products.count}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Comissão Total</p>
-                          <p className="text-lg font-medium text-[#D15556]">
-                            R$ {professional.commission.total.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
+                            
+                            <div className="mt-3 pt-3 border-t border-white/20">
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">TOTAL EM CAIXA:</span>
+                                <span className="text-lg font-bold">R$ {currentCash.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </>
+                        )
+                      })()}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-12">
+                <DollarSign className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum caixa aberto</h3>
+                <p className="text-gray-600 mb-4">Abra um caixa para começar a trabalhar</p>
+                <button
+                  onClick={() => setShowOpenCashierModal(true)}
+                  className="px-6 py-3 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors flex items-center space-x-2 mx-auto"
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Abrir Primeiro Caixa</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Feed de Atividades */}
+        <div className="bg-white border border-gray-100 rounded-lg">
+          <div className="p-6 border-b border-gray-100">
+            <h2 className="text-xl font-medium text-gray-900">Atividades Recentes</h2>
+            <p className="text-sm text-gray-600 mt-1">Últimas movimentações do site</p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {notifications.length > 0 ? (
+                notifications.slice(0, 10).map((notification) => (
+                  <div key={notification.id} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0 mt-1">
+                      {getNotificationIcon(notification.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                      <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
+                      <p className="text-xs text-gray-500 mt-1">{formatTime(notification.time)}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Bell className="w-8 h-8 mx-auto mb-4 text-gray-300" />
+                  <p>Nenhuma atividade recente</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8 bg-white border border-gray-100">
+      {/* Ações Rápidas */}
+      <div className="mt-8 bg-white border border-gray-100 rounded-lg">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-medium text-gray-900">Ações Rápidas</h2>
         </div>
         <div className="p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/admin/agendamentos/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center">
+            <Link href="/admin/agendamentos/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
               <Calendar className="w-8 h-8 text-[#D15556] mb-2" />
               <span className="text-sm font-medium text-gray-900">Novo Agendamento</span>
             </Link>
-            <Link href="/admin/clientes/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center">
+            <Link href="/admin/clientes/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
               <Users className="w-8 h-8 text-[#D15556] mb-2" />
               <span className="text-sm font-medium text-gray-900">Novo Cliente</span>
             </Link>
-            <Link href="/admin/comandas/nova" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center">
+            <Link href="/admin/comandas/nova" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
               <DollarSign className="w-8 h-8 text-[#D15556] mb-2" />
               <span className="text-sm font-medium text-gray-900">Nova Comanda</span>
             </Link>
-            <Link href="/admin/produtos" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center">
-              <TrendingUp className="w-8 h-8 text-[#D15556] mb-2" />
+            <Link href="/admin/produtos" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
+              <Package className="w-8 h-8 text-[#D15556] mb-2" />
               <span className="text-sm font-medium text-gray-900">Gerenciar Produtos</span>
             </Link>
           </div>
         </div>
       </div>
+
+      {/* Modal - Abrir Caixa */}
+      {showOpenCashierModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Abrir Caixa</h3>
+              <button
+                onClick={() => setShowOpenCashierModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Profissional Responsável
+                </label>
+                <select
+                  value={selectedProfessional}
+                  onChange={(e) => setSelectedProfessional(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                >
+                  <option value="">Selecionar Profissional</option>
+                  {cashierData?.professionals.map((professional) => (
+                    <option key={professional.id} value={professional.id}>
+                      {professional.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Valor Inicial (Dinheiro)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={initialCash}
+                  onChange={(e) => setInitialCash(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                  placeholder="0,00"
+                />
+              </div>
+              
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowOpenCashierModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={openCashier}
+                disabled={!selectedProfessional}
+                className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Abrir Caixa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Fechar Caixa */}
+      {showCloseCashierModal && selectedCashier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Fechar Caixa</h3>
+              <button
+                onClick={() => setShowCloseCashierModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-2">
+                Tem certeza que deseja fechar o caixa de <strong>{selectedCashier.responsible?.name}</strong>?
+              </p>
+              
+              {/* Mostrar cálculo do caixa */}
+              {(() => {
+                const totalWithdrawals = selectedCashier.movements?.filter(m => m.type === 'WITHDRAWAL').reduce((sum, m) => sum + m.amount, 0) || 0
+                const totalSupplies = selectedCashier.movements?.filter(m => m.type === 'SUPPLY').reduce((sum, m) => sum + m.amount, 0) || 0
+                const currentCash = selectedCashier.initialCash + totalSupplies - totalWithdrawals
+                
+                return (
+                  <div className="bg-gray-50 p-3 rounded-lg mb-3">
+                    <p className="text-sm font-medium text-gray-800 mb-2">Resumo do Caixa:</p>
+                    <div className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span>Dinheiro Inicial:</span>
+                        <span>R$ {selectedCashier.initialCash.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>+ Suprimentos:</span>
+                        <span className="text-green-600">+R$ {totalSupplies.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>- Sangrias:</span>
+                        <span className="text-red-600">-R$ {totalWithdrawals.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-semibold border-t pt-1">
+                        <span>Total Final:</span>
+                        <span>R$ {currentCash.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+              
+              <p className="text-xs text-gray-500">
+                Esta ação não pode ser desfeita.
+              </p>
+            </div>
+            
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowCloseCashierModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={closeCashier}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Fechar Caixa</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Movimentação */}
+      {showMovementModal && selectedCashier && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">Movimentação</h3>
+              <button
+                onClick={() => setShowMovementModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Tipo de Movimentação
+                </label>
+                <div className="flex space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="WITHDRAWAL"
+                      checked={movementType === 'WITHDRAWAL'}
+                      onChange={(e) => setMovementType(e.target.value as 'WITHDRAWAL')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-900">Sangria</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="SUPPLY"
+                      checked={movementType === 'SUPPLY'}
+                      onChange={(e) => setMovementType(e.target.value as 'SUPPLY')}
+                      className="mr-2"
+                    />
+                    <span className="text-sm font-medium text-gray-900">Suprimento</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Valor
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={movementAmount}
+                  onChange={(e) => setMovementAmount(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                  placeholder="0,00"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1">
+                  Descrição
+                </label>
+                <textarea
+                  value={movementDescription}
+                  onChange={(e) => setMovementDescription(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
+                  style={{ color: '#000000' }}
+                  rows={3}
+                  placeholder="Descreva a movimentação..."
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6">
+              <button
+                onClick={() => setShowMovementModal(false)}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={addMovement}
+                disabled={!movementAmount || !movementDescription}
+                className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alertas de Notificação */}
+      {activeAlerts.map((alert) => (
+        <NotificationAlert
+          key={alert.alertId}
+          notification={alert}
+          onClose={() => setActiveAlerts(prev => prev.filter(a => a.alertId !== alert.alertId))}
+        />
+      ))}
     </div>
   )
 }
