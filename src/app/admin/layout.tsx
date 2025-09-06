@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { 
   LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, Settings, 
-  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe
+  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe, Target
 } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 
@@ -42,6 +42,7 @@ export default function AdminLayout({
     { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag },
     { name: 'Pedidos', href: '/admin/pedidos', icon: Package },
     { name: 'Comandas', href: '/admin/comandas', icon: Package },
+    { name: 'Metas/Comissão', href: '/admin/metas-comissao', icon: Target },
     { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
     { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
     { name: 'Editar Site', href: '/admin/editar-site', icon: Globe },
