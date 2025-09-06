@@ -188,6 +188,8 @@ export default function AgendamentosPage() {
   }>>([])
   const [availableServices, setAvailableServices] = useState<any[]>([])
   const [existingComanda, setExistingComanda] = useState<any>(null)
+  const [selectedProfessional, setSelectedProfessional] = useState<string>('all')
+  const [showProfessionalDropdown, setShowProfessionalDropdown] = useState(false)
 
   // Buscar dados da API
   useEffect(() => {
@@ -195,6 +197,23 @@ export default function AgendamentosPage() {
     fetchProfessionals()
     fetchServices()
   }, [selectedDate, filterStatus])
+
+  // Fechar dropdown quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showProfessionalDropdown) {
+        const target = event.target as Element
+        if (!target.closest('.professional-dropdown')) {
+          setShowProfessionalDropdown(false)
+        }
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showProfessionalDropdown])
 
   const fetchAppointments = async () => {
     try {
@@ -307,11 +326,6 @@ export default function AgendamentosPage() {
     }
   }
 
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const newDate = new Date(selectedDate)
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1))
-    setSelectedDate(newDate)
-  }
 
   const goToToday = () => {
     setSelectedDate(new Date())
@@ -642,11 +656,16 @@ export default function AgendamentosPage() {
         </div>
       )
     }
+
+    // Filtrar profissionais baseado na seleção (mobile)
+    const displayProfessionals = selectedProfessional === 'all' 
+      ? professionals 
+      : professionals.filter(prof => prof._id === selectedProfessional)
     
     return (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {/* Header com botões */}
-        <div className="border-b border-gray-200 p-4">
+      <div className="bg-white rounded-lg shadow overflow-hidden relative">
+        {/* Header com botões - Desktop */}
+        <div className="hidden lg:block border-b border-gray-200 p-4">
           <div className="flex items-center justify-between">
             <div className="flex space-x-3">
               <button
@@ -665,8 +684,80 @@ export default function AgendamentosPage() {
           </div>
         </div>
 
-        {/* Cabeçalho dos Profissionais */}
-        <div className="border-b border-gray-200">
+        {/* Header Mobile - Mais compacto */}
+        <div className="lg:hidden border-b border-gray-200 p-3 relative overflow-visible">
+          <div className="text-center mb-3">
+            <h3 className="text-sm font-semibold text-gray-900">
+              {formatDate(selectedDate)}
+            </h3>
+          </div>
+          
+          {/* Seletor de Profissional (Mobile) */}
+          <div className="relative professional-dropdown">
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Selecionar Profissional:
+            </label>
+            <button
+              onClick={() => setShowProfessionalDropdown(!showProfessionalDropdown)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900 text-sm text-left flex items-center justify-between"
+              style={{ color: '#000000' }}
+            >
+              <span>
+                {selectedProfessional === 'all' 
+                  ? 'Todos os Profissionais' 
+                  : professionals.find(p => p._id === selectedProfessional)?.name || 'Selecionar'
+                }
+              </span>
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {/* Dropdown Customizado */}
+            {showProfessionalDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                <button
+                  onClick={() => {
+                    setSelectedProfessional('all')
+                    setShowProfessionalDropdown(false)
+                  }}
+                  className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center ${
+                    selectedProfessional === 'all' ? 'bg-gray-100 text-[#D15556]' : 'text-gray-900'
+                  }`}
+                >
+                  <span className="flex-1">Todos os Profissionais</span>
+                  {selectedProfessional === 'all' && (
+                    <svg className="w-4 h-4 text-[#D15556]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </button>
+                {professionals.map((professional) => (
+                  <button
+                    key={professional._id}
+                    onClick={() => {
+                      setSelectedProfessional(professional._id)
+                      setShowProfessionalDropdown(false)
+                    }}
+                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-50 flex items-center ${
+                      selectedProfessional === professional._id ? 'bg-gray-100 text-[#D15556]' : 'text-gray-900'
+                    }`}
+                  >
+                    <span className="flex-1">{professional.name}</span>
+                    {selectedProfessional === professional._id && (
+                      <svg className="w-4 h-4 text-[#D15556]" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Cabeçalho dos Profissionais (Desktop) */}
+        <div className="hidden lg:block border-b border-gray-200">
           <div className={`grid gap-1 p-2`} style={{ gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)` }}>
             <div className="text-sm font-medium text-gray-900 p-2 flex items-center justify-center">Horário</div>
             {professionals.map((professional) => (
@@ -700,9 +791,10 @@ export default function AgendamentosPage() {
         </div>
 
         {/* Grade de horários usando CSS Grid */}
-        <div className="overflow-y-auto max-h-[600px]">
+        <div className="overflow-y-auto max-h-[600px] lg:max-h-[600px]">
+          {/* Desktop: Grade completa */}
           <div 
-            className="grid gap-1 p-1"
+            className="hidden lg:grid gap-1 p-1"
             style={{ 
               gridTemplateColumns: `120px repeat(${professionals.length}, 1fr)`,
               gridTemplateRows: `repeat(${timeSlots.length}, 40px)`
@@ -718,8 +810,6 @@ export default function AgendamentosPage() {
                 <div className="text-sm font-medium text-gray-900">{time}</div>
               </div>
             ))}
-            
-            {/* Cabeçalho dos profissionais removido para evitar blocos vazios */}
             
             {/* Blocos de almoço */}
             {professionals.map((professional, profIndex) => {
@@ -745,7 +835,6 @@ export default function AgendamentosPage() {
               const startIndex = timeSlots.findIndex(time => time === appointment.startTime)
               const durationSlots = getDurationInSlots(appointment.startTime, appointment.endTime)
               const professionalIndex = professionals.findIndex(prof => prof._id === appointment.professionalId)
-              
               
               if (startIndex === -1 || professionalIndex === -1) return null
               
@@ -791,6 +880,134 @@ export default function AgendamentosPage() {
                 </div>
               )
             })}
+          </div>
+
+          {/* Mobile: Lista vertical com uma coluna */}
+          <div className="lg:hidden">
+            {displayProfessionals.map((professional) => (
+              <div key={professional._id} className="mb-4">
+                {/* Cabeçalho do profissional no mobile - mais compacto */}
+                <div className="bg-gray-50 p-2 border-b border-gray-200 sticky top-0 z-10">
+                  <div className={`flex items-center p-2 rounded-lg shadow-sm ${
+                    professional.name === 'Bruna Canovas' ? 'bg-[#d34d4c] text-white' :
+                    professional.name === 'Vitória Uliani' ? 'bg-[#f2dcbc] text-[#022b28]' :
+                    professional.name === 'Cicera Canovas' ? 'bg-[#022b28] text-white' :
+                    professional.name === 'Ellen Souza' ? 'bg-[#8c5459] text-white' :
+                    'bg-gray-600 text-white'
+                  }`}>
+                    {/* Foto do profissional */}
+                    <div className="w-8 h-8 rounded-full bg-white/20 mr-2 flex items-center justify-center overflow-hidden">
+                      {professional.name === 'Bruna Canovas' ? (
+                        <img src="/assents/fotobruna.jpeg" alt="Bruna" className="w-full h-full object-cover" />
+                      ) : professional.name === 'Cicera Canovas' ? (
+                        <img src="/assents/ciceraperfil.jpeg" alt="Cicera" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-white/30 flex items-center justify-center text-xs font-bold">
+                          {professional.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-sm font-medium">
+                      {professional.name}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Lista de horários para este profissional - com scroll e altura proporcional */}
+                <div className="p-2 max-h-[400px] overflow-y-auto">
+                  <div className="space-y-0">
+                    {timeSlots.map((time, index) => {
+                      const appointmentsAtTime = dayAppointments.filter(apt => 
+                        apt.startTime === time && apt.professionalId === professional._id
+                      )
+                      
+                      // Verificar se é horário de almoço - só renderizar no primeiro horário
+                      if (isLunchTime(time) && time === '13:00') {
+                        return (
+                          <div
+                            key={`lunch-${professional._id}`}
+                            className="bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300 rounded-lg p-2 text-center flex items-center justify-center shadow-sm mb-1"
+                            style={{ height: '240px' }} // 4 slots de 15min = 240px
+                          >
+                            <div className="text-sm text-orange-800 font-bold">🍽️ Almoço</div>
+                          </div>
+                        )
+                      }
+                      
+                      // Pular os outros horários de almoço (13:15, 13:30, 13:45) pois já foram renderizados no bloco único
+                      if (isLunchTime(time) && time !== '13:00') {
+                        return null
+                      }
+
+                      if (appointmentsAtTime.length === 0) {
+                        return (
+                          <div
+                            key={`empty-${time}-${professional._id}`}
+                            className="h-15 border border-gray-200 rounded-lg flex items-center justify-center text-gray-400 text-xs mb-1"
+                            style={{ height: '60px' }}
+                          >
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{time}</span>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-gray-300">Livre</span>
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      return appointmentsAtTime.map((appointment) => {
+                        const durationSlots = getDurationInSlots(appointment.startTime, appointment.endTime)
+                        const heightInPx = Math.max(60, durationSlots * 60) // 60px por slot de 15min
+                        
+                        return (
+                          <div
+                            key={appointment._id}
+                            className={`p-2 rounded-lg border shadow-md cursor-pointer transition-all hover:shadow-lg mb-1 ${getStatusColor(appointment.status)}`}
+                            style={{ height: `${heightInPx}px` }}
+                            onClick={() => handleEditAppointment(appointment)}
+                          >
+                            <div className="h-full flex flex-col justify-between">
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs font-bold opacity-90">
+                                  {appointment.startTime}
+                                </div>
+                                <div className="text-xs font-bold opacity-90">
+                                  {appointment.endTime}
+                                </div>
+                              </div>
+                              
+                              <div className="flex-1 flex flex-col justify-center">
+                                <div className="text-sm font-medium opacity-90 mb-1">
+                                  {appointment.service}
+                                </div>
+                                
+                                {/* Etiquetas selecionadas */}
+                                {appointment.customLabels && appointment.customLabels.length > 0 && (
+                                  <div className="flex flex-wrap gap-1 mb-1">
+                                    {appointment.customLabels.map((label: any) => (
+                                      <span
+                                        key={label.id}
+                                        className={`px-1 py-0.5 rounded text-xs font-medium ${label.color} opacity-90`}
+                                      >
+                                        {label.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                
+                                <div className="text-sm font-medium opacity-90">
+                                  {appointment.clientName}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -1005,39 +1222,32 @@ export default function AgendamentosPage() {
 
         {/* Controles da Agenda */}
         <div className="bg-white rounded-lg shadow mb-6">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-              {/* Navegação de Data */}
+              {/* Seletor de Data - Sempre visível */}
               <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => navigateDate('prev')}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold text-gray-900">
-                    {formatDate(selectedDate)}
-                  </h2>
-                  <button
-                    onClick={goToToday}
-                    className="text-sm text-[#D15556] hover:text-[#c04546]"
-                  >
-                    Ir para hoje
-                  </button>
+                <div className="flex flex-col">
+                  <label className="text-sm font-medium text-gray-700 mb-1">
+                    Selecionar Data:
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedDate.toISOString().split('T')[0]}
+                    onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent bg-white text-gray-900"
+                    style={{ color: '#000000' }}
+                  />
                 </div>
-                
                 <button
-                  onClick={() => navigateDate('next')}
-                  className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  onClick={goToToday}
+                  className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors text-sm font-medium"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  Hoje
                 </button>
               </div>
 
-              {/* Modo de Visualização - Apenas Vista Diária */}
-              <div className="flex items-center space-x-2">
+              {/* Modo de Visualização - Oculto em telas muito pequenas */}
+              <div className="hidden sm:flex items-center space-x-2">
                 <button
                   onClick={() => setViewMode('day')}
                   className="p-2 rounded-lg transition-colors bg-[#D15556] text-white"
@@ -1047,8 +1257,9 @@ export default function AgendamentosPage() {
                 </button>
               </div>
 
-              {/* Filtros */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              {/* Filtros - Simplificados em mobile */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                {/* Busca - Sempre visível */}
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
@@ -1061,10 +1272,11 @@ export default function AgendamentosPage() {
                   />
                 </div>
                 
+                {/* Status - Oculto em telas muito pequenas */}
                 <select
                   value={filterStatus}
                   onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="hidden sm:block px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
                 >
                   <option value="all">Todos os Status</option>
                   <option value="SCHEDULED">Agendado</option>
@@ -1087,9 +1299,9 @@ export default function AgendamentosPage() {
 
         {/* Agenda */}
         {!loading && (
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Calendário Lateral */}
-            <div className="lg:col-span-1">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-6">
+            {/* Calendário Lateral - Oculto no mobile */}
+            <div className="hidden lg:block lg:col-span-1">
               {renderSideCalendar()}
             </div>
             
@@ -1100,8 +1312,9 @@ export default function AgendamentosPage() {
           </div>
         )}
 
-        {/* Resumo do Dia */}
-        <div className={`mt-6 grid gap-6`} style={{ gridTemplateColumns: `repeat(${professionals.length + 1}, 1fr)` }}>
+        {/* Resumo do Dia - Apenas Desktop */}
+        <div className="hidden lg:block mt-6">
+          <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${professionals.length + 1}, 1fr)` }}>
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
@@ -1138,6 +1351,7 @@ export default function AgendamentosPage() {
               )
             })}
           </div>
+        </div>
 
         {/* Modal de Confirmação de Exclusão */}
         {showDeleteModal && (
@@ -1184,13 +1398,13 @@ export default function AgendamentosPage() {
         {/* Modal de Edição de Agendamento */}
         {showEditModal && selectedAppointment && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden mx-2 sm:mx-4">
               {/* Header do Modal */}
-              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between p-3 sm:p-6 border-b border-gray-200">
                 <div className="flex space-x-1">
                   <button
                     onClick={() => setActiveTab('reserva')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       activeTab === 'reserva'
                         ? 'bg-purple-100 text-purple-700'
                         : 'text-gray-500 hover:text-gray-700'
@@ -1200,7 +1414,7 @@ export default function AgendamentosPage() {
                   </button>
                   <button
                     onClick={() => setActiveTab('informacoes')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-2 sm:px-4 py-1 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       activeTab === 'informacoes'
                         ? 'bg-purple-100 text-purple-700'
                         : 'text-gray-500 hover:text-gray-700'
@@ -1211,23 +1425,23 @@ export default function AgendamentosPage() {
                 </div>
                 <button
                   onClick={closeEditModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               {/* Conteúdo do Modal */}
-              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-120px)] sm:max-h-[calc(90vh-120px)]">
+              <div className="p-3 sm:p-6 overflow-y-auto max-h-[calc(95vh-100px)] sm:max-h-[calc(90vh-120px)]">
                 {activeTab === 'reserva' ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4 sm:space-y-6">
                     {/* Informações do Cliente */}
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <div className="flex justify-between items-start">
+                    <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-3 sm:space-y-0">
                         <div className="flex-1">
-                          <div className="text-sm text-gray-600 mb-2">
+                          <div className="text-xs sm:text-sm text-gray-600 mb-2">
                             <span className="font-medium">Cliente:</span>{' '}
                             <Link 
                               href={`/admin/clientes/${clientData?._id || 'novo'}`}
@@ -1236,7 +1450,7 @@ export default function AgendamentosPage() {
                               {clientData?.name || selectedAppointment.clientName}
                             </Link>
                           </div>
-                          <div className="text-sm text-gray-600 mb-2">
+                          <div className="text-xs sm:text-sm text-gray-600 mb-2">
                             <span className="font-medium">Celular:</span>{' '}
                             <a 
                               href={`https://wa.me/55${selectedAppointment.clientPhone.replace(/\D/g, '')}`}
@@ -1248,28 +1462,30 @@ export default function AgendamentosPage() {
                             </a>
                           </div>
                         </div>
-                        {existingComanda ? (
-                          <Link
-                            href={`/admin/comandas/${existingComanda._id}`}
-                            className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>Ver Comanda</span>
-                          </Link>
-                        ) : (
-                          <button
-                            onClick={handleOpenComanda}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg"
-                          >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                            </svg>
-                            <span>Abrir Comanda</span>
-                          </button>
-                        )}
+                        <div className="flex-shrink-0">
+                          {existingComanda ? (
+                            <Link
+                              href={`/admin/comandas/${existingComanda._id}`}
+                              className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg text-sm sm:text-base"
+                            >
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
+                              <span>Ver Comanda</span>
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={handleOpenComanda}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex items-center space-x-2 transition-colors shadow-md hover:shadow-lg text-sm sm:text-base"
+                            >
+                              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                              </svg>
+                              <span>Abrir Comanda</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {clientData?.birthDate && (
                         <div className="text-sm text-gray-600 mb-2">
@@ -1336,7 +1552,7 @@ export default function AgendamentosPage() {
                     {/* Tabela de Serviços */}
                     <div className="border border-gray-200 rounded-lg overflow-hidden">
                       <div className="overflow-x-auto">
-                        <table className="w-full min-w-[600px]">
+                        <table className="w-full min-w-[500px] sm:min-w-[600px]">
                         <thead className="bg-gray-50">
                           <tr>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serviço</th>
@@ -1580,16 +1796,16 @@ export default function AgendamentosPage() {
               </div>
 
               {/* Footer do Modal */}
-              <div className="flex items-center justify-end space-x-3 p-4 sm:p-6 pb-6 sm:pb-8 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end space-y-2 sm:space-y-0 sm:space-x-3 p-3 sm:p-6 pb-4 sm:pb-8 border-t border-gray-200">
                 <button
                   onClick={closeEditModal}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors text-sm sm:text-base"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={handleSaveAppointment}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
                 >
                   Salvar
                 </button>
