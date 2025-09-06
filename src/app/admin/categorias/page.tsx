@@ -370,88 +370,93 @@ export default function CategoriasPage() {
 
       {/* Modal para Nova/Editar Categoria */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 p-4">
-          <div className="relative top-4 sm:top-20 mx-auto p-4 sm:p-5 border w-full max-w-md sm:w-96 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
-                </h3>
+        <div className="modal-container">
+          <div className="modal-overlay" onClick={() => {
+            setShowModal(false)
+            setEditingCategory(null)
+            setFormData({ name: '', type: 'service', description: '' })
+          }} />
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="text-lg font-medium text-gray-900">
+                {editingCategory ? 'Editar Categoria' : 'Nova Categoria'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowModal(false)
+                  setEditingCategory(null)
+                  setFormData({ name: '', type: 'service', description: '' })
+                }}
+                className="modal-close-btn"
+                aria-label="Fechar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="modal-body space-y-4">
+              <div className="modal-form-group">
+                <label className="modal-form-label">
+                  Nome da Categoria *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="modal-form-input"
+                  placeholder="Nome da categoria"
+                  required
+                />
+              </div>
+
+              <div className="modal-form-group">
+                <label className="modal-form-label">
+                  Tipo
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'service' | 'product' }))}
+                  className="modal-form-input"
+                >
+                  <option value="service">Serviço</option>
+                  <option value="product">Produto</option>
+                </select>
+              </div>
+
+              <div className="modal-form-group">
+                <label className="modal-form-label">
+                  Descrição
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                  className="modal-form-input modal-form-textarea"
+                  placeholder="Descrição da categoria"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
                 <button
+                  type="button"
                   onClick={() => {
                     setShowModal(false)
                     setEditingCategory(null)
                     setFormData({ name: '', type: 'service', description: '' })
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="modal-btn modal-btn-secondary"
                 >
-                  <X className="w-5 h-5" />
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="modal-btn modal-btn-primary flex items-center"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {editingCategory ? 'Atualizar' : 'Criar'}
                 </button>
               </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nome da Categoria *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
-                    placeholder="Nome da categoria"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tipo
-                  </label>
-                  <select
-                    value={formData.type}
-                    onChange={(e) => setFormData(prev => ({ ...prev, type: e.target.value as 'service' | 'product' }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
-                  >
-                    <option value="service">Serviço</option>
-                    <option value="product">Produto</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#D15556] focus:border-[#D15556]"
-                    placeholder="Descrição da categoria"
-                  />
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowModal(false)
-                      setEditingCategory(null)
-                      setFormData({ name: '', type: 'service', description: '' })
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-[#D15556] text-white rounded-md hover:bg-[#c04546] transition-colors flex items-center"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    {editingCategory ? 'Atualizar' : 'Criar'}
-                  </button>
-                </div>
-              </form>
+            </form>
             </div>
           </div>
         </div>

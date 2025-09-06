@@ -111,7 +111,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[9999] overflow-hidden">
+    <div className="cart-modal-container">
       {/* Login Modal */}
       <LoginModal 
         isOpen={isLoginModalOpen} 
@@ -121,26 +121,27 @@ export default function Cart({ isOpen, onClose }: CartProps) {
       
       {/* Overlay */}
       <div 
-        className="absolute inset-0 bg-white bg-opacity-20 transition-opacity backdrop-blur-[2px]"
+        className="cart-modal-overlay"
         onClick={onClose}
       />
       
       {/* Cart Panel */}
-      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transform transition-transform">
+      <div className="cart-modal-content">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b">
+          <div className="modal-header">
             <h2 className="text-lg font-semibold text-gray-900">Carrinho de Compras</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="modal-close-btn"
+              aria-label="Fechar carrinho"
             >
               <X className="w-6 h-6" />
             </button>
           </div>
 
           {/* Cart Items */}
-          <div className="flex-1 overflow-y-auto p-6">
+          <div className="flex-1 overflow-y-auto modal-body">
             {state.items.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -168,36 +169,36 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                         )}
                       </div>
 
-                                             {/* Product Info */}
-                       <div className="flex-1 min-w-0 mr-2">
-                         <h3 className="text-sm font-medium text-gray-900 truncate mb-1">
-                           {item.name}
-                         </h3>
-                         <div className="flex flex-col space-y-1">
-                           {item.discount && item.discount > 0 ? (
-                             <>
-                               <span className="text-sm line-through text-gray-400">
-                                 R$ {item.originalPrice?.toFixed(2) || item.price.toFixed(2)}
-                               </span>
-                               <div className="flex items-center space-x-1">
-                                 <span className="text-sm font-medium text-red-600">
-                                   R$ {finalPrice.toFixed(2)}
-                                 </span>
-                                 <span className="text-xs text-red-600 font-medium">
-                                   -{item.discount}%
-                                 </span>
-                               </div>
-                             </>
-                           ) : (
-                             <span className="text-sm font-medium text-gray-900">
-                               R$ {item.price.toFixed(2)}
-                             </span>
-                           )}
-                         </div>
-                         <p className="text-xs text-gray-500 mt-1">
-                           Estoque: {item.stock} unidades
-                         </p>
-                       </div>
+                      {/* Product Info */}
+                      <div className="flex-1 min-w-0 mr-2">
+                        <h3 className="text-sm font-medium text-gray-900 truncate mb-1">
+                          {item.name}
+                        </h3>
+                        <div className="flex flex-col space-y-1">
+                          {item.discount && item.discount > 0 ? (
+                            <>
+                              <span className="text-sm line-through text-gray-400">
+                                R$ {item.originalPrice?.toFixed(2) || item.price.toFixed(2)}
+                              </span>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-sm font-medium text-red-600">
+                                  R$ {finalPrice.toFixed(2)}
+                                </span>
+                                <span className="text-xs text-red-600 font-medium">
+                                  -{item.discount}%
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <span className="text-sm font-medium text-gray-900">
+                              R$ {item.price.toFixed(2)}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Estoque: {item.stock} unidades
+                        </p>
+                      </div>
 
                       {/* Quantity Controls */}
                       <div className="flex items-center space-x-2">
@@ -205,6 +206,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                           onClick={() => updateQuantity(item._id, item.quantity - 1)}
                           disabled={item.quantity <= 1}
                           className="w-8 h-8 rounded-full border border-[#d34d4c] flex items-center justify-center hover:bg-[#d34d4c] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-[#d34d4c] transition-colors"
+                          aria-label="Diminuir quantidade"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -215,6 +217,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                           onClick={() => updateQuantity(item._id, item.quantity + 1)}
                           disabled={item.quantity >= item.stock}
                           className="w-8 h-8 rounded-full border border-[#d34d4c] flex items-center justify-center hover:bg-[#d34d4c] hover:text-white disabled:opacity-50 disabled:cursor-not-allowed text-[#d34d4c] transition-colors"
+                          aria-label="Aumentar quantidade"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -224,6 +227,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
                       <button
                         onClick={() => removeItem(item._id)}
                         className="text-red-500 hover:text-red-700 transition-colors"
+                        aria-label="Remover item"
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -236,7 +240,7 @@ export default function Cart({ isOpen, onClose }: CartProps) {
 
           {/* Footer */}
           {state.items.length > 0 && (
-            <div className="border-t p-6 space-y-4">
+            <div className="border-t modal-body space-y-4">
               {/* Total */}
               <div className="flex justify-between items-center">
                 <span className="text-lg font-medium text-gray-900">Total:</span>
@@ -249,11 +253,11 @@ export default function Cart({ isOpen, onClose }: CartProps) {
               <button
                 onClick={handleReserve}
                 disabled={isReserving}
-                className="w-full bg-[#d34d4c] text-white py-3 px-4 rounded-lg hover:bg-[#b83e3d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                className="modal-btn modal-btn-primary modal-btn-full flex items-center justify-center space-x-2"
               >
                 {isReserving ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    <div className="modal-spinner"></div>
                     <span>Reservando...</span>
                   </>
                 ) : (

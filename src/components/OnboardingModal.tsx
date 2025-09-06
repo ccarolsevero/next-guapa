@@ -109,196 +109,196 @@ export default function OnboardingModal({ isOpen, onClose, onComplete, clientDat
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <div className="w-12 h-12 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
-                <User className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-[#006D5B]">
-                  Complete seu Cadastro
-                </h2>
-                <p className="text-gray-600">
-                  Atualize seus dados para uma melhor experiência
-                </p>
-              </div>
+    <div className="modal-container">
+      <div className="modal-overlay" onClick={onClose} />
+      <div className="modal-content modal-content-large">
+        {/* Header */}
+        <div className="modal-header">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+              <User className="w-6 h-6 text-white" />
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {errors.general && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-800 text-sm">{errors.general}</p>
-              </div>
-            )}
-
-            {/* Nome */}
             <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                <User className="w-4 h-4 inline mr-2" />
-                Nome Completo *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.name ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Digite seu nome completo"
-              />
-              {errors.name && <p className="text-red-600 text-sm mt-1">{errors.name}</p>}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                <Mail className="w-4 h-4 inline mr-2" />
-                Email *
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.email ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="Digite seu email"
-              />
-              {errors.email && <p className="text-red-600 text-sm mt-1">{errors.email}</p>}
-              <p className="text-gray-500 text-sm mt-1">
-                Este será seu email para login no site
+              <h2 className="text-2xl font-bold text-[#006D5B]">
+                Complete seu Cadastro
+              </h2>
+              <p className="text-gray-600">
+                Atualize seus dados para uma melhor experiência
               </p>
             </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="modal-close-btn"
+            aria-label="Fechar modal"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
 
-            {/* Telefone */}
-            <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                <Phone className="w-4 h-4 inline mr-2" />
-                Telefone *
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.phone ? 'border-red-300' : 'border-gray-300'
-                }`}
-                placeholder="(11) 99999-9999"
-              />
-              {errors.phone && <p className="text-red-600 text-sm mt-1">{errors.phone}</p>}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="modal-body space-y-6">
+          {errors.general && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-sm">{errors.general}</p>
             </div>
+          )}
 
-            {/* Data de Nascimento */}
-            <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                <Calendar className="w-4 h-4 inline mr-2" />
-                Data de Nascimento *
-              </label>
-              <input
-                type="date"
-                value={formData.birthDate}
-                onChange={(e) => handleInputChange('birthDate', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.birthDate ? 'border-red-300' : 'border-gray-300'
-                }`}
-              />
-              {errors.birthDate && <p className="text-red-600 text-sm mt-1">{errors.birthDate}</p>}
-            </div>
+          {/* Nome */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <User className="w-4 h-4 inline mr-2" />
+              Nome Completo *
+            </label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
+              className={`modal-form-input ${
+                errors.name ? 'error' : ''
+              }`}
+              placeholder="Digite seu nome completo"
+            />
+            {errors.name && <p className="modal-error-message">{errors.name}</p>}
+          </div>
 
-            {/* Endereço */}
-            <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                <MapPin className="w-4 h-4 inline mr-2" />
-                Endereço
-              </label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => handleInputChange('address', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
-                placeholder="Rua, número, bairro, cidade"
-              />
-            </div>
+          {/* Email */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <Mail className="w-4 h-4 inline mr-2" />
+              Email *
+            </label>
+            <input
+              type="email"
+              value={formData.email}
+              onChange={(e) => handleInputChange('email', e.target.value)}
+              className={`modal-form-input ${
+                errors.email ? 'error' : ''
+              }`}
+              placeholder="Digite seu email"
+            />
+            {errors.email && <p className="modal-error-message">{errors.email}</p>}
+            <p className="text-gray-500 text-sm mt-1">
+              Este será seu email para login no site
+            </p>
+          </div>
 
-            {/* Nova Senha */}
-            <div>
-              <label className="block text-sm font-medium text-[#006D5B] mb-2">
+          {/* Telefone */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <Phone className="w-4 h-4 inline mr-2" />
+              Telefone *
+            </label>
+            <input
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
+              className={`modal-form-input ${
+                errors.phone ? 'error' : ''
+              }`}
+              placeholder="(11) 99999-9999"
+            />
+            {errors.phone && <p className="modal-error-message">{errors.phone}</p>}
+          </div>
+
+          {/* Data de Nascimento */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <Calendar className="w-4 h-4 inline mr-2" />
+              Data de Nascimento *
+            </label>
+            <input
+              type="date"
+              value={formData.birthDate}
+              onChange={(e) => handleInputChange('birthDate', e.target.value)}
+              className={`modal-form-input ${
+                errors.birthDate ? 'error' : ''
+              }`}
+            />
+            {errors.birthDate && <p className="modal-error-message">{errors.birthDate}</p>}
+          </div>
+
+          {/* Endereço */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <MapPin className="w-4 h-4 inline mr-2" />
+              Endereço
+            </label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) => handleInputChange('address', e.target.value)}
+              className="modal-form-input"
+              placeholder="Rua, número, bairro, cidade"
+            />
+          </div>
+
+          {/* Nova Senha */}
+          <div className="modal-form-group">
+            <label className="modal-form-label">
+              <Lock className="w-4 h-4 inline mr-2" />
+              Nova Senha (opcional)
+            </label>
+            <input
+              type="password"
+              value={formData.newPassword}
+              onChange={(e) => handleInputChange('newPassword', e.target.value)}
+              className={`modal-form-input ${
+                errors.newPassword ? 'error' : ''
+              }`}
+              placeholder="Mínimo 6 caracteres"
+            />
+            {errors.newPassword && <p className="modal-error-message">{errors.newPassword}</p>}
+          </div>
+
+          {/* Confirmar Senha */}
+          {formData.newPassword && (
+            <div className="modal-form-group">
+              <label className="modal-form-label">
                 <Lock className="w-4 h-4 inline mr-2" />
-                Nova Senha (opcional)
+                Confirmar Nova Senha
               </label>
               <input
                 type="password"
-                value={formData.newPassword}
-                onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.newPassword ? 'border-red-300' : 'border-gray-300'
+                value={formData.confirmPassword}
+                onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                className={`modal-form-input ${
+                  errors.confirmPassword ? 'error' : ''
                 }`}
-                placeholder="Mínimo 6 caracteres"
+                placeholder="Confirme sua nova senha"
               />
-              {errors.newPassword && <p className="text-red-600 text-sm mt-1">{errors.newPassword}</p>}
+              {errors.confirmPassword && <p className="modal-error-message">{errors.confirmPassword}</p>}
             </div>
+          )}
 
-            {/* Confirmar Senha */}
-            {formData.newPassword && (
-              <div>
-                <label className="block text-sm font-medium text-[#006D5B] mb-2">
-                  <Lock className="w-4 h-4 inline mr-2" />
-                  Confirmar Nova Senha
-                </label>
-                <input
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900 ${
-                  errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                }`}
-                  placeholder="Confirme sua nova senha"
-                />
-                {errors.confirmPassword && <p className="text-red-600 text-sm mt-1">{errors.confirmPassword}</p>}
-              </div>
-            )}
-
-            {/* Botões */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-3 text-gray-600 hover:text-gray-800 transition-colors font-medium"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="bg-[#D15556] text-white px-6 py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    Completar Cadastro
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
+          {/* Botões */}
+          <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <button
+              type="button"
+              onClick={onClose}
+              className="modal-btn modal-btn-secondary"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="modal-btn modal-btn-primary flex items-center"
+            >
+              {loading ? (
+                <>
+                  <div className="modal-spinner mr-2"></div>
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Completar Cadastro
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

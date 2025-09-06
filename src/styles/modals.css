@@ -1,0 +1,328 @@
+/* Estilos padronizados para todos os modals do projeto */
+
+/* Overlay padrão para todos os modals */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  animation: modalOverlayFadeIn 0.3s ease-out;
+}
+
+/* Container do modal */
+.modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Conteúdo do modal */
+.modal-content {
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-width: 28rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalContentFadeIn 0.3s ease-out;
+  position: relative;
+}
+
+/* Modal grande (para formulários complexos) */
+.modal-content-large {
+  max-width: 32rem;
+}
+
+/* Modal extra grande (para formulários administrativos) */
+.modal-content-extra-large {
+  max-width: 40rem;
+}
+
+/* Header do modal */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Body do modal */
+.modal-body {
+  padding: 1.5rem;
+}
+
+/* Botão de fechar */
+.modal-close-btn {
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: color 0.2s ease;
+}
+
+.modal-close-btn:hover {
+  color: #6b7280;
+}
+
+/* Campos de formulário responsivos */
+.modal-form-group {
+  margin-bottom: 1rem;
+}
+
+.modal-form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.modal-form-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-form-input:focus {
+  outline: none;
+  border-color: #d34d4c;
+  box-shadow: 0 0 0 3px rgba(211, 77, 76, 0.1);
+}
+
+.modal-form-textarea {
+  resize: vertical;
+  min-height: 4rem;
+}
+
+/* Botões do modal */
+.modal-btn {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  font-size: 0.875rem;
+}
+
+.modal-btn-primary {
+  background: #d34d4c;
+  color: white;
+}
+
+.modal-btn-primary:hover {
+  background: #b83e3d;
+}
+
+.modal-btn-secondary {
+  background: transparent;
+  color: #6b7280;
+}
+
+.modal-btn-secondary:hover {
+  color: #374151;
+}
+
+.modal-btn-full {
+  width: 100%;
+}
+
+/* Validação visual */
+.modal-form-input.error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.modal-form-input.success {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.modal-error-message {
+  color: #ef4444;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.modal-success-message {
+  color: #10b981;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+/* Animações */
+@keyframes modalOverlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalContentFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+  .modal-container {
+    padding: 0;
+  }
+  
+  .modal-content {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+    max-height: 100vh;
+  }
+  
+  .modal-header {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  /* Campos de formulário maiores em mobile */
+  .modal-form-input {
+    min-height: 44px;
+    font-size: 16px; /* Evita zoom no iOS */
+    padding: 0.875rem;
+  }
+  
+  .modal-form-textarea {
+    min-height: 6rem;
+  }
+  
+  /* Botões maiores em mobile */
+  .modal-btn {
+    min-height: 44px;
+    padding: 0.875rem 1rem;
+  }
+}
+
+/* CartModal específico - responsivo */
+.cart-modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.cart-modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(2px);
+}
+
+.cart-modal-content {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  width: 100%;
+  max-width: 28rem;
+  background: white;
+  box-shadow: -10px 0 25px -5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  animation: cartModalSlideIn 0.3s ease-out;
+}
+
+/* Responsividade do CartModal */
+@media (max-width: 768px) {
+  .cart-modal-content {
+    max-width: 100%;
+    right: 0;
+    left: 0;
+  }
+}
+
+/* Animações específicas */
+@keyframes cartModalSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Estados de loading */
+.modal-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.modal-loading-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #d34d4c;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Acessibilidade */
+.modal-content:focus {
+  outline: none;
+}
+
+.modal-content[aria-modal="true"] {
+  /* Estilos para screen readers */
+}
+
+/* Scrollbar customizada */
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-content::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
