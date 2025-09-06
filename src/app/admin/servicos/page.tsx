@@ -38,6 +38,7 @@ const professionals = [
 export default function ServicosPage() {
   const [services, setServices] = useState<Service[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [activeCategories, setActiveCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const [categoriesLoading, setCategoriesLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -67,16 +68,17 @@ export default function ServicosPage() {
     }
   }
 
-  // Carregar categorias de serviços da API
+  // Carregar todas as categorias (para o modal de gerenciamento)
   const loadCategories = async () => {
     try {
       setCategoriesLoading(true)
-      const response = await fetch('/api/service-categories-v2?isActive=true')
+      // Para o modal de gerenciamento, carregar todas as categorias (ativas e inativas)
+      const response = await fetch('/api/service-categories-v2')
       if (!response.ok) {
         throw new Error('Erro ao carregar categorias de serviços')
       }
       const data = await response.json()
-      console.log('📋 Categorias carregadas:', data)
+      console.log('📋 Todas as categorias carregadas:', data)
       setCategories(data)
     } catch (error) {
       console.error('Erro ao carregar categorias de serviços:', error)
@@ -91,6 +93,29 @@ export default function ServicosPage() {
       setCategories(fallbackCategories)
     } finally {
       setCategoriesLoading(false)
+    }
+  }
+
+  // Carregar apenas categorias ativas (para o select de filtro)
+  const loadActiveCategories = async () => {
+    try {
+      const response = await fetch('/api/service-categories-v2?isActive=true')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar categorias ativas')
+      }
+      const data = await response.json()
+      console.log('📋 Categorias ativas carregadas:', data)
+      setActiveCategories(data)
+    } catch (error) {
+      console.error('Erro ao carregar categorias ativas:', error)
+      // Fallback para categorias padrão se a API falhar
+      const fallbackCategories = [
+        { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+        { _id: '2', name: 'Cortes', isActive: true, order: 2 },
+        { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+        { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+      ]
+      setActiveCategories(fallbackCategories)
     }
   }
 
@@ -116,6 +141,7 @@ export default function ServicosPage() {
       if (response.ok) {
         // Recarregar categorias
         await loadCategories()
+        await loadActiveCategories()
         // Fechar modal e limpar campos
         setShowCategoryModal(false)
         setNewCategoryName('')
@@ -157,6 +183,7 @@ export default function ServicosPage() {
         
         // Recarregar categorias
         await loadCategories()
+        await loadActiveCategories()
         
         alert(`Categoria ${action}da com sucesso!`)
       } else {
@@ -192,6 +219,7 @@ export default function ServicosPage() {
         
         // Recarregar categorias
         await loadCategories()
+        await loadActiveCategories()
         
         alert('Categoria deletada com sucesso!')
       } else {
@@ -207,7 +235,8 @@ export default function ServicosPage() {
 
   useEffect(() => {
     loadServices()
-    loadCategories()
+    loadCategories() // Para o modal de gerenciamento (todas as categorias)
+    loadActiveCategories() // Para o select de filtro (apenas ativas)
   }, [])
 
   const filteredServices = services.filter(service => {
@@ -319,7 +348,7 @@ export default function ServicosPage() {
               {categoriesLoading ? (
                 <option value="">Carregando categorias...</option>
               ) : (
-                categories.map(category => (
+                activeCategories.map(category => (
                   <option key={category._id} value={category.name}>{category.name}</option>
                 ))
               )}
