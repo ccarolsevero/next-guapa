@@ -308,10 +308,17 @@ export default function ComandaDetalhesPage() {
         setComanda(updatedComanda)
     } else {
         console.log('🆕 Adicionando novo produto')
+        // Calcular preço com desconto
+        const finalPrice = product.discount > 0 
+          ? product.price * (1 - product.discount / 100)
+          : product.price
+        
         const newProduct = { 
           id: product._id,
           nome: product.name, 
-          preco: product.price, 
+          preco: finalPrice, // Usar preço com desconto aplicado
+          precoOriginal: product.price, // Manter preço original para referência
+          desconto: product.discount || 0, // Salvar percentual de desconto
           quantidade: 1, 
           vendidoPor: soldByProfessionalName || comanda?.profissionalVendedora,
           vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
@@ -908,7 +915,19 @@ export default function ComandaDetalhesPage() {
                   <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{product.nome}</div>
-                      <div className="text-sm text-gray-700 font-medium">R$ {(product.preco || 0).toFixed(2)}</div>
+                      <div className="text-sm text-gray-700 font-medium">
+                        R$ {(product.preco || 0).toFixed(2)}
+                        {product.desconto > 0 && (
+                          <span className="ml-2 text-xs text-green-600 font-medium">
+                            ({product.desconto}% de desconto)
+                          </span>
+                        )}
+                      </div>
+                      {product.precoOriginal && product.precoOriginal !== product.preco && (
+                        <div className="text-xs text-gray-500 line-through">
+                          R$ {product.precoOriginal.toFixed(2)}
+                        </div>
+                      )}
                       <div className="text-xs text-gray-600 mt-1">
                         Vendido por: 
                         <button
