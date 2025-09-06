@@ -6,6 +6,12 @@ export interface IComanda extends Document {
   status: 'em_atendimento' | 'finalizada' | 'cancelada'
   dataInicio: Date
   dataFim?: Date
+  dataFinalizacao?: Date
+  valorFinal?: number
+  desconto?: number
+  creditAmount?: number
+  metodoPagamento?: string
+  isFinalizada: boolean
   servicos: Array<{
     servicoId: mongoose.Types.ObjectId
     nome: string
@@ -47,6 +53,28 @@ const ComandaSchema: Schema = new Schema({
   },
   dataFim: {
     type: Date
+  },
+  dataFinalizacao: {
+    type: Date
+  },
+  valorFinal: {
+    type: Number
+  },
+  desconto: {
+    type: Number,
+    default: 0
+  },
+  creditAmount: {
+    type: Number,
+    default: 0
+  },
+  metodoPagamento: {
+    type: String,
+    default: 'dinheiro'
+  },
+  isFinalizada: {
+    type: Boolean,
+    default: false
   },
   servicos: [{
     servicoId: {

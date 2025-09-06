@@ -64,6 +64,7 @@ export default function ComandaDetalhesPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingComanda, setEditingComanda] = useState<any>(null)
   const [editLoading, setEditLoading] = useState(false)
+  const [isComandaFinalizada, setIsComandaFinalizada] = useState(false)
 
   const updateTotal = () => {
     if (!comanda) {
@@ -167,6 +168,7 @@ export default function ComandaDetalhesPage() {
           const data = await response.json()
           console.log('📥 Carregando comanda inicial do banco')
           setComanda(data.comanda)
+          setIsComandaFinalizada(data.comanda.isFinalizada || data.comanda.status === 'finalizada')
           setInitialLoadComplete(true)
         } else {
           console.error('❌ Erro na API de comanda:', response.status)
@@ -687,12 +689,14 @@ export default function ComandaDetalhesPage() {
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </button>
-              <Link
-                    href={`/admin/comandas/${comanda?.id}/finalizar`}
-                className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
-              >
-                Finalizar
-              </Link>
+              {!isComandaFinalizada && (
+                <Link
+                  href={`/admin/atendimentos/finalizar/${comanda?.id}`}
+                  className="bg-black text-white px-6 py-2 hover:bg-gray-800 transition-colors font-medium tracking-wide"
+                >
+                  Finalizar
+                </Link>
+              )}
                 </>
               )}
               {isReadOnly && (
@@ -708,6 +712,36 @@ export default function ComandaDetalhesPage() {
           </div>
         </div>
       </div>
+
+      {/* Banner de Comanda Finalizada */}
+      {isComandaFinalizada && (
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-green-800">
+                  Comanda Finalizada
+                </h3>
+                <div className="mt-1 text-sm text-green-700">
+                  <p>Esta comanda foi finalizada em {comanda?.dataFinalizacao ? new Date(comanda.dataFinalizacao).toLocaleDateString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : 'Data não disponível'}.</p>
+                  <p className="mt-1">Apenas edições são permitidas. Não é possível adicionar novos itens.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-3 gap-8">
@@ -746,7 +780,7 @@ export default function ComandaDetalhesPage() {
                   <Scissors className="w-5 h-5 mr-2" />
                   Serviços
                 </h2>
-                {!isReadOnly && (
+                {!isReadOnly && !isComandaFinalizada && (
                 <button
                   onClick={() => setShowAddService(!showAddService)}
                   className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"
@@ -820,7 +854,7 @@ export default function ComandaDetalhesPage() {
                   <ShoppingBag className="w-5 h-5 mr-2" />
                   Produtos
                 </h2>
-                {!isReadOnly && (
+                {!isReadOnly && !isComandaFinalizada && (
                 <button
                   onClick={() => setShowAddProduct(!showAddProduct)}
                   className="bg-black text-white px-4 py-2 hover:bg-gray-800 transition-colors font-medium text-sm"

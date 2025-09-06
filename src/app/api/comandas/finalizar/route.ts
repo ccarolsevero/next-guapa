@@ -52,12 +52,27 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Comanda encontrada:', {
       status: comanda.status,
+      isFinalizada: comanda.isFinalizada,
       clienteId: comanda.clienteId,
       clienteNome: comanda.clienteNome,
       profissionalId: comanda.profissionalId,
       valorTotal: comanda.valorTotal
     })
     console.log('🔍 Estrutura completa da comanda:', JSON.stringify(comanda, null, 2))
+
+    // Verificar se a comanda já foi finalizada
+    if (comanda.isFinalizada || comanda.status === 'finalizada') {
+      console.log('❌ Comanda já foi finalizada anteriormente')
+      return NextResponse.json(
+        { 
+          error: 'Esta comanda já foi finalizada e não pode ser finalizada novamente',
+          comandaId: comandaId,
+          dataFinalizacao: comanda.dataFinalizacao,
+          status: comanda.status
+        },
+        { status: 409 }
+      )
+    }
 
     // 2. Atualizar status da comanda para 'finalizada'
     console.log('🔄 Atualizando comanda no banco...')
@@ -78,6 +93,7 @@ export async function POST(request: NextRequest) {
       { 
         $set: { 
           status: 'finalizada',
+          isFinalizada: true,
           dataFim: dataFim,
           valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
           desconto: finalizacaoData.desconto || 0,

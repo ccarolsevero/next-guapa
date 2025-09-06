@@ -30,6 +30,12 @@ interface Comanda {
   status: 'em_atendimento' | 'finalizada' | 'cancelada'
   dataInicio: string
   dataFim?: string
+  dataFinalizacao?: string
+  valorFinal?: number
+  desconto?: number
+  creditAmount?: number
+  metodoPagamento?: string
+  isFinalizada: boolean
   servicos: Array<{
     servicoId: string
     nome: string
@@ -287,13 +293,26 @@ export default function ComandasPage() {
                       >
                         Visualizar
                       </Link>
-                      {comanda.status !== 'finalizada' && (
+                      {!comanda.isFinalizada && comanda.status !== 'finalizada' && (
                         <Link
                           href={`/admin/atendimentos/finalizar/${comanda._id}`}
                           className="text-green-600 hover:text-green-800 transition-colors"
                         >
                           Finalizar
                         </Link>
+                      )}
+                      {comanda.isFinalizada && (
+                        <>
+                          <Link
+                            href={`/admin/comandas/${comanda._id}`}
+                            className="text-blue-600 hover:text-blue-800 transition-colors"
+                          >
+                            Editar
+                          </Link>
+                          <span className="text-gray-500 text-sm">
+                            Finalizada em {comanda.dataFinalizacao ? new Date(comanda.dataFinalizacao).toLocaleDateString('pt-BR') : 'Data não disponível'}
+                          </span>
+                        </>
                       )}
                     </div>
                   </td>
