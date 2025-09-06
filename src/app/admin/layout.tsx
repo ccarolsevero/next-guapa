@@ -35,7 +35,7 @@ export default function AdminLayout({
 
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Agendamentos', href: '/admin/agendamentos', icon: Calendar },
+    { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Serviços', href: '/admin/servicos', icon: Scissors },
     { name: 'Pacotes', href: '/admin/pacotes', icon: Package },
