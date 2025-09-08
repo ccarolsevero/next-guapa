@@ -10,6 +10,7 @@ export interface IComanda extends Document {
   valorFinal?: number
   desconto?: number
   creditAmount?: number
+  valorSinal?: number // Valor do sinal pago no agendamento
   metodoPagamento?: string
   isFinalizada: boolean
   servicos: Array<{
@@ -65,6 +66,10 @@ const ComandaSchema: Schema = new Schema({
     default: 0
   },
   creditAmount: {
+    type: Number,
+    default: 0
+  },
+  valorSinal: {
     type: Number,
     default: 0
   },

@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
           valorFinal: finalizacaoData.valorFinal || comanda.valorTotal,
           desconto: finalizacaoData.desconto || 0,
           creditAmount: finalizacaoData.creditAmount || 0,
+          valorSinal: finalizacaoData.valorSinal || 0,
           metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'dinheiro',
           dataFinalizacao: new Date()
         }
@@ -182,6 +183,7 @@ export async function POST(request: NextRequest) {
       metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'Não definido',
       desconto: finalizacaoData.desconto || 0,
       creditAmount: finalizacaoData.creditAmount || 0,
+      valorSinal: finalizacaoData.valorSinal || 0,
       totalComissao: finalizacaoData.totalComissao || 0,
       servicos: finalizacaoData.servicos || comanda.servicos || [],
       produtos: finalizacaoData.produtos || comanda.produtos || [],

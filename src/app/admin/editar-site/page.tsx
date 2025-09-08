@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { 
   Plus, 
   Edit, 
@@ -66,9 +67,21 @@ interface SiteSettings {
   updatedAt: string
 }
 
+interface Promotion {
+  _id: string
+  title: string
+  description: string
+  imageUrl: string
+  isActive: boolean
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
 export default function EditarSite() {
   const [homeGallery, setHomeGallery] = useState<HomePhoto[]>([])
   const [professionals, setProfessionals] = useState<Professional[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [newImageUrl, setNewImageUrl] = useState<string>('')
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
     siteName: 'Guapa',
@@ -82,7 +95,10 @@ export default function EditarSite() {
   const [showAddProfessionalModal, setShowAddProfessionalModal] = useState(false)
   const [showEditProfessionalModal, setShowEditProfessionalModal] = useState(false)
   const [showServicesModal, setShowServicesModal] = useState(false)
+  const [showAddPromotionModal, setShowAddPromotionModal] = useState(false)
+  const [showEditPromotionModal, setShowEditPromotionModal] = useState(false)
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null)
+  const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(null)
   const [availableServices, setAvailableServices] = useState<Service[]>([])
   const [selectedServices, setSelectedServices] = useState<string[]>([])
   const [isEditingFeaturedServices, setIsEditingFeaturedServices] = useState(false)
@@ -99,6 +115,11 @@ export default function EditarSite() {
     gallery: [] as string[],
     newService: '',
     newGalleryImage: ''
+  })
+  const [newPromotion, setNewPromotion] = useState({
+    title: '',
+    description: '',
+    imageUrl: ''
   })
 
   useEffect(() => {
@@ -124,6 +145,7 @@ export default function EditarSite() {
       await Promise.all([
         loadHomeGallery(),
         loadProfessionals(),
+        loadPromotions(),
         loadSiteSettings(),
         loadAvailableServices()
       ])
@@ -169,6 +191,22 @@ export default function EditarSite() {
     } catch (error) {
       console.error('Erro ao carregar profissionais:', error)
       setProfessionals([])
+    }
+  }
+
+  const loadPromotions = async () => {
+    try {
+      console.log('Carregando promoções do banco de dados...')
+      const response = await fetch('/api/promotions')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar promoções')
+      }
+      const proms: Promotion[] = await response.json()
+      console.log('Promoções carregadas:', proms.length)
+      setPromotions(proms)
+    } catch (error) {
+      console.error('Erro ao carregar promoções:', error)
+      setPromotions([])
     }
   }
 
@@ -715,6 +753,120 @@ export default function EditarSite() {
     }
   }
 
+  // Funções para gerenciar promoções
+  const handleAddPromotion = async () => {
+    try {
+      const response = await fetch('/api/promotions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: newPromotion.title,
+          description: newPromotion.description,
+          imageUrl: newPromotion.imageUrl
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao adicionar promoção')
+      }
+
+      await loadPromotions()
+      setShowAddPromotionModal(false)
+      setNewPromotion({
+        title: '',
+        description: '',
+        imageUrl: ''
+      })
+      alert('Promoção adicionada com sucesso!')
+    } catch (error) {
+      console.error('Erro ao adicionar promoção:', error)
+      alert('Erro ao adicionar promoção')
+    }
+  }
+
+  const handleEditPromotion = (promotion: Promotion) => {
+    setSelectedPromotion(promotion)
+    setShowEditPromotionModal(true)
+  }
+
+  const handleSavePromotionEdit = async () => {
+    if (!selectedPromotion) return
+
+    try {
+      const response = await fetch(`/api/promotions/${selectedPromotion._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: selectedPromotion.title,
+          description: selectedPromotion.description,
+          imageUrl: selectedPromotion.imageUrl,
+          isActive: selectedPromotion.isActive
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar promoção')
+      }
+
+      await loadPromotions()
+      setShowEditPromotionModal(false)
+      setSelectedPromotion(null)
+      alert('Promoção atualizada com sucesso!')
+    } catch (error) {
+      console.error('Erro ao atualizar promoção:', error)
+      alert('Erro ao atualizar promoção')
+    }
+  }
+
+  const handleDeletePromotion = async (promotion: Promotion) => {
+    if (confirm(`Tem certeza que deseja excluir a promoção "${promotion.title}"?`)) {
+      try {
+        const response = await fetch(`/api/promotions/${promotion._id}`, {
+          method: 'DELETE'
+        })
+
+        if (!response.ok) {
+          throw new Error('Erro ao deletar promoção')
+        }
+
+        await loadPromotions()
+        alert('Promoção deletada com sucesso!')
+      } catch (error) {
+        console.error('Erro ao deletar promoção:', error)
+        alert('Erro ao deletar promoção')
+      }
+    }
+  }
+
+  const handleTogglePromotionActive = async (promotion: Promotion) => {
+    try {
+      const response = await fetch(`/api/promotions/${promotion._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...promotion,
+          isActive: !promotion.isActive
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao atualizar promoção')
+      }
+
+      await loadPromotions()
+      alert(`Promoção ${promotion.isActive ? 'desativada' : 'ativada'} com sucesso!`)
+    } catch (error) {
+      console.error('Erro ao atualizar promoção:', error)
+      alert('Erro ao atualizar promoção')
+    }
+  }
+
 
 
   if (loading) {
@@ -730,7 +882,8 @@ export default function EditarSite() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <ProtectedRoute requiredPermission="siteEdit" fallbackMessage="Você não tem permissão para editar o site. Apenas administradores podem fazer alterações no site.">
+      <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Editar Site</h1>
 
@@ -1026,6 +1179,111 @@ export default function EditarSite() {
               </h3>
               <p className="text-gray-500">
                 Comece adicionando o primeiro profissional
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Promoções/Serviços */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold" style={{ color: '#d34d4c' }}>Promoções/Serviços</h2>
+            <button
+              onClick={() => setShowAddPromotionModal(true)}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Adicionar Promoção
+            </button>
+          </div>
+
+          {/* Lista de Promoções */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {promotions.map((promotion) => (
+              <div key={promotion._id} className={`border rounded-lg overflow-hidden ${!promotion.isActive ? 'opacity-60 bg-gray-100' : ''}`}>
+                {/* Imagem */}
+                <div className="relative h-48 bg-gray-200">
+                  <img
+                    src={promotion.imageUrl}
+                    alt={promotion.title}
+                    className={`w-full h-full object-cover ${!promotion.isActive ? 'grayscale' : ''}`}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      target.src = '/assents/fotobruna.jpeg'
+                    }}
+                  />
+                  <div className="absolute top-2 right-2 flex gap-2">
+                    <button
+                      onClick={() => handleTogglePromotionActive(promotion)}
+                      className={`p-2 rounded-full ${
+                        promotion.isActive 
+                          ? 'bg-green-500 text-white' 
+                          : 'bg-red-500 text-white'
+                      } hover:opacity-80 transition-colors`}
+                      title={promotion.isActive ? 'Desativar' : 'Ativar'}
+                    >
+                      {promotion.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  {/* Indicador de status */}
+                  {!promotion.isActive && (
+                    <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
+                      DESATIVADA
+                    </div>
+                  )}
+                </div>
+
+                {/* Informações */}
+                <div className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className={`text-lg font-semibold ${!promotion.isActive ? 'text-gray-500' : 'text-gray-800'}`}>
+                        {promotion.title}
+                      </h3>
+                    </div>
+                    <div className="flex gap-1">
+                      {!promotion.isActive && (
+                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-xs font-medium">
+                          Inativa
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <p className={`text-sm mb-3 line-clamp-3 ${!promotion.isActive ? 'text-gray-400' : 'text-gray-700'}`}>
+                    {promotion.description}
+                  </p>
+
+                  {/* Ações */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditPromotion(promotion)}
+                      className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                    >
+                      <Edit className="w-3 h-3 inline mr-1" />
+                      Editar
+                    </button>
+                    <button
+                      onClick={() => handleDeletePromotion(promotion)}
+                      className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium"
+                    >
+                      <Trash2 className="w-3 h-3 inline mr-1" />
+                      Excluir
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {promotions.length === 0 && (
+            <div className="text-center py-8">
+              <Image className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-600 mb-2">
+                Nenhuma promoção cadastrada
+              </h3>
+              <p className="text-gray-500">
+                Comece adicionando a primeira promoção
               </p>
             </div>
           )}
@@ -1620,6 +1878,210 @@ export default function EditarSite() {
           </div>
         </div>
       )}
+
+      {/* Modal de Adicionar Promoção */}
+      {showAddPromotionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-light text-[#D15556]">Adicionar Promoção</h3>
+              <button 
+                onClick={() => setShowAddPromotionModal(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Título *
+                </label>
+                <input
+                  type="text"
+                  value={newPromotion.title}
+                  onChange={(e) => setNewPromotion({...newPromotion, title: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Título da promoção"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição *
+                </label>
+                <textarea
+                  value={newPromotion.description}
+                  onChange={(e) => setNewPromotion({...newPromotion, description: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  rows={4}
+                  placeholder="Descrição da promoção"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  URL da Imagem *
+                </label>
+                <input
+                  type="url"
+                  value={newPromotion.imageUrl}
+                  onChange={(e) => setNewPromotion({...newPromotion, imageUrl: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+              </div>
+
+              {/* Preview da imagem */}
+              {newPromotion.imageUrl && (
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Preview da Imagem
+                  </label>
+                  <div className="border border-gray-300 rounded-lg p-4">
+                    <img
+                      src={newPromotion.imageUrl}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = '/assents/fotobruna.jpeg'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowAddPromotionModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleAddPromotion}
+                  disabled={!newPromotion.title || !newPromotion.description || !newPromotion.imageUrl}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Adicionar Promoção
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Editar Promoção */}
+      {showEditPromotionModal && selectedPromotion && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="bg-white p-4 sm:p-6 lg:p-8 rounded-lg shadow-xl max-w-2xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-2xl font-light text-[#D15556]">Editar Promoção</h3>
+              <button 
+                onClick={() => setShowEditPromotionModal(false)}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Título *
+                </label>
+                <input
+                  type="text"
+                  value={selectedPromotion.title}
+                  onChange={(e) => setSelectedPromotion({...selectedPromotion, title: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="Título da promoção"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  Descrição *
+                </label>
+                <textarea
+                  value={selectedPromotion.description}
+                  onChange={(e) => setSelectedPromotion({...selectedPromotion, description: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  rows={4}
+                  placeholder="Descrição da promoção"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                  URL da Imagem *
+                </label>
+                <input
+                  type="url"
+                  value={selectedPromotion.imageUrl}
+                  onChange={(e) => setSelectedPromotion({...selectedPromotion, imageUrl: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-800"
+                  placeholder="https://exemplo.com/imagem.jpg"
+                />
+              </div>
+
+              {/* Preview da imagem */}
+              {selectedPromotion.imageUrl && (
+                <div>
+                  <label className="block text-sm font-medium text-[#006D5B] mb-2">
+                    Preview da Imagem
+                  </label>
+                  <div className="border border-gray-300 rounded-lg p-4">
+                    <img
+                      src={selectedPromotion.imageUrl}
+                      alt="Preview"
+                      className="w-full h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = '/assents/fotobruna.jpeg'
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Status */}
+              <div>
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedPromotion.isActive}
+                    onChange={(e) => setSelectedPromotion({...selectedPromotion, isActive: e.target.checked})}
+                    className="mr-2"
+                  />
+                  <span className="text-sm font-medium text-[#006D5B]">Promoção ativa</span>
+                </label>
+              </div>
+
+              {/* Botões */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setShowEditPromotionModal(false)}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSavePromotionEdit}
+                  disabled={!selectedPromotion.title || !selectedPromotion.description || !selectedPromotion.imageUrl}
+                  className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </ProtectedRoute>
   )
 }

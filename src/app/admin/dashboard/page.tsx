@@ -100,6 +100,26 @@ interface PaymentTotal {
   count: number
 }
 
+interface Appointment {
+  _id: string
+  clientName: string
+  clientPhone: string
+  professionalId: string
+  professionalName: string
+  serviceId: string
+  serviceName: string
+  date: string
+  time: string
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled'
+  paymentStatus: 'pending' | 'partial' | 'paid'
+  signalPaid: boolean
+  totalValue: number
+  signalValue?: number
+  signalPaidAt?: string
+  notes?: string
+  createdAt: string
+}
+
 export default function DashboardPage() {
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all')
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0])
@@ -130,6 +150,70 @@ export default function DashboardPage() {
   const [movementAmount, setMovementAmount] = useState('')
   const [movementDescription, setMovementDescription] = useState('')
   const [initialCash, setInitialCash] = useState('')
+  
+  // Estados para agendamentos
+  const [recentAppointments, setRecentAppointments] = useState<Appointment[]>([])
+  const [loadingAppointments, setLoadingAppointments] = useState(false)
+
+  // Buscar agendamentos recentes
+  const fetchRecentAppointments = async () => {
+    setLoadingAppointments(true)
+    try {
+      const response = await fetch('/api/appointments?limit=10&sortBy=createdAt&sortOrder=desc')
+      if (response.ok) {
+        const data = await response.json()
+        setRecentAppointments(data.appointments || [])
+      }
+    } catch (error) {
+      console.error('Erro ao buscar agendamentos:', error)
+    } finally {
+      setLoadingAppointments(false)
+    }
+  }
+
+  // Marcar sinal como pago
+  const markSignalAsPaid = async (appointmentId: string) => {
+    try {
+      const appointment = recentAppointments.find(apt => apt._id === appointmentId)
+      if (!appointment) return
+
+      // Calcular 30% do valor do serviço
+      const signalValue = appointment.totalValue * 0.3
+
+      const response = await fetch(`/api/appointments/${appointmentId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          signalPaid: true,
+          signalValue: signalValue,
+          signalPaidAt: new Date().toISOString()
+        })
+      })
+
+      if (response.ok) {
+        // Atualizar a lista local
+        setRecentAppointments(prev => 
+          prev.map(apt => 
+            apt._id === appointmentId 
+              ? { 
+                  ...apt, 
+                  signalPaid: true, 
+                  signalValue: signalValue,
+                  paymentStatus: 'partial' as const 
+                }
+              : apt
+          )
+        )
+      } else {
+        alert('Erro ao marcar sinal como pago')
+      }
+    } catch (error) {
+      console.error('Erro ao marcar sinal como pago:', error)
+      alert('Erro ao marcar sinal como pago')
+    }
+  }
 
   // Buscar dados da caixa
   const fetchCashierData = async () => {
@@ -263,7 +347,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
-      await Promise.all([fetchCashierData(), fetchOpenCashiers()])
+      await Promise.all([fetchCashierData(), fetchOpenCashiers(), fetchRecentAppointments()])
       setLoading(false)
     }
     loadData()
@@ -580,30 +664,131 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Ações Rápidas */}
+      {/* Novos Agendamentos */}
       <div className="mt-8 bg-white border border-gray-100 rounded-lg">
         <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-medium text-gray-900">Ações Rápidas</h2>
-        </div>
-        <div className="p-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/admin/agendamentos/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
-              <Calendar className="w-8 h-8 text-[#D15556] mb-2" />
-              <span className="text-sm font-medium text-gray-900">Novo Agendamento</span>
-            </Link>
-            <Link href="/admin/clientes/novo" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
-              <Users className="w-8 h-8 text-[#D15556] mb-2" />
-              <span className="text-sm font-medium text-gray-900">Novo Cliente</span>
-            </Link>
-            <Link href="/admin/comandas/nova" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
-              <DollarSign className="w-8 h-8 text-[#D15556] mb-2" />
-              <span className="text-sm font-medium text-gray-900">Nova Comanda</span>
-            </Link>
-            <Link href="/admin/produtos" className="flex flex-col items-center p-4 border border-gray-100 hover:border-[#D15556] hover:bg-[#EED7B6]/10 transition-colors text-center rounded-lg">
-              <Package className="w-8 h-8 text-[#D15556] mb-2" />
-              <span className="text-sm font-medium text-gray-900">Gerenciar Produtos</span>
-            </Link>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-medium text-gray-900">Novos Agendamentos</h2>
+              <p className="text-sm text-gray-600 mt-1">Gerencie os pagamentos de sinal</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={fetchRecentAppointments}
+                className="p-2 text-gray-400 hover:text-[#D15556] transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+              <Link 
+                href="/admin/agendamentos/novo"
+                className="px-4 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors flex items-center space-x-2"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Novo Agendamento</span>
+              </Link>
+            </div>
           </div>
+        </div>
+        
+        <div className="p-6">
+          {loadingAppointments ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#D15556]"></div>
+            </div>
+          ) : recentAppointments.length > 0 ? (
+            <div className="space-y-4">
+              {recentAppointments.map((appointment) => (
+                <div key={appointment._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-4">
+                        <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center">
+                          <User className="w-6 h-6 text-[#D15556]" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-medium text-gray-900">{appointment.clientName}</h3>
+                            <span className="text-sm text-gray-500">•</span>
+                            <span className="text-sm text-gray-600">{appointment.clientPhone}</span>
+                          </div>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <span className="text-sm text-gray-600">
+                              <Calendar className="w-4 h-4 inline mr-1" />
+                              {new Date(appointment.date).toLocaleDateString('pt-BR')} às {appointment.time}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              <Scissors className="w-4 h-4 inline mr-1" />
+                              {appointment.serviceName}
+                            </span>
+                            <span className="text-sm text-gray-600">
+                              <User className="w-4 h-4 inline mr-1" />
+                              {appointment.professionalName}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-gray-900">
+                          R$ {appointment.totalValue.toFixed(2)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Sinal: R$ {appointment.signalValue ? appointment.signalValue.toFixed(2) : (appointment.totalValue * 0.3).toFixed(2)}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        {appointment.signalPaid ? (
+                          <div className="flex items-center space-x-1 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Sinal Pago</span>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => markSignalAsPaid(appointment._id)}
+                            className="flex items-center space-x-1 px-3 py-1 bg-[#D15556] text-white rounded-full text-sm hover:bg-[#c04546] transition-colors"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            <span>Marcar Sinal</span>
+                          </button>
+                        )}
+                        
+                        <Link
+                          href={`/admin/agendamentos/${appointment._id}`}
+                          className="p-2 text-gray-400 hover:text-[#D15556] transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {appointment.notes && (
+                    <div className="mt-3 pt-3 border-t border-gray-100">
+                      <p className="text-sm text-gray-600">
+                        <strong>Observações:</strong> {appointment.notes}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum agendamento recente</h3>
+              <p className="text-gray-600 mb-4">Os novos agendamentos aparecerão aqui</p>
+              <Link
+                href="/admin/agendamentos/novo"
+                className="px-6 py-3 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors flex items-center space-x-2 mx-auto w-fit"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Criar Primeiro Agendamento</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

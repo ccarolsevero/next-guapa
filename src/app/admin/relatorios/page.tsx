@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { 
   BarChart3, 
   TrendingUp, 
@@ -181,7 +182,8 @@ export default function RelatoriosPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <ProtectedRoute requiredPermission="reports" fallbackMessage="Você não tem permissão para acessar relatórios. Apenas administradores podem visualizar essas informações.">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
       {/* Header */}
       <div className="sm:flex sm:items-center sm:justify-between mb-8">
         <div>
@@ -831,5 +833,6 @@ export default function RelatoriosPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   )
 }

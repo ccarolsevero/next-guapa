@@ -88,6 +88,49 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectToDatabase()
+    
+    const body = await request.json()
+    console.log('🔍 API PATCH - Dados recebidos:', JSON.stringify(body, null, 2))
+    console.log('🔍 API PATCH - ID do agendamento:', params.id)
+    
+    // Preparar dados para atualização
+    const updateData: any = { ...body }
+    
+    // Se estiver marcando sinal como pago, adicionar timestamp
+    if (body.signalPaid && !body.signalPaidAt) {
+      updateData.signalPaidAt = new Date()
+    }
+    
+    const appointment = await Appointment.findByIdAndUpdate(
+      params.id,
+      updateData,
+      { new: true, runValidators: true }
+    )
+    
+    if (!appointment) {
+      return NextResponse.json(
+        { error: 'Agendamento não encontrado' },
+        { status: 404 }
+      )
+    }
+    
+    return NextResponse.json(appointment)
+  } catch (error) {
+    console.error('❌ Erro ao atualizar agendamento (PATCH):', error)
+    console.error('❌ Stack trace:', error.stack)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor', details: error.message },
+      { status: 500 }
+    )
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

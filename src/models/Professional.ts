@@ -1,6 +1,32 @@
-import mongoose from 'mongoose'
+import mongoose, { Document, Schema } from 'mongoose'
 
-const professionalSchema = new mongoose.Schema({
+export interface IProfessional extends Document {
+  name: string
+  title: string
+  email: string
+  phone: string
+  shortDescription: string
+  fullDescription: string
+  services: string[]
+  featuredServices: string[]
+  profileImage: string
+  gallery: string[]
+  isActive: boolean
+  isFeatured: boolean
+  // Novos campos para login e permissões
+  username: string
+  password: string
+  role: 'admin' | 'professional'
+  canAccessFinancial: boolean
+  canAccessSiteEdit: boolean
+  canAccessGoals: boolean
+  canAccessReports: boolean
+  lastLogin?: Date
+  createdAt: Date
+  updatedAt: Date
+}
+
+const professionalSchema = new Schema<IProfessional>({
   name: {
     type: String,
     required: true,
@@ -52,9 +78,46 @@ const professionalSchema = new mongoose.Schema({
   isFeatured: {
     type: Boolean,
     default: false
+  },
+  // Novos campos para login e permissões
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  role: {
+    type: String,
+    enum: ['admin', 'professional'],
+    default: 'professional'
+  },
+  canAccessFinancial: {
+    type: Boolean,
+    default: false
+  },
+  canAccessSiteEdit: {
+    type: Boolean,
+    default: false
+  },
+  canAccessGoals: {
+    type: Boolean,
+    default: false
+  },
+  canAccessReports: {
+    type: Boolean,
+    default: false
+  },
+  lastLogin: {
+    type: Date
   }
 }, {
   timestamps: true
 })
 
-export default mongoose.models.Professional || mongoose.model('Professional', professionalSchema)
+export default mongoose.models.Professional || mongoose.model<IProfessional>('Professional', professionalSchema)

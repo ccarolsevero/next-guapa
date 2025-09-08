@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { Users, Package, Loader2, ChevronDown, ChevronUp, Scissors, DollarSign, Banknote, CreditCard, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 interface Despesa {
   _id: string
@@ -384,7 +385,8 @@ export default function FinanceiroPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <ProtectedRoute requiredPermission="financial" fallbackMessage="Você não tem permissão para acessar o painel financeiro. Apenas administradores podem visualizar essas informações.">
+      <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Painel Financeiro</h1>
         <p className="text-gray-600">Acompanhe o desempenho financeiro do seu negócio</p>
@@ -1057,6 +1059,7 @@ export default function FinanceiroPage() {
       </div>
       )}
     </div>
+    </ProtectedRoute>
   )
 }
 

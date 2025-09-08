@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Edit, Trash2, Target, DollarSign, Users, TrendingUp } from 'lucide-react'
 import toast from 'react-hot-toast'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 interface Meta {
   _id?: string
@@ -188,7 +189,8 @@ export default function MetasComissaoPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <ProtectedRoute requiredPermission="goals" fallbackMessage="Você não tem permissão para acessar metas e comissões. Apenas administradores podem gerenciar essas configurações.">
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
@@ -644,5 +646,6 @@ export default function MetasComissaoPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   )
 }

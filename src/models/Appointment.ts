@@ -14,6 +14,9 @@ export interface IAppointment extends Document {
   duration: number // em minutos
   status: 'SCHEDULED' | 'CONFIRMED' | 'PENDING' | 'IN_PROGRESS' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'
   price: number
+  signalValue?: number // Valor do sinal (30% do preço)
+  signalPaid?: boolean // Se o sinal foi pago
+  signalPaidAt?: Date // Data do pagamento do sinal
   notes?: string
   customLabels?: Array<{
     id: number
@@ -88,6 +91,17 @@ const appointmentSchema = new Schema<IAppointment>({
     type: Number,
     required: true,
     min: 0
+  },
+  signalValue: {
+    type: Number,
+    min: 0
+  },
+  signalPaid: {
+    type: Boolean,
+    default: false
+  },
+  signalPaidAt: {
+    type: Date
   },
   notes: {
     type: String,

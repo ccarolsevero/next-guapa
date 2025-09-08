@@ -7,8 +7,9 @@ import {
   LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe, Target
 } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { EmployeeAuthProvider, useEmployeeAuth } from '@/hooks/useEmployeeAuth'
 
-export default function AdminLayout({
+function AdminLayoutContent({
   children,
 }: {
   children: React.ReactNode
@@ -16,40 +17,35 @@ export default function AdminLayout({
   const router = useRouter()
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false)
-
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('adminLoggedIn') === 'true'
-    setIsLoggedIn(loggedIn)
-    
-    if (!loggedIn && pathname !== '/admin/login') {
-      router.push('/admin/login')
-    }
-  }, [pathname, router])
+  const { professional, logout, hasPermission } = useEmployeeAuth()
 
   const handleLogout = () => {
-    localStorage.removeItem('adminLoggedIn')
-    setIsLoggedIn(false)
+    logout()
     router.push('/admin/login')
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar },
-    { name: 'Clientes', href: '/admin/clientes', icon: Users },
-    { name: 'Serviços', href: '/admin/servicos', icon: Scissors },
-    { name: 'Pacotes', href: '/admin/pacotes', icon: Package },
-    { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag },
-    { name: 'Pedidos', href: '/admin/pedidos', icon: Package },
-    { name: 'Comandas', href: '/admin/comandas', icon: Package },
-    { name: 'Metas/Comissão', href: '/admin/metas-comissao', icon: Target },
-    { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign },
-    { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3 },
-    { name: 'Editar Site', href: '/admin/editar-site', icon: Globe },
-    { name: 'Configurações', href: '/admin/configuracoes', icon: Settings },
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, permission: null },
+    { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar, permission: null },
+    { name: 'Clientes', href: '/admin/clientes', icon: Users, permission: null },
+    { name: 'Serviços', href: '/admin/servicos', icon: Scissors, permission: null },
+    { name: 'Pacotes', href: '/admin/pacotes', icon: Package, permission: null },
+    { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag, permission: null },
+    { name: 'Pedidos', href: '/admin/pedidos', icon: Package, permission: null },
+    { name: 'Comandas', href: '/admin/comandas', icon: Package, permission: null },
+    { name: 'Metas/Comissão', href: '/admin/metas-comissao', icon: Target, permission: 'goals' },
+    { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign, permission: 'financial' },
+    { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3, permission: 'reports' },
+    { name: 'Editar Site', href: '/admin/editar-site', icon: Globe, permission: 'siteEdit' },
+    { name: 'Configurações', href: '/admin/configuracoes', icon: Settings, permission: null },
   ]
 
-  if (!isLoggedIn || pathname === '/admin/login') {
+  // Filtrar navegação baseada nas permissões
+  const filteredNavigation = navigation.filter(item => 
+    !item.permission || hasPermission(item.permission)
+  )
+
+  if (!professional || pathname === '/admin/login') {
     return <>{children}</>
   }
 
@@ -67,7 +63,7 @@ export default function AdminLayout({
             </button>
           </div>
           <nav className="p-6 space-y-2">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon
               const isActive = pathname === item.href
               return (
@@ -98,7 +94,7 @@ export default function AdminLayout({
           </div>
           <div className="flex-1 flex flex-col overflow-y-auto">
             <nav className="flex-1 px-6 py-6 space-y-2">
-              {navigation.map((item) => {
+              {filteredNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
                 return (
@@ -135,14 +131,14 @@ export default function AdminLayout({
                 <Menu className="w-6 h-6" />
               </button>
               <h2 className="text-base sm:text-lg font-medium truncate" style={{ color: '#d34d4c' }}>
-                {navigation.find(item => item.href === pathname)?.name || 'Dashboard'}
+                {filteredNavigation.find(item => item.href === pathname)?.name || 'Dashboard'}
               </h2>
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               <div className="hidden sm:flex items-center text-sm text-gray-700">
                 <User className="w-4 h-4 mr-2" />
-                <span>Admin</span>
+                <span>{professional.name}</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -166,6 +162,20 @@ export default function AdminLayout({
       </div>
     </div>
     </ToastProvider>
+  )
+}
+
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <EmployeeAuthProvider>
+      <AdminLayoutContent>
+        {children}
+      </AdminLayoutContent>
+    </EmployeeAuthProvider>
   )
 }
 

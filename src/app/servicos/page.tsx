@@ -13,12 +13,25 @@ interface Service {
   order: number
 }
 
+interface Promotion {
+  _id: string
+  title: string
+  description: string
+  imageUrl: string
+  isActive: boolean
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
 export default function ServicosPage() {
   const [services, setServices] = useState<Service[]>([])
+  const [promotions, setPromotions] = useState<Promotion[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadServices()
+    loadPromotions()
   }, [])
 
   const loadServices = async () => {
@@ -227,6 +240,20 @@ export default function ServicosPage() {
     }
   }
 
+  const loadPromotions = async () => {
+    try {
+      const response = await fetch('/api/promotions')
+      if (!response.ok) {
+        throw new Error('Erro ao carregar promoções')
+      }
+      const data = await response.json()
+      setPromotions(data)
+    } catch (error) {
+      console.error('Erro ao carregar promoções:', error)
+      setPromotions([])
+    }
+  }
+
   // Agrupar serviços por categoria
   const servicesByCategory = services.reduce((acc, service) => {
     if (!acc[service.category]) {
@@ -265,6 +292,61 @@ export default function ServicosPage() {
           </div>
         </div>
       </section>
+
+      {/* Promoções - Seção Dinâmica */}
+      {promotions.length > 0 && (
+        <section className="py-12 md:py-24 relative">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-6xl font-bold mb-6 font-heading" style={{ color: '#f2dcbc' }}>
+                Promoções Especiais
+              </h2>
+              <p className="text-lg md:text-xl leading-relaxed font-body" style={{ color: '#f2dcbc' }}>
+                Ofertas exclusivas para você cuidar dos seus cabelos
+              </p>
+              
+              {/* Divisor visual */}
+              <div className="w-24 h-1 bg-[#d34d4c] mx-auto mt-6 md:mt-8"></div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {promotions.map((promotion) => (
+                <div key={promotion._id} className="bg-white/10 backdrop-blur-sm rounded-lg p-6 md:p-8 shadow-lg hover:shadow-xl transition-all duration-500 transform hover:scale-105 border border-white/20">
+                  {/* Imagem da promoção */}
+                  <div className="mb-6">
+                    <img
+                      src={promotion.imageUrl}
+                      alt={promotion.title}
+                      className="w-full h-48 object-cover rounded-lg"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = '/assents/fotobruna.jpeg'
+                      }}
+                    />
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold font-heading mb-4" style={{ color: '#f2dcbc' }}>
+                    {promotion.title}
+                  </h3>
+                  <p className="text-base md:text-lg leading-relaxed font-body" style={{ color: '#f2dcbc' }}>
+                    {promotion.description}
+                  </p>
+                  
+                  {/* Botão de ação */}
+                  <div className="mt-6">
+                    <a 
+                      href="/login-cliente"
+                      className="bg-[#d34d4c] text-white px-6 py-3 rounded-lg hover:bg-[#b83e3d] transition-all duration-300 transform hover:scale-105 font-medium tracking-wide shadow-md hover:shadow-lg inline-block w-full text-center"
+                    >
+                      Aproveitar Promoção
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Consultoria e Avaliação */}
       <section className="py-2 md:py-8 relative">
