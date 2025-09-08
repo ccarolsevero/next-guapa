@@ -41,13 +41,13 @@ export default function EmployeeLoginPage() {
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-[#D15556] mb-2">Guapa</h1>
-          <h2 className="text-xl font-semibold text-gray-700">Login Funcionário</h2>
-          <p className="text-gray-500 mt-2">Acesse o painel administrativo</p>
+          <h2 className="text-xl font-semibold text-gray-900">Login Funcionário</h2>
+          <p className="text-gray-700 mt-2">Acesse o painel administrativo</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Username
             </label>
             <div className="relative">
@@ -56,7 +56,7 @@ export default function EmployeeLoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 placeholder="Digite seu username"
                 disabled={loading}
                 required
@@ -65,7 +65,7 @@ export default function EmployeeLoginPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-900 mb-2">
               Senha
             </label>
             <div className="relative">
@@ -74,7 +74,7 @@ export default function EmployeeLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 placeholder="Digite sua senha"
                 disabled={loading}
                 required
@@ -104,8 +104,8 @@ export default function EmployeeLoginPage() {
         </form>
 
         <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-800 mb-2">Níveis de Acesso:</h3>
-          <ul className="text-xs text-blue-700 space-y-1">
+          <h3 className="text-sm font-medium text-blue-900 mb-2">Níveis de Acesso:</h3>
+          <ul className="text-xs text-blue-800 space-y-1">
             <li><strong>Admin (Bruna):</strong> Acesso total a todas as funcionalidades</li>
             <li><strong>Professional:</strong> Acesso limitado (sem financeiro, editar site, metas e relatórios)</li>
           </ul>

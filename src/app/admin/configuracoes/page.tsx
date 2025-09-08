@@ -433,7 +433,7 @@ export default function ConfiguracoesPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Nome do Salão
                   </label>
                   <input
@@ -446,7 +446,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Email de Contato
                   </label>
                   <input
@@ -459,7 +459,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Telefone
                   </label>
                   <input
@@ -472,7 +472,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Endereço
                   </label>
                   <input
@@ -491,7 +491,7 @@ export default function ConfiguracoesPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Senha Atual
                   </label>
                   <div className="relative">
@@ -517,7 +517,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Nova Senha
                   </label>
                   <input
@@ -530,7 +530,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Confirmar Nova Senha
                   </label>
                   <input
@@ -572,7 +572,7 @@ export default function ConfiguracoesPage() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Moeda
                   </label>
                   <select className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
@@ -584,7 +584,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Fuso Horário
                   </label>
                   <select className="w-full px-4 py-2 border border-gray-300 bg-white text-black rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
@@ -596,7 +596,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Taxa de Cancelamento (%)
                   </label>
                   <input
@@ -610,7 +610,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Tempo de Antecedência (min)
                   </label>
                   <input
@@ -629,7 +629,7 @@ export default function ConfiguracoesPage() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Política de Cancelamento
                   </label>
                   <textarea
@@ -641,7 +641,7 @@ export default function ConfiguracoesPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-900 mb-2">
                     Política de Reagendamento
                   </label>
                   <textarea
@@ -834,7 +834,7 @@ export default function ConfiguracoesPage() {
               <h3 className="text-xl font-semibold text-[#D15556]">Adicionar Funcionário</h3>
               <button
                 onClick={() => setShowAddEmployeeModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-900"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -842,7 +842,7 @@ export default function ConfiguracoesPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Nome *
                 </label>
                 <input
@@ -855,7 +855,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Username *
                 </label>
                 <input
@@ -868,7 +868,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Senha *
                 </label>
                 <input
@@ -881,7 +881,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Role
                 </label>
                 <select
@@ -895,7 +895,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
                   Permissões
                 </label>
                 <div className="space-y-2">
@@ -906,7 +906,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setNewEmployee({...newEmployee, canAccessFinancial: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Acesso ao Financeiro</span>
+                    <span className="text-sm text-gray-900">Acesso ao Financeiro</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -915,7 +915,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setNewEmployee({...newEmployee, canAccessSiteEdit: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Editar Site</span>
+                    <span className="text-sm text-gray-900">Editar Site</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -924,7 +924,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setNewEmployee({...newEmployee, canAccessGoals: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Metas e Comissões</span>
+                    <span className="text-sm text-gray-900">Metas e Comissões</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -965,7 +965,7 @@ export default function ConfiguracoesPage() {
               <h3 className="text-xl font-semibold text-[#D15556]">Editar Funcionário</h3>
               <button
                 onClick={() => setShowEditEmployeeModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-900"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -973,7 +973,7 @@ export default function ConfiguracoesPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Nome *
                 </label>
                 <input
@@ -985,7 +985,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Username *
                 </label>
                 <input
@@ -997,7 +997,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-900 mb-2">
                   Role
                 </label>
                 <select
@@ -1011,7 +1011,7 @@ export default function ConfiguracoesPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-medium text-gray-900 mb-3">
                   Permissões
                 </label>
                 <div className="space-y-2">
@@ -1022,7 +1022,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setSelectedEmployee({...selectedEmployee, canAccessFinancial: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Acesso ao Financeiro</span>
+                    <span className="text-sm text-gray-900">Acesso ao Financeiro</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1031,7 +1031,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setSelectedEmployee({...selectedEmployee, canAccessSiteEdit: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Editar Site</span>
+                    <span className="text-sm text-gray-900">Editar Site</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1040,7 +1040,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setSelectedEmployee({...selectedEmployee, canAccessGoals: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Metas e Comissões</span>
+                    <span className="text-sm text-gray-900">Metas e Comissões</span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -1062,7 +1062,7 @@ export default function ConfiguracoesPage() {
                     onChange={(e) => setSelectedEmployee({...selectedEmployee, isActive: e.target.checked})}
                     className="mr-2"
                   />
-                  <span className="text-sm font-medium text-gray-700">Funcionário ativo</span>
+                  <span className="text-sm font-medium text-gray-900">Funcionário ativo</span>
                 </label>
               </div>
 
