@@ -67,20 +67,47 @@ export async function GET(request: NextRequest) {
     switch (reportType) {
       case 'clientes-aniversariantes':
         console.log('Executando relatório: clientes-aniversariantes')
-        const aniversariantes = await db.collection('clients').find({
-          birthDate: { $exists: true, $ne: null }
-        }).toArray()
-        console.log('Aniversariantes encontrados:', aniversariantes.length)
+        try {
+          const aniversariantes = await db.collection('clients').find({
+            birthDate: { $exists: true, $ne: null }
+          }).toArray()
+          console.log('Aniversariantes encontrados:', aniversariantes.length)
 
-        reportData.aniversariantes = aniversariantes
-          .filter(client => isBirthdayThisMonth(new Date(client.birthDate)))
-          .map(client => ({
-            name: client.name,
-            email: client.email,
-            phone: client.phone,
-            birthDate: client.birthDate,
-            age: calculateAge(new Date(client.birthDate))
-          }))
+          reportData.aniversariantes = aniversariantes
+            .filter(client => {
+              try {
+                const birthDate = new Date(client.birthDate)
+                return isBirthdayThisMonth(birthDate)
+              } catch (error) {
+                console.error('Erro ao processar data de nascimento:', client.birthDate, error)
+                return false
+              }
+            })
+            .map(client => {
+              try {
+                const birthDate = new Date(client.birthDate)
+                return {
+                  name: client.name || 'Nome não informado',
+                  email: client.email || 'Email não informado',
+                  phone: client.phone || 'Telefone não informado',
+                  birthDate: client.birthDate,
+                  age: calculateAge(birthDate)
+                }
+              } catch (error) {
+                console.error('Erro ao mapear cliente:', client, error)
+                return {
+                  name: client.name || 'Nome não informado',
+                  email: client.email || 'Email não informado',
+                  phone: client.phone || 'Telefone não informado',
+                  birthDate: client.birthDate,
+                  age: 0
+                }
+              }
+            })
+        } catch (error) {
+          console.error('Erro ao buscar aniversariantes:', error)
+          reportData.aniversariantes = []
+        }
         break
 
       case 'clientes-atendidos':
@@ -443,55 +470,203 @@ export async function GET(request: NextRequest) {
         reportData.servicosRealizados = servicosRealizados
         break
 
-      case 'produtos-vendidos':
-        const produtosVendidos = await db.collection('finalizacoes').aggregate([
-          {
-            $match: {
-              dataCriacao: { $gte: startDate, $lte: endDate }
+      case 'servicos-mais-vendidos':
+        console.log('Executando relatório: servicos-mais-vendidos')
+        try {
+          // Buscar serviços mais vendidos com dados reais
+          const servicosMaisVendidos = await db.collection('finalizacoes').aggregate([
+            {
+              $match: {
+                dataCriacao: { $gte: startDate, $lte: endDate }
+              }
+            },
+            {
+              $unwind: '$servicos'
+            },
+            {
+              $addFields: {
+                servicoObjectId: { $toObjectId: '$servicos.servicoId' }
+              }
+            },
+            {
+              $lookup: {
+                from: 'services',
+                localField: 'servicoObjectId',
+                foreignField: '_id',
+                as: 'servicoInfo'
+              }
+            },
+            {
+              $unwind: '$servicoInfo'
+            },
+            {
+              $group: {
+                _id: '$servicos.servicoId',
+                name: { $first: '$servicoInfo.name' },
+                count: { $sum: 1 },
+                totalRevenue: { $sum: '$servicos.preco' },
+                avgPrice: { $avg: '$servicos.preco' }
+              }
+            },
+            {
+              $sort: { count: -1 }
+            },
+            {
+              $limit: 10
             }
-          },
-          {
-            $unwind: '$produtos'
-          },
-          {
-            $addFields: {
-              produtoObjectId: { $toObjectId: '$produtos.id' }
-            }
-          },
-          {
-            $group: {
-              _id: '$produtoObjectId',
-              quantity: { $sum: '$produtos.quantidade' },
-              totalRevenue: { $sum: { $multiply: ['$produtos.quantidade', '$produtos.preco'] } }
-            }
-          },
-          {
-            $lookup: {
-              from: 'products',
-              localField: '_id',
-              foreignField: '_id',
-              as: 'product'
-            }
-          },
-          {
-            $unwind: '$product'
-          },
-          {
-            $project: {
-              name: '$product.name',
-              quantity: 1,
-              totalRevenue: 1,
-              averagePrice: {
-                $round: [{ $divide: ['$totalRevenue', '$quantity'] }, 2]
+          ]).toArray()
+
+          // Calcular estatísticas gerais
+          const totalServicos = await db.collection('finalizacoes').aggregate([
+            {
+              $match: {
+                dataCriacao: { $gte: startDate, $lte: endDate }
+              }
+            },
+            {
+              $unwind: '$servicos'
+            },
+            {
+              $group: {
+                _id: null,
+                totalRevenue: { $sum: '$servicos.preco' },
+                totalCount: { $sum: 1 },
+                avgPrice: { $avg: '$servicos.preco' }
               }
             }
-          },
-          {
-            $sort: { quantity: -1 }
-          }
-        ]).toArray()
+          ]).toArray()
 
-        reportData.produtosVendidos = produtosVendidos
+          // Contar agendamentos no período
+          const totalAgendamentos = await db.collection('agendamentos').countDocuments({
+            data: { $gte: startDate, $lte: endDate }
+          })
+
+          reportData.servicosMaisVendidos = {
+            topServices: servicosMaisVendidos,
+            stats: {
+              totalRevenue: totalServicos[0]?.totalRevenue || 0,
+              totalServices: totalServicos[0]?.totalCount || 0,
+              avgPrice: totalServicos[0]?.avgPrice || 0,
+              totalAppointments: totalAgendamentos
+            }
+          }
+
+          console.log('✅ Serviços mais vendidos carregados:', servicosMaisVendidos.length)
+        } catch (error) {
+          console.error('❌ Erro ao carregar serviços mais vendidos:', error)
+          reportData.servicosMaisVendidos = {
+            topServices: [],
+            stats: {
+              totalRevenue: 0,
+              totalServices: 0,
+              avgPrice: 0,
+              totalAppointments: 0
+            }
+          }
+        }
+        break
+
+      case 'produtos-vendidos':
+        console.log('Executando relatório: produtos-vendidos')
+        try {
+          // Verificar se existem finalizações com produtos
+          const finalizacoesComProdutos = await db.collection('finalizacoes').find({
+            dataCriacao: { $gte: startDate, $lte: endDate },
+            'produtos.0': { $exists: true }
+          }).limit(1).toArray()
+
+          if (finalizacoesComProdutos.length === 0) {
+            console.log('Nenhuma finalização com produtos encontrada')
+            reportData.produtosVendidos = []
+            reportData.resumoProdutos = {
+              receitaTotal: 0,
+              descontos: 0,
+              valorCusto: 0,
+              totalLiquido: 0
+            }
+            break
+          }
+
+          // Buscar produtos vendidos
+          const produtosVendidos = await db.collection('finalizacoes').aggregate([
+            {
+              $match: {
+                dataCriacao: { $gte: startDate, $lte: endDate }
+              }
+            },
+            {
+              $unwind: '$produtos'
+            },
+            {
+              $addFields: {
+                produtoObjectId: { $toObjectId: '$produtos.id' }
+              }
+            },
+            {
+              $group: {
+                _id: '$produtoObjectId',
+                quantity: { $sum: '$produtos.quantidade' },
+                totalRevenue: { $sum: { $multiply: ['$produtos.quantidade', '$produtos.preco'] } },
+                totalDiscount: { $sum: { $ifNull: ['$produtos.desconto', 0] } }
+              }
+            },
+            {
+              $lookup: {
+                from: 'products',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'product'
+              }
+            },
+            {
+              $unwind: '$product'
+            },
+            {
+              $project: {
+                name: '$product.name',
+                quantity: 1,
+                totalRevenue: 1,
+                totalDiscount: 1,
+                productCost: { $ifNull: ['$product.custo', 0] },
+                totalCost: { $multiply: ['$quantity', { $ifNull: ['$product.custo', 0] }] },
+                averagePrice: {
+                  $round: [{ $divide: ['$totalRevenue', '$quantity'] }, 2]
+                }
+              }
+            },
+            {
+              $sort: { quantity: -1 }
+            }
+          ]).toArray()
+
+          console.log('Produtos vendidos encontrados:', produtosVendidos.length)
+
+          // Calcular resumo financeiro dos produtos
+          const resumoProdutos = produtosVendidos.reduce((acc, produto) => {
+            acc.receitaTotal += produto.totalRevenue || 0
+            acc.descontos += produto.totalDiscount || 0
+            acc.valorCusto += produto.totalCost || 0
+            return acc
+          }, {
+            receitaTotal: 0,
+            descontos: 0,
+            valorCusto: 0
+          })
+
+          resumoProdutos.totalLiquido = resumoProdutos.receitaTotal - resumoProdutos.descontos - resumoProdutos.valorCusto
+
+          reportData.produtosVendidos = produtosVendidos
+          reportData.resumoProdutos = resumoProdutos
+        } catch (error) {
+          console.error('Erro ao buscar produtos vendidos:', error)
+          reportData.produtosVendidos = []
+          reportData.resumoProdutos = {
+            receitaTotal: 0,
+            descontos: 0,
+            valorCusto: 0,
+            totalLiquido: 0
+          }
+        }
         break
 
       case 'comandas-alteradas':

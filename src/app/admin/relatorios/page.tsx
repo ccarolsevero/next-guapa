@@ -47,6 +47,20 @@ interface ReportData {
       totalRevenue: number
     }>
   }
+  servicosMaisVendidos?: {
+    topServices: Array<{
+      name: string
+      count: number
+      totalRevenue: number
+      avgPrice: number
+    }>
+    stats: {
+      totalRevenue: number
+      totalServices: number
+      avgPrice: number
+      totalAppointments: number
+    }
+  }
   professionals?: {
     topProfessionals: Array<{
       name: string
@@ -63,6 +77,74 @@ interface ReportData {
     }>
     total: number
   }
+  aniversariantes?: Array<{
+    name: string
+    email: string
+    phone: string
+    birthDate: string
+    age: number
+  }>
+  clientesAtendidos?: Array<{
+    name: string
+    email: string
+    phone: string
+    totalVisits: number
+    totalSpent: number
+    lastVisit: string
+  }>
+  todosClientes?: Array<{
+    name: string
+    email: string
+    phone: string
+    address: string
+    birthDate: string
+    createdAt: string
+    isCompleteProfile: boolean
+  }>
+  taxaRetorno?: {
+    totalClients: number
+    returningClients: number
+    returnRate: number
+  }
+  faixasEtarias?: {
+    [key: string]: number
+  }
+  faturamentoProfissional?: Array<{
+    name: string
+    totalRevenue: number
+    totalComandas: number
+    totalCommissions: number
+    averageTicket: number
+  }>
+  servicosRealizados?: Array<{
+    name: string
+    count: number
+    totalRevenue: number
+    averagePrice: number
+  }>
+  produtosVendidos?: Array<{
+    name: string
+    quantity: number
+    totalRevenue: number
+    totalDiscount: number
+    productCost: number
+    totalCost: number
+    averagePrice: number
+  }>
+  resumoProdutos?: {
+    receitaTotal: number
+    descontos: number
+    valorCusto: number
+    totalLiquido: number
+  }
+  comandasAlteradas?: Array<{
+    id: string
+    clienteNome: string
+    profissionalNome: string
+    valorTotal: number
+    dataFinalizacao: string
+    motivoAlteracao: string
+  }>
 }
 
 export default function RelatoriosPage() {
@@ -72,6 +154,7 @@ export default function RelatoriosPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [reportData, setReportData] = useState<ReportData>({})
   const [loadingData, setLoadingData] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const periods = [
     { value: '1month', label: 'Último Mês' },
@@ -179,6 +262,21 @@ export default function RelatoriosPage() {
   const getMonthName = (month: number) => {
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
     return months[month - 1] || ''
+  }
+
+  // Função para filtrar clientes baseado no termo de busca
+  const getFilteredClients = () => {
+    if (!reportData.todosClientes) return []
+    
+    if (!searchTerm.trim()) return reportData.todosClientes
+    
+    const term = searchTerm.toLowerCase()
+    return reportData.todosClientes.filter(client => 
+      client.name.toLowerCase().includes(term) ||
+      client.email.toLowerCase().includes(term) ||
+      client.phone.includes(term) ||
+      (client.address && client.address.toLowerCase().includes(term))
+    )
   }
 
   return (
@@ -354,29 +452,43 @@ export default function RelatoriosPage() {
       {selectedReport === 'clientes-aniversariantes' && !loadingData && (
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Clientes Aniversariantes do Mês</h3>
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-600">Debug: reportData.aniversariantes = {JSON.stringify(reportData.aniversariantes)}</p>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-[#006D5B]">Clientes Aniversariantes do Mês</h3>
+              <div className="flex items-center text-sm text-gray-600">
+                <CalendarDays className="w-4 h-4 mr-2" />
+                {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+              </div>
             </div>
-            <div className="space-y-3">
-              {reportData.aniversariantes?.map((cliente, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-8 h-8 bg-[#D15556] rounded-full flex items-center justify-center mr-3">
-                      <span className="text-white font-bold text-sm">{cliente.name.charAt(0)}</span>
+            
+            {reportData.aniversariantes && reportData.aniversariantes.length > 0 ? (
+              <div className="space-y-3">
+                {reportData.aniversariantes.map((cliente, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gradient-to-r from-pink-50 to-red-50 rounded-lg border border-pink-200">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-gradient-to-r from-[#D15556] to-[#c04546] rounded-full flex items-center justify-center mr-4 shadow-md">
+                        <span className="text-white font-bold text-lg">{cliente.name.charAt(0).toUpperCase()}</span>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 text-lg">{cliente.name}</div>
+                        <div className="text-sm text-gray-600">
+                          {cliente.age} anos • Aniversário: {new Date(cliente.birthDate).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900">{cliente.name}</div>
-                      <div className="text-sm text-gray-600">{cliente.age} anos</div>
+                    <div className="text-right">
+                      <div className="font-medium text-gray-900">{cliente.phone}</div>
+                      <div className="text-sm text-gray-600">{cliente.email}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">{cliente.phone}</div>
-                    <div className="text-sm text-gray-600">{cliente.email}</div>
-                  </div>
-                </div>
-              )) || <p className="text-gray-500 text-center py-4">Nenhum aniversariante encontrado este mês</p>}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <CalendarDays className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum aniversariante este mês</h4>
+                <p className="text-gray-600">Não há clientes fazendo aniversário em {new Date().toLocaleDateString('pt-BR', { month: 'long' })}.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -411,7 +523,46 @@ export default function RelatoriosPage() {
       {selectedReport === 'lista-clientes' && !loadingData && (
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Lista Completa de Clientes</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-[#006D5B]">Lista Completa de Clientes</h3>
+              <div className="text-sm text-gray-600">
+                Total: {reportData.todosClientes?.length || 0} clientes
+                {searchTerm && (
+                  <span className="ml-2 text-[#D15556]">
+                    • {getFilteredClients().length} encontrados
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            {/* Campo de Busca */}
+            <div className="mb-6">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Buscar por nome, email, telefone ou endereço..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                {searchTerm && (
+                  <button
+                    onClick={() => setSearchTerm('')}
+                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  >
+                    <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -419,28 +570,52 @@ export default function RelatoriosPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Endereço</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Perfil</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cadastro</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {reportData.todosClientes?.map((cliente, index) => (
-                    <tr key={index}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cliente.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.phone}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          cliente.isCompleteProfile ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {cliente.isCompleteProfile ? 'Completo' : 'Incompleto'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(cliente.createdAt).toLocaleDateString('pt-BR')}
+                  {getFilteredClients().length > 0 ? (
+                    getFilteredClients().map((cliente, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cliente.name}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.email}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.phone}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate" title={cliente.address}>
+                          {cliente.address || 'Não informado'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            cliente.isCompleteProfile ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {cliente.isCompleteProfile ? 'Completo' : 'Incompleto'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(cliente.createdAt).toLocaleDateString('pt-BR')}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-8 text-center">
+                        {searchTerm ? (
+                          <div className="text-gray-500">
+                            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <p className="text-lg font-medium text-gray-900 mb-2">Nenhum cliente encontrado</p>
+                            <p className="text-gray-600">Tente ajustar os termos de busca</p>
+                          </div>
+                        ) : (
+                          <div className="text-gray-500">
+                            <p>Nenhum dado disponível</p>
+                          </div>
+                        )}
                       </td>
                     </tr>
-                  )) || <tr><td colSpan={5} className="px-6 py-4 text-center text-gray-500">Nenhum dado disponível</td></tr>}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -542,26 +717,100 @@ export default function RelatoriosPage() {
 
       {selectedReport === 'produtos-vendidos' && !loadingData && (
         <div className="space-y-8">
+          {/* Cards de Resumo Financeiro */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.resumoProdutos?.receitaTotal || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Descontos</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.resumoProdutos?.descontos || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-red-100 text-red-600">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Valor de Custo</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.resumoProdutos?.valorCusto || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Líquido</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.resumoProdutos?.totalLiquido || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de Produtos */}
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Produtos Vendidos no Período</h3>
             <div className="space-y-4">
-              {reportData.produtosVendidos?.map((produto, index) => (
-                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
-                      <span className="text-white font-bold">{index + 1}</span>
+              {reportData.produtosVendidos && reportData.produtosVendidos.length > 0 ? (
+                reportData.produtosVendidos.map((produto, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                        <span className="text-white font-bold">{index + 1}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{produto.name}</div>
+                        <div className="text-sm text-gray-600">{produto.quantity} unidades</div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="font-medium text-gray-900">{produto.name}</div>
-                      <div className="text-sm text-gray-600">{produto.quantity} unidades</div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">{formatCurrency(produto.totalRevenue)}</div>
+                      <div className="text-sm text-gray-600">Preço médio: {formatCurrency(produto.averagePrice)}</div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-gray-900">{formatCurrency(produto.totalRevenue)}</div>
-                    <div className="text-sm text-gray-600">Preço médio: {formatCurrency(produto.averagePrice)}</div>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum produto vendido</h4>
+                  <p className="text-gray-600">Não há produtos vendidos no período selecionado.</p>
                 </div>
-              )) || <p className="text-gray-500 text-center py-4">Nenhum dado disponível</p>}
+              )}
             </div>
           </div>
         </div>
@@ -589,6 +838,102 @@ export default function RelatoriosPage() {
                   </div>
                 </div>
               )) || <p className="text-gray-500 text-center py-4">Nenhuma comanda alterada no período</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Relatório de Serviços Mais Vendidos */}
+      {selectedReport === 'servicos-mais-vendidos' && !loadingData && (
+        <div className="space-y-8">
+          {/* Cards de Resumo */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-green-100 text-green-600">
+                  <DollarSign className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Receita Total</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.servicosMaisVendidos?.stats?.totalRevenue || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-blue-100 text-blue-600">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total de Serviços</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {reportData.servicosMaisVendidos?.stats?.totalServices || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-yellow-100 text-yellow-600">
+                  <TrendingUp className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Preço Médio</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {formatCurrency(reportData.servicosMaisVendidos?.stats?.avgPrice || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="flex items-center">
+                <div className="p-3 rounded-full bg-purple-100 text-purple-600">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total de Agendamentos</p>
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {reportData.servicosMaisVendidos?.stats?.totalAppointments || 0}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Lista de Serviços Mais Vendidos */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Serviços Mais Vendidos no Período</h3>
+            <div className="space-y-4">
+              {reportData.servicosMaisVendidos?.topServices && reportData.servicosMaisVendidos.topServices.length > 0 ? (
+                reportData.servicosMaisVendidos.topServices.map((servico, index) => (
+                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-[#D15556] rounded-full flex items-center justify-center mr-4">
+                        <span className="text-white font-bold">{index + 1}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900">{servico.name}</div>
+                        <div className="text-sm text-gray-600">{servico.count} vendas</div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold text-gray-900">{formatCurrency(servico.totalRevenue)}</div>
+                      <div className="text-sm text-gray-600">Preço médio: {formatCurrency(servico.avgPrice)}</div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <BarChart3 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <h4 className="text-lg font-medium text-gray-900 mb-2">Nenhum serviço vendido</h4>
+                  <p className="text-gray-600">Não há serviços vendidos no período selecionado.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

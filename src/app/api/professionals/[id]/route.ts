@@ -68,29 +68,59 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       profileImage, 
       gallery,
       isActive,
-      isFeatured 
+      isFeatured,
+      // Novos campos para funcionários
+      username,
+      password,
+      role,
+      canAccessFinancial,
+      canAccessSiteEdit,
+      canAccessGoals,
+      canAccessReports,
+      newPassword
     } = body
 
-    console.log('Atualizando profissional:', params.id)
+    console.log('Atualizando profissional:', id)
     
     await connectDB()
     
+    // Preparar dados de atualização
+    const updateData: any = {
+      name,
+      title,
+      email,
+      phone,
+      shortDescription,
+      fullDescription,
+      services,
+      featuredServices,
+      profileImage,
+      gallery,
+      isActive,
+      isFeatured
+    }
+    
+    // Adicionar campos de funcionário se fornecidos
+    if (username !== undefined) updateData.username = username
+    if (role !== undefined) updateData.role = role
+    if (canAccessFinancial !== undefined) updateData.canAccessFinancial = canAccessFinancial
+    if (canAccessSiteEdit !== undefined) updateData.canAccessSiteEdit = canAccessSiteEdit
+    if (canAccessGoals !== undefined) updateData.canAccessGoals = canAccessGoals
+    if (canAccessReports !== undefined) updateData.canAccessReports = canAccessReports
+    
+    // Se há uma nova senha, fazer hash dela
+    if (newPassword) {
+      const bcrypt = require('bcryptjs')
+      updateData.password = await bcrypt.hash(newPassword, 12)
+    } else if (password) {
+      // Se foi fornecida uma senha (sem newPassword), fazer hash dela
+      const bcrypt = require('bcryptjs')
+      updateData.password = await bcrypt.hash(password, 12)
+    }
+    
     const updatedProfessional = await Professional.findByIdAndUpdate(
-      params.id,
-      {
-        name,
-        title,
-        email,
-        phone,
-        shortDescription,
-        fullDescription,
-        services,
-        featuredServices,
-        profileImage,
-        gallery,
-        isActive,
-        isFeatured
-      },
+      id,
+      updateData,
       { new: true }
     )
     
