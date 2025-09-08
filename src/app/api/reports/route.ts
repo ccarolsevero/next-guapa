@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import { ObjectId } from 'mongodb'
 
+// Cache simples para consultas frequentes
+const queryCache = new Map<string, { data: any; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutos
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -13,10 +17,20 @@ export async function GET(request: NextRequest) {
     const startDateParam = searchParams.get('startDate')
     const endDateParam = searchParams.get('endDate')
 
-    console.log('Relatório solicitado:', { reportType, period, startDateParam, endDateParam })
+    // Validação de parâmetros
+    if (!reportType) {
+      return NextResponse.json({ error: 'Tipo de relatório é obrigatório' }, { status: 400 })
+    }
+
+    // Verificar cache primeiro
+    const cacheKey = `${reportType}-${period}-${serviceId || ''}-${startDateParam || ''}-${endDateParam || ''}`
+    const cached = queryCache.get(cacheKey)
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return NextResponse.json(cached.data)
+    }
 
     const { db } = await connectToDatabase()
-    console.log('Conexão com banco estabelecida:', !!db)
 
     // Calcular datas baseado no período ou usar datas customizadas
     const now = new Date()
@@ -27,22 +41,15 @@ export async function GET(request: NextRequest) {
       startDate = new Date(startDateParam)
       endDate = new Date(endDateParam)
     } else {
-      switch (period) {
-        case '1month':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
-          break
-        case '3months':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
-          break
-        case '6months':
-          startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
-          break
-        case '1year':
-          startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
-          break
-        default:
-          startDate = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
+      // Cache de datas para melhor performance
+      const dateCache = {
+        '1month': () => new Date(now.getFullYear(), now.getMonth() - 1, now.getDate()),
+        '3months': () => new Date(now.getFullYear(), now.getMonth() - 3, now.getDate()),
+        '6months': () => new Date(now.getFullYear(), now.getMonth() - 6, now.getDate()),
+        '1year': () => new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
       }
+      
+      startDate = dateCache[period as keyof typeof dateCache]?.() || dateCache['6months']()
     }
 
     const reportData: any = {}
@@ -475,13 +482,13 @@ export async function GET(request: NextRequest) {
         break
 
       case 'servicos-mais-vendidos':
-        console.log('Executando relatório: servicos-mais-vendidos')
         try {
-          // Buscar serviços mais vendidos com dados reais
+          // Buscar serviços mais vendidos com dados reais - otimizado
           const servicosMaisVendidos = await db.collection('finalizacoes').aggregate([
             {
               $match: {
-                dataCriacao: { $gte: startDate, $lte: endDate }
+                dataCriacao: { $gte: startDate, $lte: endDate },
+                'servicos.0': { $exists: true } // Só processar documentos que têm serviços
               }
             },
             {
@@ -1099,6 +1106,15 @@ export async function GET(request: NextRequest) {
         total: totalAppointments
       }
     }
+    }
+
+    // Salvar no cache
+    queryCache.set(cacheKey, { data: reportData, timestamp: Date.now() })
+    
+    // Limpar cache antigo
+    if (queryCache.size > 100) {
+      const oldestKey = queryCache.keys().next().value
+      queryCache.delete(oldestKey)
     }
 
     console.log('Dados retornados:', { reportType, dataKeys: Object.keys(reportData) })

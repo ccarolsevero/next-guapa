@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { 
   BarChart3, 
@@ -174,6 +174,7 @@ export default function RelatoriosPage() {
   const [reportData, setReportData] = useState<ReportData>({})
   const [loadingData, setLoadingData] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [selectedServiceId, setSelectedServiceId] = useState('')
   const [services, setServices] = useState<Array<{_id: string, name: string}>>([])
   const [loadingServices, setLoadingServices] = useState(false)
@@ -185,7 +186,8 @@ export default function RelatoriosPage() {
     { value: '1year', label: 'Último Ano' }
   ]
 
-  const reports = [
+  // Dados estáticos otimizados com useMemo
+  const reports = useMemo(() => [
     // Relatórios de Clientes
     { id: 'clientes-aniversariantes', name: 'Clientes Aniversariantes', icon: Calendar, category: 'clientes' },
     { id: 'clientes-atendidos', name: 'Clientes Atendidos', icon: Users, category: 'clientes' },
@@ -213,19 +215,19 @@ export default function RelatoriosPage() {
     
     // Relatórios Financeiros
     { id: 'financial', name: 'Relatório Financeiro Geral', icon: DollarSign, category: 'financeiro' }
-  ]
+  ], [])
 
-  const categories = [
+  const categories = useMemo(() => [
     { id: 'clientes', name: 'Clientes', icon: Users },
     { id: 'profissionais', name: 'Profissionais', icon: Activity },
     { id: 'servicos', name: 'Serviços', icon: BarChart3 },
     { id: 'produtos', name: 'Produtos', icon: BarChart3 },
     { id: 'comandas', name: 'Comandas', icon: BarChart3 },
     { id: 'financeiro', name: 'Financeiro', icon: DollarSign }
-  ]
+  ], [])
 
-  // Carregar serviços disponíveis
-  const loadServices = async () => {
+  // Carregar serviços disponíveis - otimizado com useCallback
+  const loadServices = useCallback(async () => {
     setLoadingServices(true)
     try {
       const response = await fetch('/api/services')
@@ -238,7 +240,7 @@ export default function RelatoriosPage() {
     } finally {
       setLoadingServices(false)
     }
-  }
+  }, [])
 
   // Carregar dados dos relatórios
   useEffect(() => {
@@ -278,7 +280,16 @@ export default function RelatoriosPage() {
     if (selectedReport === 'clientes-servico-especifico' && services.length === 0) {
       loadServices()
     }
-  }, [selectedReport, services.length])
+  }, [selectedReport, services.length, loadServices])
+
+  // Debounce para busca - otimização de performance
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
 
   const handleExport = (type: string) => {
     setIsLoading(true)
@@ -289,46 +300,47 @@ export default function RelatoriosPage() {
     }, 2000)
   }
 
-  const formatCurrency = (value: number) => {
+  // Funções otimizadas com useMemo
+  const formatCurrency = useCallback((value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
-  }
+  }, [])
 
-  const getTotalRevenue = () => {
+  const getTotalRevenue = useMemo(() => {
     if (!reportData.financial?.revenue) return 0
     return reportData.financial.revenue.reduce((sum, item) => sum + item.totalRevenue, 0)
-  }
+  }, [reportData.financial?.revenue])
 
-  const getTotalExpenses = () => {
+  const getTotalExpenses = useMemo(() => {
     if (!reportData.financial?.expenses) return 0
     return reportData.financial.expenses.reduce((sum, item) => sum + item.totalExpenses, 0)
-  }
+  }, [reportData.financial?.expenses])
 
-  const getTotalProfit = () => {
-    return getTotalRevenue() - getTotalExpenses()
-  }
+  const getTotalProfit = useMemo(() => {
+    return getTotalRevenue - getTotalExpenses
+  }, [getTotalRevenue, getTotalExpenses])
 
-  const getMonthName = (month: number) => {
+  const getMonthName = useCallback((month: number) => {
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
     return months[month - 1] || ''
-  }
+  }, [])
 
-  // Função para filtrar clientes baseado no termo de busca
-  const getFilteredClients = () => {
+  // Função para filtrar clientes baseado no termo de busca - otimizada com debounce
+  const getFilteredClients = useMemo(() => {
     if (!reportData.todosClientes) return []
     
-    if (!searchTerm.trim()) return reportData.todosClientes
+    if (!debouncedSearchTerm.trim()) return reportData.todosClientes
     
-    const term = searchTerm.toLowerCase()
+    const term = debouncedSearchTerm.toLowerCase()
     return reportData.todosClientes.filter(client => 
       client.name.toLowerCase().includes(term) ||
       client.email.toLowerCase().includes(term) ||
       client.phone.includes(term) ||
       (client.address && client.address.toLowerCase().includes(term))
     )
-  }
+  }, [reportData.todosClientes, debouncedSearchTerm])
 
   return (
     <ProtectedRoute requiredPermission="reports" fallbackMessage="Você não tem permissão para acessar relatórios. Apenas administradores podem visualizar essas informações.">
@@ -409,25 +421,27 @@ export default function RelatoriosPage() {
             Relatórios de {categories.find(c => c.id === selectedCategory)?.name}
           </h3>
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {reports
-              .filter(report => report.category === selectedCategory)
-              .map((report) => {
-            const IconComponent = report.icon
-            return (
-              <button
-                key={report.id}
-                onClick={() => setSelectedReport(report.id)}
-                    className={`w-full p-3 rounded-lg border transition-colors flex items-center text-left ${
-                  selectedReport === report.id
-                        ? 'border-[#D15556] bg-[#D15556] text-white'
-                        : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
-                }`}
-              >
-                    <IconComponent className="w-5 h-5 mr-3 flex-shrink-0" />
-                    <span className="text-sm font-medium">{report.name}</span>
-              </button>
-            )
-          })}
+            {useMemo(() => 
+              reports
+                .filter(report => report.category === selectedCategory)
+                .map((report) => {
+                  const IconComponent = report.icon
+                  return (
+                    <button
+                      key={report.id}
+                      onClick={() => setSelectedReport(report.id)}
+                      className={`w-full p-3 rounded-lg border transition-colors flex items-center text-left ${
+                        selectedReport === report.id
+                          ? 'border-[#D15556] bg-[#D15556] text-white'
+                          : 'border-gray-300 hover:border-[#D15556] bg-white text-gray-700 hover:text-[#D15556]'
+                      }`}
+                    >
+                      <IconComponent className="w-5 h-5 mr-3 flex-shrink-0" />
+                      <span className="text-sm font-medium">{report.name}</span>
+                    </button>
+                  )
+                }), [reports, selectedCategory, selectedReport])
+            }
           </div>
         </div>
       </div>
@@ -442,7 +456,7 @@ export default function RelatoriosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Receita Total</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalRevenue())}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalRevenue)}
               </p>
             </div>
           </div>
@@ -456,7 +470,7 @@ export default function RelatoriosPage() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Lucro Total</p>
               <p className="text-2xl font-semibold text-gray-900">
-                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalProfit())}
+                {loadingData ? <Loader2 className="w-6 h-6 animate-spin" /> : formatCurrency(getTotalProfit)}
               </p>
             </div>
           </div>
@@ -580,7 +594,7 @@ export default function RelatoriosPage() {
                 Total: {reportData.todosClientes?.length || 0} clientes
                 {searchTerm && (
                   <span className="ml-2 text-[#D15556]">
-                    • {getFilteredClients().length} encontrados
+                    • {getFilteredClients.length} encontrados
                   </span>
                 )}
               </div>
@@ -627,8 +641,8 @@ export default function RelatoriosPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {getFilteredClients().length > 0 ? (
-                    getFilteredClients().map((cliente, index) => (
+                  {getFilteredClients.length > 0 ? (
+                    getFilteredClients.map((cliente, index: number) => (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{cliente.name}</td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{cliente.email}</td>
@@ -1241,54 +1255,91 @@ export default function RelatoriosPage() {
       {/* Relatório Financeiro */}
       {selectedReport === 'financial' && !loadingData && (
         <div className="space-y-8">
-          {/* Gráfico de Receita */}
+          {/* Gráfico Combinado de Receita, Despesas e Lucro */}
           {reportData.financial?.revenue && reportData.financial.revenue.length > 0 && (
             <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Receita Mensal</h3>
-              <div className="h-64 flex items-end justify-between space-x-2">
-                {reportData.financial.revenue.map((item, index) => {
-                  const maxRevenue = Math.max(...reportData.financial!.revenue.map(r => r.totalRevenue))
-                  return (
-                    <div key={index} className="flex-1 flex flex-col items-center">
-                      <div className="w-full bg-gray-200 rounded-t-lg relative group">
-                        <div 
-                          className="bg-[#D15556] rounded-t-lg transition-all duration-300 group-hover:bg-[#b83e3d]"
-                          style={{ height: `${(item.totalRevenue / maxRevenue) * 200}px` }}
-                        ></div>
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                          {formatCurrency(item.totalRevenue)}
-                        </div>
-                      </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {getMonthName(item._id.month)}/{item._id.year}
-                      </div>
-                    </div>
-                  )
-                })}
+              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Receita, Despesas e Lucro Mensal</h3>
+              
+              {/* Legenda */}
+              <div className="flex justify-center gap-6 mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-green-500 rounded"></div>
+                  <span className="text-sm text-gray-600">Receita</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-red-500 rounded"></div>
+                  <span className="text-sm text-gray-600">Despesas</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
+                  <span className="text-sm text-gray-600">Lucro</span>
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Gráfico de Despesas */}
-          {reportData.financial?.expenses && reportData.financial.expenses.length > 0 && (
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-[#006D5B] mb-4">Despesas Mensais</h3>
-              <div className="h-64 flex items-end justify-between space-x-2">
-                {reportData.financial.expenses.map((item, index) => {
-                  const maxExpenses = Math.max(...reportData.financial!.expenses.map(e => e.totalExpenses))
+              <div className="h-80 flex items-end justify-between space-x-2">
+                {reportData.financial.revenue.map((revenueItem, index) => {
+                  // Encontrar despesa correspondente ao mesmo mês/ano
+                  const expenseItem = reportData.financial?.expenses?.find(
+                    e => e._id.month === revenueItem._id.month && e._id.year === revenueItem._id.year
+                  )
+                  
+                  const totalExpenses = expenseItem?.totalExpenses || 0
+                  const lucro = revenueItem.totalRevenue - totalExpenses
+                  
+                  // Calcular altura máxima baseada no maior valor (receita, despesa ou lucro)
+                  const maxValue = Math.max(
+                    ...reportData.financial!.revenue.map(r => r.totalRevenue),
+                    ...(reportData.financial?.expenses?.map(e => e.totalExpenses) || [0])
+                  )
+                  
+                  const revenueHeight = (revenueItem.totalRevenue / maxValue) * 200
+                  const expenseHeight = (totalExpenses / maxValue) * 200
+                  const lucroHeight = Math.abs((lucro / maxValue) * 200)
+                  
                   return (
                     <div key={index} className="flex-1 flex flex-col items-center">
-                      <div className="w-full bg-gray-200 rounded-t-lg relative group">
+                      <div className="w-full h-64 flex flex-col justify-end relative group">
+                        {/* Receita (verde) */}
                         <div 
-                          className="bg-red-500 rounded-t-lg transition-all duration-300 group-hover:bg-red-600"
-                          style={{ height: `${(item.totalExpenses / maxExpenses) * 200}px` }}
-                        ></div>
-                        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
-                          {formatCurrency(item.totalExpenses)}
+                          className="w-full bg-green-500 rounded-t transition-all duration-300 group-hover:bg-green-600"
+                          style={{ height: `${revenueHeight}px` }}
+                        >
+                          <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                            Receita: {formatCurrency(revenueItem.totalRevenue)}
+                          </div>
                         </div>
+                        
+                        {/* Despesas (vermelho) */}
+                        {totalExpenses > 0 && (
+                          <div 
+                            className="w-full bg-red-500 transition-all duration-300 group-hover:bg-red-600"
+                            style={{ height: `${expenseHeight}px` }}
+                          >
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Despesas: {formatCurrency(totalExpenses)}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Lucro (azul) - pode ser positivo ou negativo */}
+                        {lucro !== 0 && (
+                          <div 
+                            className={`w-full transition-all duration-300 ${
+                              lucro > 0 
+                                ? 'bg-blue-500 group-hover:bg-blue-600' 
+                                : 'bg-orange-500 group-hover:bg-orange-600'
+                            }`}
+                            style={{ height: `${lucroHeight}px` }}
+                          >
+                            <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                              Lucro: {formatCurrency(lucro)}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="text-sm text-gray-600 mt-2">
-                        {getMonthName(item._id.month)}/{item._id.year}
+                      
+                      <div className="text-sm text-gray-600 mt-2 text-center">
+                        {getMonthName(revenueItem._id.month)}/{revenueItem._id.year}
                       </div>
                     </div>
                   )
@@ -1304,15 +1355,15 @@ export default function RelatoriosPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <span className="text-gray-700">Receita Total</span>
-                  <span className="font-semibold text-green-600">{formatCurrency(getTotalRevenue())}</span>
+                  <span className="font-semibold text-green-600">{formatCurrency(getTotalRevenue)}</span>
                       </div>
                 <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                   <span className="text-gray-700">Despesas Total</span>
-                  <span className="font-semibold text-red-600">{formatCurrency(getTotalExpenses())}</span>
+                  <span className="font-semibold text-red-600">{formatCurrency(getTotalExpenses)}</span>
                     </div>
                 <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                   <span className="text-gray-700">Lucro Líquido</span>
-                  <span className="font-semibold text-blue-600">{formatCurrency(getTotalProfit())}</span>
+                  <span className="font-semibold text-blue-600">{formatCurrency(getTotalProfit)}</span>
                   </div>
               </div>
             </div>
@@ -1323,13 +1374,13 @@ export default function RelatoriosPage() {
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Margem de Lucro</span>
                   <span className="font-semibold text-green-600">
-                    {getTotalRevenue() > 0 ? ((getTotalProfit() / getTotalRevenue()) * 100).toFixed(1) : 0}%
+                    {getTotalRevenue > 0 ? ((getTotalProfit / getTotalRevenue) * 100).toFixed(1) : 0}%
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-gray-600">Receita Média/Mês</span>
                   <span className="font-semibold text-gray-900">
-                    {reportData.financial?.revenue ? formatCurrency(getTotalRevenue() / reportData.financial.revenue.length) : formatCurrency(0)}
+                    {reportData.financial?.revenue ? formatCurrency(getTotalRevenue / reportData.financial.revenue.length) : formatCurrency(0)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
