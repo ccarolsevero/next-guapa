@@ -294,18 +294,18 @@ export default function ServicosPage() {
           </p>
         </div>
         <div className="mt-4 sm:mt-0">
-          <div className="flex space-x-3">
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <div className="flex flex-col sm:flex-row gap-2">
               <button
                 onClick={() => setShowCategoryModal(true)}
-                className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4d] transition-colors flex items-center"
+                className="bg-[#006D5B] text-white px-3 py-2 rounded-lg hover:bg-[#005a4d] transition-colors flex items-center justify-center text-sm"
               >
                 <Tag className="w-4 h-4 mr-2" />
                 Nova Categoria
               </button>
               <button
                 onClick={() => setShowCategoriesListModal(true)}
-                className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center"
+                className="bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors flex items-center justify-center text-sm"
               >
                 <Tag className="w-4 h-4 mr-2" />
                 Gerenciar Categorias
@@ -313,7 +313,7 @@ export default function ServicosPage() {
             </div>
             <Link
               href="/admin/servicos/editar/novo"
-              className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
+              className="bg-[#D15556] text-white px-3 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center justify-center text-sm"
             >
               <Plus className="w-4 h-4 mr-2" />
               Novo Serviço

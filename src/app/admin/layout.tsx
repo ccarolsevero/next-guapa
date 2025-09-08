@@ -55,34 +55,36 @@ function AdminLayoutContent({
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed inset-y-0 left-0 w-64 shadow-lg" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
-          <div className="flex items-center justify-between p-6 border-b" style={{ borderColor: '#e6d1b8' }}>
-            <h1 className="text-xl font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
+        <div className="fixed inset-y-0 left-0 w-72 shadow-lg flex flex-col" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="flex items-center justify-between p-4 border-b flex-shrink-0" style={{ borderColor: '#e6d1b8' }}>
+            <h1 className="text-lg font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
             <button onClick={() => setSidebarOpen(false)}>
               <X className="w-6 h-6" style={{ color: '#d34d4c' }} />
             </button>
           </div>
-          <nav className="p-6 space-y-2">
-            {filteredNavigation.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`flex items-center px-4 py-3 text-sm font-medium rounded-none transition-colors ${
-                    isActive
-                      ? 'bg-[#D15556] text-white'
-                      : 'text-gray-700 hover:bg-[#EED7B6]/50 hover:text-[#D15556]'
-                  }`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.name}
-                </Link>
-              )
-            })}
-          </nav>
+          <div className="flex-1 overflow-y-auto">
+            <nav className="p-4 space-y-1">
+              {filteredNavigation.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-[#D15556] text-white'
+                        : 'text-gray-700 hover:bg-[#EED7B6]/50 hover:text-[#D15556]'
+                    }`}
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
         </div>
       </div>
 
