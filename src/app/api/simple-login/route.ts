@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
 
 export async function POST(request: NextRequest) {
-  let client;
   try {
     const { username, password } = await request.json()
     
@@ -16,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Conectar diretamente ao MongoDB
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
+    const client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
     await client.connect();
     
     const db = client.db('guapa');
@@ -29,6 +28,7 @@ export async function POST(request: NextRequest) {
     });
     
     if (!professional) {
+      await client.close();
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -39,17 +39,12 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await bcrypt.compare(password, professional.password);
     
     if (!isPasswordValid) {
+      await client.close();
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
       )
     }
-    
-    // Atualizar último login
-    await collection.updateOne(
-      { _id: professional._id },
-      { $set: { lastLogin: new Date() } }
-    );
     
     // Gerar token JWT
     const token = jwt.sign(
@@ -63,6 +58,8 @@ export async function POST(request: NextRequest) {
       { expiresIn: '24h' }
     );
     
+    await client.close();
+    
     // Retornar dados do profissional (sem senha)
     const { password: _, ...professionalData } = professional;
     
@@ -73,14 +70,10 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Erro no login do funcionário:', error)
+    console.error('Erro no login:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
-  } finally {
-    if (client) {
-      await client.close();
-    }
   }
 }

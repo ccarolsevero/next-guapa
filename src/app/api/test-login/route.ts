@@ -1,23 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient } from 'mongodb'
 import bcrypt from 'bcryptjs'
-import jwt from 'jsonwebtoken'
 
 export async function POST(request: NextRequest) {
-  let client;
   try {
     const { username, password } = await request.json()
     
-    if (!username || !password) {
-      return NextResponse.json(
-        { error: 'Username e senha são obrigatórios' },
-        { status: 400 }
-      )
-    }
-    
-    // Conectar diretamente ao MongoDB
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
+    console.log('🔌 Conectando diretamente ao MongoDB...');
+    const client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
     await client.connect();
+    console.log('✅ Conectado ao MongoDB');
     
     const db = client.db('guapa');
     const collection = db.collection('professionals');
@@ -28,7 +20,10 @@ export async function POST(request: NextRequest) {
       isActive: true 
     });
     
+    console.log('👤 Profissional encontrado:', professional ? 'Sim' : 'Não');
+    
     if (!professional) {
+      await client.close();
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -39,48 +34,30 @@ export async function POST(request: NextRequest) {
     const isPasswordValid = await bcrypt.compare(password, professional.password);
     
     if (!isPasswordValid) {
+      await client.close();
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
       )
     }
     
-    // Atualizar último login
-    await collection.updateOne(
-      { _id: professional._id },
-      { $set: { lastLogin: new Date() } }
-    );
-    
-    // Gerar token JWT
-    const token = jwt.sign(
-      { 
-        id: professional._id.toString(),
-        username: professional.username,
-        role: professional.role,
-        name: professional.name
-      },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '24h' }
-    );
-    
-    // Retornar dados do profissional (sem senha)
-    const { password: _, ...professionalData } = professional;
+    await client.close();
     
     return NextResponse.json({
       message: 'Login realizado com sucesso',
-      token,
-      professional: professionalData
+      professional: {
+        id: professional._id,
+        name: professional.name,
+        username: professional.username,
+        role: professional.role
+      }
     })
     
   } catch (error) {
-    console.error('Erro no login do funcionário:', error)
+    console.error('Erro no teste de login:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
-  } finally {
-    if (client) {
-      await client.close();
-    }
   }
 }
