@@ -235,7 +235,6 @@ export async function GET(request: NextRequest) {
         const clientesServicoEspecifico = await db.collection('finalizacoes').aggregate([
           {
             $match: {
-              'servicos.servicoId': new ObjectId(serviceId),
               dataCriacao: { $gte: startDate, $lte: endDate }
             }
           },
@@ -243,8 +242,13 @@ export async function GET(request: NextRequest) {
             $unwind: '$servicos'
           },
           {
+            $addFields: {
+              servicoObjectId: { $toObjectId: '$servicos.servicoId' }
+            }
+          },
+          {
             $match: {
-              'servicos.servicoId': new ObjectId(serviceId)
+              servicoObjectId: new ObjectId(serviceId)
             }
           },
           {
@@ -837,6 +841,58 @@ export async function GET(request: NextRequest) {
           reportData.financial = {
             revenue: financialData,
             expenses: expensesData
+          }
+
+          // Carregar dados de clientes para o relatório financeiro
+          const clientStats = await db.collection('clients').aggregate([
+            {
+              $group: {
+                _id: null,
+                totalClients: { $sum: 1 },
+                newClients: {
+                  $sum: {
+                    $cond: [
+                      { $gte: ['$createdAt', startDate] },
+                      1,
+                      0
+                    ]
+                  }
+                }
+              }
+            }
+          ]).toArray()
+
+          reportData.clients = {
+            topClients: [],
+            stats: clientStats[0] || { totalClients: 0, newClients: 0 }
+          }
+
+          // Carregar dados de agendamentos para o relatório financeiro
+          const appointmentsByStatus = await db.collection('agendamentos').aggregate([
+            {
+              $match: {
+                data: { $gte: startDate, $lte: endDate }
+              }
+            },
+            {
+              $group: {
+                _id: '$status',
+                count: { $sum: 1 }
+              }
+            }
+          ]).toArray()
+
+          const totalAppointments = appointmentsByStatus.reduce((sum, item) => sum + item.count, 0)
+
+          const appointmentsWithPercentage = appointmentsByStatus.map(item => ({
+            status: item._id,
+            count: item.count,
+            percentage: totalAppointments > 0 ? Math.round((item.count / totalAppointments) * 100) : 0
+          }))
+
+          reportData.appointments = {
+            byStatus: appointmentsWithPercentage,
+            total: totalAppointments
           }
         }
 
