@@ -56,6 +56,7 @@ interface Employee {
   lastLogin?: Date
   createdAt: Date
   updatedAt: Date
+  newPassword?: string
 }
 
 export default function ConfiguracoesPage() {
@@ -258,7 +259,8 @@ export default function ConfiguracoesPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao adicionar funcionário')
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao adicionar funcionário')
       }
 
       // Recarregar lista de funcionários
@@ -308,7 +310,8 @@ export default function ConfiguracoesPage() {
           canAccessSiteEdit: selectedEmployee.canAccessSiteEdit,
           canAccessGoals: selectedEmployee.canAccessGoals,
           canAccessReports: selectedEmployee.canAccessReports,
-          isActive: selectedEmployee.isActive
+          isActive: selectedEmployee.isActive,
+          newPassword: selectedEmployee.newPassword
         })
       })
 
@@ -849,7 +852,7 @@ export default function ConfiguracoesPage() {
                   type="text"
                   value={newEmployee.name}
                   onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                   placeholder="Nome completo"
                 />
               </div>
@@ -862,7 +865,7 @@ export default function ConfiguracoesPage() {
                   type="text"
                   value={newEmployee.username}
                   onChange={(e) => setNewEmployee({...newEmployee, username: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                   placeholder="username"
                 />
               </div>
@@ -875,7 +878,7 @@ export default function ConfiguracoesPage() {
                   type="password"
                   value={newEmployee.password}
                   onChange={(e) => setNewEmployee({...newEmployee, password: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                   placeholder="Mínimo 6 caracteres"
                 />
               </div>
@@ -887,7 +890,7 @@ export default function ConfiguracoesPage() {
                 <select
                   value={newEmployee.role}
                   onChange={(e) => setNewEmployee({...newEmployee, role: e.target.value as 'admin' | 'professional'})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 >
                   <option value="professional">Professional</option>
                   <option value="admin">Admin</option>
@@ -980,7 +983,7 @@ export default function ConfiguracoesPage() {
                   type="text"
                   value={selectedEmployee.name}
                   onChange={(e) => setSelectedEmployee({...selectedEmployee, name: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 />
               </div>
 
@@ -992,7 +995,20 @@ export default function ConfiguracoesPage() {
                   type="text"
                   value={selectedEmployee.username}
                   onChange={(e) => setSelectedEmployee({...selectedEmployee, username: e.target.value})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  Nova Senha (deixe em branco para manter a atual)
+                </label>
+                <input
+                  type="password"
+                  value={selectedEmployee.newPassword || ''}
+                  onChange={(e) => setSelectedEmployee({...selectedEmployee, newPassword: e.target.value})}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
+                  placeholder="Mínimo 6 caracteres"
                 />
               </div>
 
@@ -1003,7 +1019,7 @@ export default function ConfiguracoesPage() {
                 <select
                   value={selectedEmployee.role}
                   onChange={(e) => setSelectedEmployee({...selectedEmployee, role: e.target.value as 'admin' | 'professional'})}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent text-gray-900"
                 >
                   <option value="professional">Professional</option>
                   <option value="admin">Admin</option>

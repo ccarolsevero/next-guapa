@@ -4,10 +4,10 @@ import Professional from '@/models/Professional'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     console.log('Buscando profissional com ID/nome:', id)
     
     await connectDB()
@@ -52,8 +52,9 @@ export async function GET(
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params
     const body = await request.json()
     const { 
       name, 
@@ -112,13 +113,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    console.log('Deletando profissional:', params.id)
+    const { id } = await params
+    console.log('Deletando profissional:', id)
     
     await connectDB()
     
-    const deletedProfessional = await Professional.findByIdAndDelete(params.id)
+    const deletedProfessional = await Professional.findByIdAndDelete(id)
     
     if (!deletedProfessional) {
       return NextResponse.json(
@@ -127,7 +129,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       )
     }
     
-    console.log('Profissional deletado com sucesso:', params.id)
+    console.log('Profissional deletado com sucesso:', id)
     
     return NextResponse.json({ message: 'Profissional deletado com sucesso' })
   } catch (error) {

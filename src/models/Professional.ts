@@ -83,7 +83,6 @@ const professionalSchema = new Schema<IProfessional>({
   username: {
     type: String,
     required: true,
-    unique: true,
     trim: true,
     lowercase: true
   },
