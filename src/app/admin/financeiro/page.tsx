@@ -495,73 +495,75 @@ export default function FinanceiroPage() {
           </div>
 
           {/* Controle de Despesas */}
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-            <div className="flex items-center justify-between mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">Controle de Despesas</h3>
                 <p className="text-sm text-gray-700">Gerencie as despesas da empresa</p>
-        </div>
+              </div>
               <button
                 onClick={() => setShowDespesaModal(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center gap-2"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <DollarSign className="w-4 h-4" />
                 Nova Despesa
               </button>
-      </div>
+            </div>
 
             <div className="space-y-3">
               {despesas.length > 0 ? (
                 despesas.map((despesa) => (
-                  <div key={despesa._id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      <div className="p-2 rounded-full bg-red-100">
-                        <DollarSign className="w-5 h-5 text-red-600" />
-                      </div>
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-gray-900">{despesa.categoria}</span>
-                          <span className={`px-2 py-1 text-xs rounded-full text-white font-medium ${
-                            despesa.tipo === 'fixa' 
-                              ? 'bg-blue-500' 
-                              : 'bg-orange-500'
-                          }`}>
-                            {despesa.tipo === 'fixa' ? 'Fixa' : 'Variável'}
-                          </span>
+                  <div key={despesa._id} className="p-4 border border-gray-200 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center space-x-3 min-w-0 flex-1">
+                        <div className="p-2 rounded-full bg-red-100 flex-shrink-0">
+                          <DollarSign className="w-5 h-5 text-red-600" />
                         </div>
-                        {despesa.observacao && (
-                          <p className="text-sm text-gray-600">{despesa.observacao}</p>
-                        )}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                            <span className="font-medium text-gray-900 truncate">{despesa.categoria}</span>
+                            <span className={`px-2 py-1 text-xs rounded-full text-white font-medium flex-shrink-0 ${
+                              despesa.tipo === 'fixa' 
+                                ? 'bg-blue-500' 
+                                : 'bg-orange-500'
+                            }`}>
+                              {despesa.tipo === 'fixa' ? 'Fixa' : 'Variável'}
+                            </span>
+                          </div>
+                          {despesa.observacao && (
+                            <p className="text-sm text-gray-600 truncate">{despesa.observacao}</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="flex items-center space-x-3">
-                        <button
-                          onClick={() => {
-                            setEditingDespesa(despesa)
-                            setShowEditDespesaModal(true)
-                          }}
-                          className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
-                          title="Editar despesa"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => excluirDespesa(despesa._id)}
-                          className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
-                          title="Excluir despesa"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                        <div>
+                      <div className="flex items-center justify-between sm:justify-end gap-3">
+                        <div className="text-right">
                           <p className="text-lg font-semibold text-red-600">{formatCurrency(despesa.valor)}</p>
                           <p className="text-sm text-gray-500">
                             {new Date(despesa.data).toLocaleDateString('pt-BR')}
                           </p>
+                        </div>
+                        <div className="flex items-center space-x-2 flex-shrink-0">
+                          <button
+                            onClick={() => {
+                              setEditingDespesa(despesa)
+                              setShowEditDespesaModal(true)
+                            }}
+                            className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50"
+                            title="Editar despesa"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => excluirDespesa(despesa._id)}
+                            className="text-red-600 hover:text-red-800 p-1 rounded hover:bg-red-50"
+                            title="Excluir despesa"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
                         </div>
                       </div>
                     </div>
