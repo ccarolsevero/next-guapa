@@ -76,7 +76,9 @@ export default function ConfiguracoesPage() {
   const [loadingEmployees, setLoadingEmployees] = useState(false)
   const [showAddEmployeeModal, setShowAddEmployeeModal] = useState(false)
   const [showEditEmployeeModal, setShowEditEmployeeModal] = useState(false)
+  const [showDeleteEmployeeModal, setShowDeleteEmployeeModal] = useState(false)
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null)
+  const [employeeToDelete, setEmployeeToDelete] = useState<Employee | null>(null)
   const [newEmployee, setNewEmployee] = useState({
     name: '',
     username: '',
@@ -291,6 +293,40 @@ export default function ConfiguracoesPage() {
   const handleEditEmployee = (employee: Employee) => {
     setSelectedEmployee(employee)
     setShowEditEmployeeModal(true)
+  }
+
+  const handleDeleteEmployee = (employee: Employee) => {
+    setEmployeeToDelete(employee)
+    setShowDeleteEmployeeModal(true)
+  }
+
+  const confirmDeleteEmployee = async () => {
+    if (!employeeToDelete) return
+
+    try {
+      const response = await fetch(`/api/professionals/${employeeToDelete._id}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao deletar funcionário')
+      }
+
+      // Recarregar lista de funcionários
+      const employeesResponse = await fetch('/api/professionals')
+      if (employeesResponse.ok) {
+        const data = await employeesResponse.json()
+        setEmployees(data)
+      }
+
+      setShowDeleteEmployeeModal(false)
+      setEmployeeToDelete(null)
+      alert('Funcionário deletado com sucesso!')
+    } catch (error) {
+      console.error('Erro ao deletar funcionário:', error)
+      alert('Erro ao deletar funcionário')
+    }
   }
 
   const handleSaveEmployeeEdit = async () => {
@@ -769,6 +805,13 @@ export default function ConfiguracoesPage() {
                           >
                             <Edit className="w-4 h-4" />
                           </button>
+                          <button
+                            onClick={() => handleDeleteEmployee(employee)}
+                            className="p-2 rounded-full bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                            title="Deletar"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
                       
@@ -1096,6 +1139,53 @@ export default function ConfiguracoesPage() {
                   Salvar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteEmployeeModal && employeeToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-[#D15556]">Confirmar Exclusão</h3>
+              <button
+                onClick={() => {
+                  setShowDeleteEmployeeModal(false)
+                  setEmployeeToDelete(null)
+                }}
+                className="text-gray-500 hover:text-gray-900"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">
+                Tem certeza que deseja excluir o funcionário <strong>{employeeToDelete.name}</strong>?
+              </p>
+              <p className="text-sm text-red-600">
+                ⚠️ Esta ação não pode ser desfeita. Todos os dados do funcionário serão permanentemente removidos.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteEmployeeModal(false)
+                  setEmployeeToDelete(null)
+                }}
+                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmDeleteEmployee}
+                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Excluir
+              </button>
             </div>
           </div>
         </div>
