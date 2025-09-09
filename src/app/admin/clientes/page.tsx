@@ -188,24 +188,24 @@ export default function ClientesPage() {
             Gerencie todos os clientes do salão ({totalClients} clientes)
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex space-x-3">
+        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => setShowAnalytics(!showAnalytics)}
-            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center"
+            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center justify-center w-full sm:w-auto"
           >
             <BarChart3 className="w-4 h-4 mr-2" />
             {showAnalytics ? 'Ocultar' : 'Mostrar'} Análises
           </button>
           <Link
             href="/admin/clientes/importar-flexivel"
-            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center"
+            className="bg-[#006D5B] text-white px-4 py-2 rounded-lg hover:bg-[#005a4f] transition-colors flex items-center justify-center w-full sm:w-auto"
           >
             <Upload className="w-4 h-4 mr-2" />
             Importar Clientes
           </Link>
           <Link
             href="/admin/clientes/novo"
-            className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-colors flex items-center"
+            className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#b83e3d] transition-colors flex items-center justify-center w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Cliente
@@ -288,11 +288,11 @@ export default function ClientesPage() {
                 />
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <select
                 value={filterComplete}
                 onChange={(e) => setFilterComplete(e.target.value as 'all' | 'complete' | 'incomplete')}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent w-full sm:w-auto"
               >
                 <option value="all">Todos os Clientes</option>
                 <option value="complete">Perfil Completo</option>
@@ -301,7 +301,7 @@ export default function ClientesPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg focus:ring-2 focus:ring-[#D15556] focus:border-transparent w-full sm:w-auto"
               >
                 <option value="name">Ordenar por Nome</option>
                 <option value="createdAt">Ordenar por Data de Cadastro</option>
@@ -309,7 +309,7 @@ export default function ClientesPage() {
               </select>
               <button
                 onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-[#D15556] focus:border-transparent"
+                className="px-4 py-2 border border-gray-300 bg-white text-gray-900 rounded-lg hover:bg-gray-50 focus:ring-2 focus:ring-[#D15556] focus:border-transparent w-full sm:w-auto flex items-center justify-center"
               >
                 {sortOrder === 'asc' ? '↑' : '↓'}
               </button>

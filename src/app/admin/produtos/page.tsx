@@ -412,19 +412,19 @@ export default function ProdutosPage() {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
           <h1 className="text-2xl font-bold text-gray-900">Gerenciar Produtos</h1>
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={openCategoryModal}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center w-full sm:w-auto"
             >
               <Tag className="w-4 h-4 mr-2" />
               Gerenciar Categorias
             </button>
           <Link
             href="/admin/produtos/novo"
-            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center"
+            className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700 transition-colors flex items-center justify-center w-full sm:w-auto"
           >
             <Plus className="w-4 h-4 mr-2" />
             Novo Produto

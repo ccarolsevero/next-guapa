@@ -1034,11 +1034,11 @@ export default function EditarSite() {
 
         {/* Profissionais */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
             <h2 className="text-xl font-semibold" style={{ color: '#d34d4c' }}>Profissionais</h2>
             <button
               onClick={() => setShowAddProfessionalModal(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center"
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center w-full sm:w-auto"
             >
               <Plus className="w-4 h-4 mr-2" />
               Adicionar Profissional

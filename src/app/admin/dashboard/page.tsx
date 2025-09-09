@@ -481,7 +481,7 @@ export default function DashboardPage() {
                 {openCashiers.map((cashier) => (
                   <div key={cashier._id} className="border border-gray-200 rounded-lg p-6">
                     {/* Header do Caixa */}
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-[#EED7B6] rounded-full flex items-center justify-center mr-4">
                         <User className="w-6 h-6 text-[#D15556]" />
@@ -491,13 +491,13 @@ export default function DashboardPage() {
                           <p className="text-sm text-gray-600">{cashier.responsible?.role || 'Profissional'}</p>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2">
                         <button
                           onClick={() => {
                             setSelectedCashier(cashier)
                             setShowMovementModal(true)
                           }}
-                          className="px-3 py-1 text-sm bg-[#EED7B6] text-[#D15556] rounded-lg hover:bg-[#D15556] hover:text-white transition-colors flex items-center space-x-1"
+                          className="px-3 py-2 text-sm bg-[#EED7B6] text-[#D15556] rounded-lg hover:bg-[#D15556] hover:text-white transition-colors flex items-center justify-center space-x-1 w-full sm:w-auto"
                         >
                           <DollarSign className="w-3 h-3" />
                           <span>Movimentação</span>
@@ -507,7 +507,7 @@ export default function DashboardPage() {
                             setSelectedCashier(cashier)
                             setShowCloseCashierModal(true)
                           }}
-                          className="px-3 py-1 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors flex items-center space-x-1"
+                          className="px-3 py-2 text-sm bg-red-100 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center space-x-1 w-full sm:w-auto"
                         >
                           <CheckCircle className="w-3 h-3" />
                           <span>Fechar Caixa</span>
@@ -516,7 +516,7 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Informações do Caixa */}
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 text-sm">
                       <div>
                         <p className="text-gray-800 font-medium">Abertura:</p>
                         <p className="text-gray-900 font-semibold">{new Date(cashier.openedAt).toLocaleString('pt-BR')}</p>
@@ -583,7 +583,7 @@ export default function DashboardPage() {
                         
                         return (
                           <>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm mb-3">
                               <div>
                                 <p className="opacity-90">Dinheiro Inicial:</p>
                                 <p className="font-semibold">R$ {cashier.initialCash.toFixed(2)}</p>
