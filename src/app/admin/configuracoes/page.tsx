@@ -119,24 +119,24 @@ export default function ConfiguracoesPage() {
       }
     }
 
-    const fetchEmployees = async () => {
+    const fetchUsers = async () => {
       try {
         setLoadingEmployees(true)
-        const response = await fetch('/api/professionals')
+        const response = await fetch('/api/users')
         
         if (response.ok) {
           const data = await response.json()
           setEmployees(data)
         }
       } catch (err) {
-        console.error('Erro ao buscar funcionários:', err)
+        console.error('Erro ao buscar usuários:', err)
       } finally {
         setLoadingEmployees(false)
       }
     }
 
     fetchConfiguracao()
-    fetchEmployees()
+    fetchUsers()
   }, [])
 
   const handleSave = async () => {
@@ -234,7 +234,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  // Funções para gerenciar funcionários
+  // Funções para gerenciar usuários de acesso
   const handleAddEmployee = async () => {
     if (!newEmployee.name || !newEmployee.username || !newEmployee.password) {
       alert('Por favor, preencha todos os campos obrigatórios')
@@ -242,7 +242,7 @@ export default function ConfiguracoesPage() {
     }
 
     try {
-      const response = await fetch('/api/professionals', {
+      const response = await fetch('/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -262,13 +262,13 @@ export default function ConfiguracoesPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao adicionar funcionário')
+        throw new Error(errorData.error || 'Erro ao adicionar usuário')
       }
 
-      // Recarregar lista de funcionários
-      const employeesResponse = await fetch('/api/professionals')
-      if (employeesResponse.ok) {
-        const data = await employeesResponse.json()
+      // Recarregar lista de usuários
+      const usersResponse = await fetch('/api/users')
+      if (usersResponse.ok) {
+        const data = await usersResponse.json()
         setEmployees(data)
       }
 
@@ -283,10 +283,10 @@ export default function ConfiguracoesPage() {
         canAccessGoals: false,
         canAccessReports: false
       })
-      alert('Funcionário adicionado com sucesso!')
+      alert('Usuário adicionado com sucesso!')
     } catch (error) {
-      console.error('Erro ao adicionar funcionário:', error)
-      alert('Erro ao adicionar funcionário')
+      console.error('Erro ao adicionar usuário:', error)
+      alert('Erro ao adicionar usuário')
     }
   }
 
@@ -304,28 +304,28 @@ export default function ConfiguracoesPage() {
     if (!employeeToDelete) return
 
     try {
-      const response = await fetch(`/api/professionals/${employeeToDelete._id}`, {
+      const response = await fetch(`/api/users/${employeeToDelete._id}`, {
         method: 'DELETE'
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Erro ao deletar funcionário')
+        throw new Error(errorData.error || 'Erro ao deletar usuário')
       }
 
-      // Recarregar lista de funcionários
-      const employeesResponse = await fetch('/api/professionals')
-      if (employeesResponse.ok) {
-        const data = await employeesResponse.json()
+      // Recarregar lista de usuários
+      const usersResponse = await fetch('/api/users')
+      if (usersResponse.ok) {
+        const data = await usersResponse.json()
         setEmployees(data)
       }
 
       setShowDeleteEmployeeModal(false)
       setEmployeeToDelete(null)
-      alert('Funcionário deletado com sucesso!')
+      alert('Usuário deletado com sucesso!')
     } catch (error) {
-      console.error('Erro ao deletar funcionário:', error)
-      alert('Erro ao deletar funcionário')
+      console.error('Erro ao deletar usuário:', error)
+      alert('Erro ao deletar usuário')
     }
   }
 
@@ -333,7 +333,7 @@ export default function ConfiguracoesPage() {
     if (!selectedEmployee) return
 
     try {
-      const response = await fetch(`/api/professionals/${selectedEmployee._id}`, {
+      const response = await fetch(`/api/users/${selectedEmployee._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -352,28 +352,28 @@ export default function ConfiguracoesPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar funcionário')
+        throw new Error('Erro ao atualizar usuário')
       }
 
-      // Recarregar lista de funcionários
-      const employeesResponse = await fetch('/api/professionals')
-      if (employeesResponse.ok) {
-        const data = await employeesResponse.json()
+      // Recarregar lista de usuários
+      const usersResponse = await fetch('/api/users')
+      if (usersResponse.ok) {
+        const data = await usersResponse.json()
         setEmployees(data)
       }
 
       setShowEditEmployeeModal(false)
       setSelectedEmployee(null)
-      alert('Funcionário atualizado com sucesso!')
+      alert('Usuário atualizado com sucesso!')
     } catch (error) {
-      console.error('Erro ao atualizar funcionário:', error)
-      alert('Erro ao atualizar funcionário')
+      console.error('Erro ao atualizar usuário:', error)
+      alert('Erro ao atualizar usuário')
     }
   }
 
   const handleToggleEmployeeActive = async (employee: Employee) => {
     try {
-      const response = await fetch(`/api/professionals/${employee._id}`, {
+      const response = await fetch(`/api/users/${employee._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -385,20 +385,20 @@ export default function ConfiguracoesPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Erro ao atualizar funcionário')
+        throw new Error('Erro ao atualizar usuário')
       }
 
-      // Recarregar lista de funcionários
-      const employeesResponse = await fetch('/api/professionals')
-      if (employeesResponse.ok) {
-        const data = await employeesResponse.json()
+      // Recarregar lista de usuários
+      const usersResponse = await fetch('/api/users')
+      if (usersResponse.ok) {
+        const data = await usersResponse.json()
         setEmployees(data)
       }
 
-      alert(`Funcionário ${employee.isActive ? 'desativado' : 'ativado'} com sucesso!`)
+      alert(`Usuário ${employee.isActive ? 'desativado' : 'ativado'} com sucesso!`)
     } catch (error) {
-      console.error('Erro ao atualizar funcionário:', error)
-      alert('Erro ao atualizar funcionário')
+      console.error('Erro ao atualizar usuário:', error)
+      alert('Erro ao atualizar usuário')
     }
   }
 
@@ -735,25 +735,25 @@ export default function ConfiguracoesPage() {
           </div>
         )}
 
-        {/* Gerenciamento de Funcionários */}
+        {/* Gerenciamento de Usuários de Acesso */}
         {activeTab === 'employees' && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#006D5B]">Funcionários</h3>
+                <h3 className="text-lg font-semibold text-[#006D5B]">Usuários de Acesso</h3>
                 <button
                   onClick={() => setShowAddEmployeeModal(true)}
                   className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Adicionar Funcionário
+                  Adicionar Usuário
                 </button>
               </div>
 
               {loadingEmployees ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-[#D15556]" />
-                  <span className="ml-2 text-gray-600">Carregando funcionários...</span>
+                  <span className="ml-2 text-gray-600">Carregando usuários...</span>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -845,10 +845,10 @@ export default function ConfiguracoesPage() {
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                       <h3 className="text-lg font-medium text-gray-600 mb-2">
-                        Nenhum funcionário cadastrado
+                        Nenhum usuário cadastrado
                       </h3>
                       <p className="text-gray-500">
-                        Comece adicionando o primeiro funcionário
+                        Comece adicionando o primeiro usuário de acesso
                       </p>
                     </div>
                   )}
@@ -877,7 +877,7 @@ export default function ConfiguracoesPage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-[#D15556]">Adicionar Funcionário</h3>
+              <h3 className="text-xl font-semibold text-[#D15556]">Adicionar Usuário</h3>
               <button
                 onClick={() => setShowAddEmployeeModal(false)}
                 className="text-gray-500 hover:text-gray-900"
