@@ -36,7 +36,7 @@ function ConfirmacaoPagamentoContent() {
 
     try {
       setChecking(true)
-      const response = await fetch('/api/payments/status', {
+      const response = await fetch('/api/payments/confirm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +48,28 @@ function ConfirmacaoPagamentoContent() {
       })
 
       const data = await response.json()
-      setPaymentStatus(data)
+      
+      if (data.success && data.appointment?.signalPaid) {
+        setPaymentStatus({
+          success: true,
+          paid: true,
+          paidAt: data.appointment.signalPaidAt,
+          signalValue: data.creditsAdded,
+          status: 'confirmed'
+        })
+      } else if (data.success === false) {
+        setPaymentStatus({
+          success: false,
+          paid: false,
+          status: data.status || 'pending'
+        })
+      } else {
+        setPaymentStatus({
+          success: false,
+          paid: false,
+          error: 'Erro ao verificar status do pagamento'
+        })
+      }
     } catch (error) {
       console.error('Erro ao verificar status:', error)
       setPaymentStatus({
@@ -123,6 +144,21 @@ function ConfirmacaoPagamentoContent() {
             <p className="text-gray-600 mb-6">
               Seu sinal foi pago com sucesso. Seu agendamento está confirmado.
             </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-center">
+                <div className="flex-shrink-0">
+                  <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>Créditos adicionados!</strong> O valor do sinal foi adicionado como crédito na sua conta e pode ser usado em futuros agendamentos.
+                  </p>
+                </div>
+              </div>
+            </div>
             
             {paymentStatus.signalValue && (
               <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">

@@ -16,7 +16,8 @@ import {
   Edit,
   Plus,
   Eye,
-  X
+  X,
+  CreditCard
 } from 'lucide-react'
 import { useAuth, AuthProvider } from '@/contexts/AuthContext'
 import OnboardingModal from '@/components/OnboardingModal'
@@ -32,6 +33,7 @@ interface ClientData {
   createdAt: string
   onboardingCompleted?: boolean
   onboardingRequired?: boolean
+  credits?: number
 }
 
 interface Appointment {
@@ -59,6 +61,16 @@ interface Order {
   createdAt: string
 }
 
+interface CreditTransaction {
+  _id: string
+  type: 'credit' | 'debit' | 'refund'
+  amount: number
+  description: string
+  status: 'pending' | 'completed' | 'cancelled'
+  paymentMethod?: string
+  createdAt: string
+}
+
 function PainelClienteContent() {
   const { client, logout } = useAuth()
   const [clientData, setClientData] = useState<ClientData | null>(null)
@@ -82,6 +94,7 @@ function PainelClienteContent() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [recommendations, setRecommendations] = useState<any[]>([])
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([])
   const [loading, setLoading] = useState(true)
   const [showOnboarding, setShowOnboarding] = useState(false)
 
@@ -134,6 +147,18 @@ function PainelClienteContent() {
           }
         } catch (error) {
           console.log('⚠️ Erro ao carregar recomendações:', error)
+        }
+        
+        // Buscar créditos do cliente
+        try {
+          const creditsResponse = await fetch(`/api/credits?clientId=${clientId}`)
+          if (creditsResponse.ok) {
+            const creditsData = await creditsResponse.json()
+            setCreditTransactions(creditsData.transactions || [])
+            console.log('💰 Créditos carregados:', creditsData.transactions?.length || 0)
+          }
+        } catch (error) {
+          console.log('⚠️ Erro ao carregar créditos:', error)
         }
         
         // Verificar se precisa completar onboarding
@@ -609,6 +634,17 @@ function PainelClienteContent() {
                   Recomendações
                 </button>
                 <button
+                  onClick={() => setActiveTab('credits')}
+                  className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
+                    activeTab === 'credits'
+                      ? 'bg-[#D15556] text-white'
+                      : 'text-[#006D5B] hover:bg-[#EED7B6]'
+                  }`}
+                >
+                  <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 inline mr-2 sm:mr-3" />
+                  Meus Créditos
+                </button>
+                <button
                   onClick={() => setActiveTab('profile')}
                   className={`w-full text-left px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     activeTab === 'profile'
@@ -635,7 +671,7 @@ function PainelClienteContent() {
                 </div>
 
                 {/* Cards de Resumo */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                   <div className="bg-white rounded-lg shadow-lg p-6">
                     <div className="flex items-center">
                       <div className="w-12 h-12 bg-[#D15556] rounded-lg flex items-center justify-center mr-4">
@@ -659,6 +695,20 @@ function PainelClienteContent() {
                         <p className="text-sm text-gray-600">Pedidos</p>
                         <p className="text-2xl font-semibold text-[#006D5B]">
                           {orders.length}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white rounded-lg shadow-lg p-6">
+                    <div className="flex items-center">
+                      <div className="w-12 h-12 bg-green-500 rounded-lg flex items-center justify-center mr-4">
+                        <CreditCard className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600">Créditos</p>
+                        <p className="text-2xl font-semibold text-[#006D5B]">
+                          R$ {(clientData.credits || 0).toFixed(2)}
                         </p>
                       </div>
                     </div>
@@ -1074,6 +1124,139 @@ function PainelClienteContent() {
                         )}
                       </Link>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Créditos */}
+            {activeTab === 'credits' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-light text-[#006D5B]">
+                    Meus Créditos
+                  </h2>
+                  <button
+                    onClick={fetchDashboardData}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors font-medium flex items-center"
+                    title="Atualizar dados"
+                  >
+                    <CreditCard className="w-4 h-4 mr-2" />
+                    Atualizar
+                  </button>
+                </div>
+
+                {/* Saldo de Créditos */}
+                <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">Saldo Disponível</h3>
+                      <p className="text-3xl font-bold">
+                        R$ {(clientData?.credits || 0).toFixed(2)}
+                      </p>
+                      <p className="text-green-100 text-sm mt-1">
+                        Use seus créditos em futuros agendamentos
+                      </p>
+                    </div>
+                    <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                      <CreditCard className="w-8 h-8" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Histórico de Transações */}
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h3 className="text-lg font-medium text-[#006D5B]">
+                      Histórico de Transações
+                    </h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Data</th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Tipo</th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Descrição</th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Valor</th>
+                          <th className="px-6 py-3 text-left text-sm font-medium text-gray-500">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {creditTransactions.length > 0 ? (
+                          creditTransactions.map((transaction) => (
+                            <tr key={transaction._id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {new Date(transaction.createdAt).toLocaleDateString('pt-BR')}
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  transaction.type === 'credit' 
+                                    ? 'bg-green-100 text-green-800'
+                                    : transaction.type === 'debit'
+                                    ? 'bg-red-100 text-red-800'
+                                    : 'bg-blue-100 text-blue-800'
+                                }`}>
+                                  {transaction.type === 'credit' ? 'Crédito' : 
+                                   transaction.type === 'debit' ? 'Débito' : 'Reembolso'}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-900">
+                                {transaction.description}
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <span className={`font-medium ${
+                                  transaction.type === 'credit' 
+                                    ? 'text-green-600'
+                                    : transaction.type === 'debit'
+                                    ? 'text-red-600'
+                                    : 'text-blue-600'
+                                }`}>
+                                  {transaction.type === 'credit' ? '+' : 
+                                   transaction.type === 'debit' ? '-' : '+'}
+                                  R$ {transaction.amount.toFixed(2)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                                  transaction.status === 'completed' 
+                                    ? 'bg-green-100 text-green-800'
+                                    : transaction.status === 'pending'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}>
+                                  {transaction.status === 'completed' ? 'Concluído' : 
+                                   transaction.status === 'pending' ? 'Pendente' : 'Cancelado'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                              <CreditCard className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                              <p>Nenhuma transação encontrada</p>
+                              <p className="text-sm text-gray-400 mt-1">
+                                Suas transações de crédito aparecerão aqui
+                              </p>
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Informações sobre Créditos */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <h3 className="text-lg font-medium text-blue-900 mb-3">
+                    Como funcionam os créditos?
+                  </h3>
+                  <div className="space-y-2 text-sm text-blue-800">
+                    <p>• Quando você paga o sinal de 30% de um agendamento, esse valor é adicionado como crédito na sua conta</p>
+                    <p>• Você pode usar seus créditos para pagar futuros agendamentos</p>
+                    <p>• Os créditos não expiram e podem ser usados a qualquer momento</p>
+                    <p>• Em caso de cancelamento, os créditos podem ser reembolsados conforme nossa política</p>
                   </div>
                 </div>
               </div>
