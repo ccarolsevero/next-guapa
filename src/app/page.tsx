@@ -256,9 +256,8 @@ export default function HomePage() {
           <p className="text-[#f2dcbc]">Carregando...</p>
         </div>
       </div>
-    </>
-  )
-}
+    )
+  }
 
   return (
     <>
