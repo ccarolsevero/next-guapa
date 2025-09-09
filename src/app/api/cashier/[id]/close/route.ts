@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient, ObjectId } from 'mongodb'
-
-const uri = process.env.MONGODB_URI!
-const client = new MongoClient(uri)
+import { ObjectId } from 'mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
 
 export async function POST(
   request: NextRequest,
@@ -13,8 +11,7 @@ export async function POST(
     const body = await request.json()
     const { finalCash, notes } = body
 
-    await client.connect()
-    const db = client.db('guapa')
+    const { db } = await connectToDatabase()
 
     // Buscar o caixa
     const cashier = await db.collection('cashiers').findOne({
@@ -103,7 +100,5 @@ export async function POST(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
-  } finally {
-    await client.close()
   }
 }
