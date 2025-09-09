@@ -441,21 +441,22 @@ export default function ConfiguracoesPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200 mb-8">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex flex-wrap gap-2 sm:gap-8">
           {tabs.map((tab) => {
             const IconComponent = tab.icon
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
+                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-[#D15556] text-[#D15556]'
                     : 'border-transparent text-gray-500 hover:text-[#D15556] hover:border-[#D15556]'
                 }`}
               >
                 <IconComponent className="w-4 h-4 mr-2" />
-                {tab.name}
+                <span className="hidden sm:inline">{tab.name}</span>
+                <span className="sm:hidden">{tab.name.split(' ')[0]}</span>
               </button>
             )
           })}
@@ -703,27 +704,27 @@ export default function ConfiguracoesPage() {
               
               <div className="space-y-4">
                 {['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'].map((day) => (
-                  <div key={day} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div key={day} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-lg gap-4">
                     <div className="flex items-center space-x-4">
                       <input
                         type="checkbox"
                         defaultChecked={day !== 'Domingo'}
                         className="rounded"
                       />
-                      <span className="font-medium text-gray-900">{day}</span>
+                      <span className="font-medium text-gray-900 text-sm sm:text-base">{day}</span>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                       <input
                         type="time"
                         defaultValue="09:00"
-                        className="px-3 py-1 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent w-full sm:w-auto"
                         style={{ color: '#000000' }}
                       />
-                      <span className="text-gray-500">até</span>
+                      <span className="text-gray-500 text-sm">até</span>
                       <input
                         type="time"
                         defaultValue="18:00"
-                        className="px-3 py-1 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                        className="px-3 py-2 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent w-full sm:w-auto"
                         style={{ color: '#000000' }}
                       />
                     </div>
@@ -739,11 +740,11 @@ export default function ConfiguracoesPage() {
         {activeTab === 'employees' && (
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow p-6" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h3 className="text-lg font-semibold text-[#006D5B]">Usuários de Acesso</h3>
                 <button
                   onClick={() => setShowAddEmployeeModal(true)}
-                  className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center"
+                  className="bg-[#D15556] text-white px-4 py-2 rounded-lg hover:bg-[#c04546] transition-colors flex items-center justify-center w-full sm:w-auto"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Adicionar Usuário
@@ -979,7 +980,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setNewEmployee({...newEmployee, canAccessReports: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Relatórios</span>
+                    <span className="text-sm text-gray-900">Relatórios</span>
                   </label>
                 </div>
               </div>
@@ -1108,7 +1109,7 @@ export default function ConfiguracoesPage() {
                       onChange={(e) => setSelectedEmployee({...selectedEmployee, canAccessReports: e.target.checked})}
                       className="mr-2"
                     />
-                    <span className="text-sm">Relatórios</span>
+                    <span className="text-sm text-gray-900">Relatórios</span>
                   </label>
                 </div>
               </div>
