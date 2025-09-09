@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Calendar, Scissors, Sparkles, User, MapPin, Phone, Mail, MessageCircle } from 'lucide-react'
 import LayoutPublic from '../../layout-public'
 import { useParams } from 'next/navigation'
+import { useSiteSettings } from '@/hooks/useSiteSettings'
 
 interface Service {
   _id: string
@@ -44,6 +45,7 @@ const defaultServices = [
 export default function ProfessionalPage() {
   const params = useParams()
   const professionalId = params.id as string
+  const { settings } = useSiteSettings()
   
   const [professional, setProfessional] = useState<Professional | null>(null)
   const [professionalServices, setProfessionalServices] = useState<Service[]>([])
@@ -335,7 +337,7 @@ export default function ProfessionalPage() {
       {/* WhatsApp Fixo */}
       <div className="fixed bottom-6 right-6 z-50">
         <a 
-          href={`https://wa.me/5519991531394?text=Olá! Gostaria de agendar um horário com a ${professional.name} no Espaço Guapa.`}
+          href={`https://wa.me/${settings?.whatsapp || '5519991531394'}?text=Olá! Gostaria de agendar um horário com a ${professional.name} no Espaço Guapa.`}
           target="_blank" 
           rel="noopener noreferrer"
           className="bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110 cursor-pointer"

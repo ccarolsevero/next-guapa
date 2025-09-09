@@ -43,6 +43,7 @@ export async function GET() {
       nomeSalao: configuracao.nomeSalao,
       emailContato: configuracao.emailContato,
       telefone: configuracao.telefone,
+      whatsapp: configuracao.whatsapp,
       endereco: configuracao.endereco,
       horariosFuncionamento: configuracao.horariosFuncionamento,
       politicaCancelamento: configuracao.politicaCancelamento,
@@ -70,6 +71,7 @@ export async function GET() {
       nomeSalao: 'Espaço Guapa',
       emailContato: 'contato@espacoguapa.com',
       telefone: '(11) 99999-9999',
+      whatsapp: '5519991531394',
       endereco: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
       horariosFuncionamento: [
         { dia: 'Segunda-feira', ativo: true, horaInicio: '09:00', horaFim: '18:00' },

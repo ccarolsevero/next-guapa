@@ -26,6 +26,7 @@ export async function GET() {
         nomeSalao: 'Espaço Guapa',
         emailContato: 'contato@espacoguapa.com',
         telefone: '(11) 99999-9999',
+        whatsapp: '5519991531394', // Número do WhatsApp do salão
         endereco: 'Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP',
         moeda: 'BRL',
         fusoHorario: 'America/Sao_Paulo',
