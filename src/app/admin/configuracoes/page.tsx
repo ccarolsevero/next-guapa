@@ -696,45 +696,6 @@ export default function ConfiguracoesPage() {
           </div>
         )}
 
-        {/* Configurações de Horários */}
-        {activeTab === 'schedule' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Horário de Funcionamento</h3>
-              
-              <div className="space-y-4">
-                {['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'].map((day) => (
-                  <div key={day} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border border-gray-200 rounded-lg gap-4">
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="checkbox"
-                        defaultChecked={day !== 'Domingo'}
-                        className="rounded"
-                      />
-                      <span className="font-medium text-gray-900 text-sm sm:text-base">{day}</span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                      <input
-                        type="time"
-                        defaultValue="09:00"
-                        className="px-3 py-2 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent w-full sm:w-auto"
-                        style={{ color: '#000000' }}
-                      />
-                      <span className="text-gray-500 text-sm">até</span>
-                      <input
-                        type="time"
-                        defaultValue="18:00"
-                        className="px-3 py-2 border border-gray-300 bg-white text-black rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent w-full sm:w-auto"
-                        style={{ color: '#000000' }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        )}
 
         {/* Gerenciamento de Usuários de Acesso */}
         {activeTab === 'employees' && (

@@ -30,6 +30,9 @@ export default function AgendamentoPage() {
   const [availableTimes, setAvailableTimes] = useState<string[]>(timeSlots)
   const [loading, setLoading] = useState(false)
   const [showDateTimeModal, setShowDateTimeModal] = useState(false)
+  const [appointmentId, setAppointmentId] = useState<string | null>(null)
+  const [paymentLink, setPaymentLink] = useState<string | null>(null)
+  const [signalValue, setSignalValue] = useState<number>(0)
 
   // Carregar profissionais do banco
   useEffect(() => {
@@ -145,6 +148,8 @@ export default function AgendamentoPage() {
     e.preventDefault()
     
     try {
+      setLoading(true)
+      
       // Calcular horário de fim baseado na duração do serviço
       const startTime = formData.time
       const duration = selectedService?.duration || 60
@@ -158,7 +163,7 @@ export default function AgendamentoPage() {
         clientName: formData.name,
         clientPhone: formData.phone,
         clientEmail: formData.email,
-        clientId: isLoggedIn && client ? client._id : null, // Adicionar clientId se logado
+        clientId: isLoggedIn && client ? client._id : null,
         service: formData.service,
         professional: formData.professional,
         professionalId: selectedProfessional?._id?.toString() || '',
@@ -171,7 +176,8 @@ export default function AgendamentoPage() {
         status: 'SCHEDULED'
       }
       
-      const response = await fetch('/api/appointments', {
+      // Criar o agendamento
+      const appointmentResponse = await fetch('/api/appointments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -179,16 +185,43 @@ export default function AgendamentoPage() {
         body: JSON.stringify(appointmentData),
       })
       
-      if (response.ok) {
-        setShowDateTimeModal(false) // Fechar modal
-        setStep(3) // Mostrar confirmação
-      } else {
-        const errorData = await response.json()
-        alert(`Erro ao agendar: ${errorData.error || 'Erro desconhecido'}`)
+      if (!appointmentResponse.ok) {
+        const errorData = await appointmentResponse.json()
+        throw new Error(errorData.error || 'Erro ao criar agendamento')
       }
+      
+      const appointmentResult = await appointmentResponse.json()
+      setAppointmentId(appointmentResult.appointmentId)
+      
+      // Criar link de pagamento para o sinal
+      const paymentResponse = await fetch('/api/payments/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          appointmentId: appointmentResult.appointmentId,
+          services: [selectedService]
+        }),
+      })
+      
+      if (!paymentResponse.ok) {
+        const errorData = await paymentResponse.json()
+        throw new Error(errorData.error || 'Erro ao criar link de pagamento')
+      }
+      
+      const paymentResult = await paymentResponse.json()
+      setPaymentLink(paymentResult.paymentLink)
+      setSignalValue(paymentResult.signalValue)
+      
+      setShowDateTimeModal(false)
+      setStep(3) // Mostrar página de pagamento
+      
     } catch (error) {
       console.error('Erro ao agendar:', error)
-      alert('Erro ao processar agendamento. Tente novamente.')
+      alert(`Erro ao processar agendamento: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -199,7 +232,74 @@ export default function AgendamentoPage() {
     return tomorrow.toISOString().split('T')[0]
   }
 
+  // Função para formatar moeda
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value)
+  }
+
+  // Página de pagamento (step 3)
   if (step === 3) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E8' }}>
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-[#D15556] rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl font-bold">R$</span>
+            </div>
+            <h2 className="text-2xl font-bold text-[#006D5B] mb-4">Pagamento do Sinal</h2>
+            <p className="text-gray-700 mb-6 font-medium">
+              Para confirmar seu agendamento, é necessário o pagamento do sinal de 30% do valor do serviço.
+            </p>
+            
+            <div className="bg-[#F5F0E8] p-4 rounded-lg mb-6">
+              <h3 className="font-semibold text-[#006D5B] mb-3">Resumo do Agendamento:</h3>
+              <p className="text-sm text-gray-700 font-medium"><strong>Serviço:</strong> {formData.service}</p>
+              <p className="text-sm text-gray-700 font-medium"><strong>Profissional:</strong> {formData.professional}</p>
+              <p className="text-sm text-gray-700 font-medium"><strong>Data:</strong> {formData.date}</p>
+              <p className="text-sm text-gray-700 font-medium"><strong>Horário:</strong> {formData.time}</p>
+              <div className="border-t border-gray-300 mt-3 pt-3">
+                <p className="text-sm text-gray-700 font-medium"><strong>Valor Total:</strong> {formatCurrency(selectedService?.price || 0)}</p>
+                <p className="text-lg font-bold text-[#D15556]"><strong>Sinal (30%):</strong> {formatCurrency(signalValue)}</p>
+              </div>
+            </div>
+
+            {paymentLink ? (
+              <div className="space-y-4">
+                <a
+                  href={paymentLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#D15556] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c04546] transition-colors inline-block"
+                >
+                  Pagar Sinal Agora
+                </a>
+                <p className="text-xs text-gray-500">
+                  Você será redirecionado para uma página segura de pagamento
+                </p>
+                <button
+                  onClick={() => setStep(4)}
+                  className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                >
+                  Já Paguei - Verificar Status
+                </button>
+              </div>
+            ) : (
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#D15556] mx-auto mb-4"></div>
+                <p className="text-gray-600">Preparando link de pagamento...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Página de confirmação final (step 4)
+  if (step === 4) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E8' }}>
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">

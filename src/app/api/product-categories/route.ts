@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
-import ServiceCategory from '@/models/ServiceCategory'
+import ProductCategory from '@/models/ProductCategory'
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('active') === 'true'
 
     const query = activeOnly ? { isActive: true } : {}
-    const categories = await ServiceCategory.find(query)
+    const categories = await ProductCategory.find(query)
       .sort({ order: 1, name: 1 })
 
     return NextResponse.json(categories)
   } catch (error) {
-    console.error('Erro ao buscar categorias de serviços:', error)
+    console.error('Erro ao buscar categorias de produtos:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se já existe uma categoria com o mesmo nome
-    const existingCategory = await ServiceCategory.findOne({ 
+    const existingCategory = await ProductCategory.findOne({ 
       name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
     })
 
@@ -52,14 +52,14 @@ export async function POST(request: NextRequest) {
     // Se não foi especificado um order, pegar o próximo número
     let categoryOrder = order
     if (categoryOrder === undefined || categoryOrder === null) {
-      const lastCategory = await ServiceCategory.findOne().sort({ order: -1 })
+      const lastCategory = await ProductCategory.findOne().sort({ order: -1 })
       categoryOrder = lastCategory ? lastCategory.order + 1 : 1
     }
 
-    const newCategory = new ServiceCategory({
+    const newCategory = new ProductCategory({
       name: name.trim(),
       description: description?.trim(),
-      color: color || '#D15556',
+      color: color || '#006D5B',
       icon: icon?.trim(),
       order: categoryOrder,
       isActive: true
@@ -70,11 +70,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       category: newCategory,
-      message: 'Categoria de serviço criada com sucesso'
+      message: 'Categoria de produto criada com sucesso'
     }, { status: 201 })
 
   } catch (error) {
-    console.error('Erro ao criar categoria de serviço:', error)
+    console.error('Erro ao criar categoria de produto:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

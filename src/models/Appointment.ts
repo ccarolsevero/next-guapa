@@ -17,6 +17,7 @@ export interface IAppointment extends Document {
   signalValue?: number // Valor do sinal (30% do preço)
   signalPaid?: boolean // Se o sinal foi pago
   signalPaidAt?: Date // Data do pagamento do sinal
+  sicobTransactionId?: string // ID da transação no Sicob
   notes?: string
   customLabels?: Array<{
     id: number
@@ -102,6 +103,10 @@ const appointmentSchema = new Schema<IAppointment>({
   },
   signalPaidAt: {
     type: Date
+  },
+  sicobTransactionId: {
+    type: String,
+    trim: true
   },
   notes: {
     type: String,

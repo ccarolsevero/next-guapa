@@ -69,6 +69,20 @@ export async function POST(request: NextRequest) {
     
     await connectDB()
     
+    // Validar se a categoria existe
+    const ServiceCategory = (await import('@/models/ServiceCategory')).default
+    const categoryExists = await ServiceCategory.findOne({ 
+      name: category, 
+      isActive: true 
+    })
+    
+    if (!categoryExists) {
+      return NextResponse.json(
+        { error: 'Categoria de serviço não encontrada ou inativa' },
+        { status: 400 }
+      )
+    }
+    
     const newService = await Service.create({
       name,
       category,

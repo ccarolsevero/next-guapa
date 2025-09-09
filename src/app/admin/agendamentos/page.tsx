@@ -18,8 +18,7 @@ import {
   Trash,
   Filter,
   Search,
-  AlertTriangle,
-  Clock3
+  AlertTriangle
 } from 'lucide-react'
 // import { useToast } from '@/contexts/ToastContext'
 
@@ -679,9 +678,6 @@ export default function AgendamentosPage() {
               >
                 Hoje
               </button>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-                Bloquear Horário
-              </button>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
               {formatDate(selectedDate)}
@@ -1187,15 +1183,15 @@ export default function AgendamentosPage() {
         <div className="mt-4 space-y-2 text-xs">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-[#D15556] rounded"></div>
-            <span>Hoje</span>
+            <span className="text-gray-900 font-medium">Hoje</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-[#006D5B] rounded"></div>
-            <span>Selecionado</span>
+            <span className="text-gray-900 font-medium">Selecionado</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-50 border border-blue-200 rounded"></div>
-            <span>Com agendamentos</span>
+            <span className="text-gray-900 font-medium">Com agendamentos</span>
           </div>
         </div>
       </div>
@@ -1251,16 +1247,6 @@ export default function AgendamentosPage() {
                 </button>
               </div>
 
-              {/* Modo de Visualização - Oculto em telas muito pequenas */}
-              <div className="hidden sm:flex items-center space-x-2">
-                <button
-                  onClick={() => setViewMode('day')}
-                  className="p-2 rounded-lg transition-colors bg-[#D15556] text-white"
-                  title="Vista Diária"
-                >
-                  <Clock3 className="w-4 h-4" />
-                </button>
-              </div>
 
               {/* Filtros - Simplificados em mobile */}
               <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">

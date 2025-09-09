@@ -267,8 +267,8 @@ export default function NovoAgendamentoPage() {
                         onClick={() => handleClientSelect(client)}
                         className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
-                        <div className="font-medium">{client.name}</div>
-                        <div className="text-sm text-gray-600">{client.phone}</div>
+                        <div className="font-semibold text-gray-900">{client.name}</div>
+                        <div className="text-sm text-gray-700">{client.phone}</div>
                       </div>
                     ))}
                   </div>
