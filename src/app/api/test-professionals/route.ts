@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       message: 'Teste de conexão com profissionais',
       count: professionals.length,
-      professionals: professionals.map(p => ({
+      professionals: professionals.map((p: any) => ({
         id: p._id,
         name: p.name,
         username: p.username,
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Erro no teste:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: (error as Error).message },
       { status: 500 }
     )
   }

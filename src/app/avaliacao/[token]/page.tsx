@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
-import { Star, MessageSquare, CheckCircle, Heart } from 'lucide-react'
+import { Star, MessageSquare, CheckCircle, Heart, Scissors, Home, DollarSign } from 'lucide-react'
 
 // Mock data para dados do atendimento
 const mockAppointmentData = {

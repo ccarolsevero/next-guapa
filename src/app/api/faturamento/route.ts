@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       },
       comandasFinalizadas: comandasFinalizadas.length,
       finalizacoes: finalizacoes.length,
-      detalhesComandas: comandasFinalizadas.map(c => ({
+      detalhesComandas: comandasFinalizadas.map((c: any) => ({
         id: c._id,
         cliente: c.clienteNome,
         valor: c.valorFinal || c.valorTotal,

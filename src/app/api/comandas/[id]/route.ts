@@ -4,16 +4,17 @@ import connectDB from '@/lib/mongodb'
 // GET - Buscar comanda específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     console.log('🔍 === API COMANDAS [ID] - GET ===')
     console.log('📡 Conectando ao banco...')
     
     await connectDB()
     console.log('✅ Conectado ao banco')
     
-    const comandaId = params.id
+    const comandaId = id
     console.log('🔍 Buscando comanda ID:', comandaId)
     
     // Usar conexão direta do MongoDB (Mongoose não está funcionando)
@@ -90,13 +91,13 @@ export async function GET(
       creditAmount: comanda.creditAmount,
       metodoPagamento: comanda.metodoPagamento,
       isFinalizada: comanda.isFinalizada,
-      servicos: comanda.servicos ? comanda.servicos.map(servico => ({
+      servicos: comanda.servicos ? comanda.servicos.map((servico: any) => ({
         id: servico.id || servico._id,
         nome: servico.nome,
         preco: servico.preco,
         quantidade: servico.quantidade
       })) : [],
-      produtos: comanda.produtos ? comanda.produtos.map(produto => ({
+      produtos: comanda.produtos ? comanda.produtos.map((produto: any) => ({
         id: produto.id || produto._id,
         nome: produto.nome,
         preco: produto.preco,
@@ -124,15 +125,16 @@ export async function GET(
 // PUT - Atualizar comanda
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     console.log('🔧 === API COMANDAS [ID] - PUT ===')
     console.log('📡 Conectando ao banco...')
     
     await connectDB()
     
-    const comandaId = params.id
+    const comandaId = id
     const body = await request.json()
     
     console.log('📥 Dados recebidos para atualização:')
@@ -196,12 +198,13 @@ export async function PUT(
 // DELETE - Excluir comanda
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
-    const comandaId = params.id
+    const { id } = await params
+    const comandaId = id
     
     // Usar conexão direta do MongoDB
     const { MongoClient } = await import('mongodb')

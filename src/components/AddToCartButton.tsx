@@ -41,7 +41,6 @@ export default function AddToCartButton({ product, className = '', variant = 'de
         _id: product._id,
         name: product.name,
         price: product.price,
-        description: product.description,
         imageUrl: product.imageUrl,
         stock: product.stock,
         discount: product.discount,

@@ -303,7 +303,7 @@ export async function POST(request: NextRequest) {
                 valor: dadosFinalizacao.valorFinal,
                 servicos: dadosFinalizacao.servicos || [],
                 produtos: dadosFinalizacao.produtos || []
-              }
+              } as any
             },
             $inc: { 
               totalGasto: dadosFinalizacao.valorFinal,

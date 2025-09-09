@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import crypto from 'crypto'
 
 // Rate limiting store (in production, use Redis or similar)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>()
@@ -8,7 +9,7 @@ const RATE_LIMIT_WINDOW = 15 * 60 * 1000 // 15 minutes
 const RATE_LIMIT_MAX_REQUESTS = 100 // 100 requests per window
 
 export function rateLimit(request: NextRequest): boolean {
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown'
+  const ip = (request as any).ip || request.headers.get('x-forwarded-for') || 'unknown'
   const now = Date.now()
   
   const key = `${ip}:${Math.floor(now / RATE_LIMIT_WINDOW)}`
@@ -90,7 +91,6 @@ export function isValidObjectId(id: string): boolean {
 export function generateSecureToken(length: number = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
-  const crypto = require('crypto')
   const randomBytes = crypto.randomBytes(length)
   
   for (let i = 0; i < length; i++) {

@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 const uri = process.env.MONGODB_URI!
 const client = new MongoClient(uri)
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { finalCash, notes } = body
 
@@ -18,7 +18,7 @@ export async function POST(
 
     // Buscar o caixa
     const cashier = await db.collection('cashiers').findOne({
-      _id: id,
+      _id: new ObjectId(id),
       status: 'OPEN'
     })
 
@@ -67,7 +67,7 @@ export async function POST(
 
     // Fechar o caixa
     const updatedCashier = await db.collection('cashiers').updateOne(
-      { _id: id },
+      { _id: new ObjectId(id) },
       {
         $set: {
           status: 'CLOSED',

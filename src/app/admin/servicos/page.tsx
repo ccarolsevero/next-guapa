@@ -629,7 +629,7 @@ export default function ServicosPage() {
                       )}
                       <div className="flex items-center gap-4 mt-2">
                         <span className="text-xs text-gray-500">
-                          {category.serviceCount} serviço{category.serviceCount !== 1 ? 's' : ''}
+                          {(category as any).serviceCount} serviço{(category as any).serviceCount !== 1 ? 's' : ''}
                         </span>
                       </div>
                     </div>

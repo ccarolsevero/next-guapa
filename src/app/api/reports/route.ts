@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
           console.log('Aniversariantes encontrados:', aniversariantes.length)
 
           reportData.aniversariantes = aniversariantes
-            .filter(client => {
+            .filter((client: any) => {
               try {
                 const birthDate = new Date(client.birthDate)
                 return isBirthdayThisMonth(birthDate)
@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
                 return false
               }
             })
-            .map(client => {
+            .map((client: any) => {
               try {
                 const birthDate = new Date(client.birthDate)
                 return {
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
         console.log('Executando relatório: lista-clientes')
         const todosClientes = await db.collection('clients').find({}).toArray()
         console.log('Total de clientes:', todosClientes.length)
-        reportData.todosClientes = todosClientes.map(client => ({
+        reportData.todosClientes = todosClientes.map((client: any) => ({
           name: client.name,
           email: client.email,
           phone: client.phone,
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
           ]
         }).toArray()
 
-        reportData.clientesCreditoDebito = clientesCreditoDebito.map(client => ({
+        reportData.clientesCreditoDebito = clientesCreditoDebito.map((client: any) => ({
           name: client.name,
           email: client.email,
           phone: client.phone,
@@ -305,7 +305,7 @@ export async function GET(request: NextRequest) {
           '65+': 0
         }
 
-        clientesFaixaEtaria.forEach(client => {
+        clientesFaixaEtaria.forEach((client: any) => {
           const age = calculateAge(new Date(client.birthDate))
           if (age <= 18) faixasEtarias['0-18']++
           else if (age <= 25) faixasEtarias['19-25']++
@@ -653,7 +653,7 @@ export async function GET(request: NextRequest) {
           console.log('Produtos vendidos encontrados:', produtosVendidos.length)
 
           // Calcular resumo financeiro dos produtos
-          const resumoProdutos = produtosVendidos.reduce((acc, produto) => {
+          const resumoProdutos = produtosVendidos.reduce((acc: any, produto: any) => {
             acc.receitaTotal += produto.totalRevenue || 0
             acc.descontos += produto.totalDiscount || 0
             acc.valorCusto += produto.totalCost || 0
@@ -686,7 +686,7 @@ export async function GET(request: NextRequest) {
           alterada: true
         }).toArray()
 
-        reportData.comandasAlteradas = comandasAlteradas.map(comanda => ({
+        reportData.comandasAlteradas = comandasAlteradas.map((comanda: any) => ({
           id: comanda._id,
           clienteNome: comanda.clienteNome,
           profissionalNome: comanda.profissionalNome,
@@ -889,9 +889,9 @@ export async function GET(request: NextRequest) {
             }
           ]).toArray()
 
-          const totalAppointments = appointmentsByStatus.reduce((sum, item) => sum + item.count, 0)
+          const totalAppointments = appointmentsByStatus.reduce((sum: any, item: any) => sum + item.count, 0)
 
-          const appointmentsWithPercentage = appointmentsByStatus.map(item => ({
+          const appointmentsWithPercentage = appointmentsByStatus.map((item: any) => ({
             status: item._id,
             count: item.count,
             percentage: totalAppointments > 0 ? Math.round((item.count / totalAppointments) * 100) : 0
@@ -1093,9 +1093,9 @@ export async function GET(request: NextRequest) {
         }
       ]).toArray()
 
-      const totalAppointments = appointmentsByStatus.reduce((sum, item) => sum + item.count, 0)
+      const totalAppointments = appointmentsByStatus.reduce((sum: any, item: any) => sum + item.count, 0)
 
-      const appointmentsWithPercentage = appointmentsByStatus.map(item => ({
+      const appointmentsWithPercentage = appointmentsByStatus.map((item: any) => ({
         status: item._id,
         count: item.count,
         percentage: totalAppointments > 0 ? Math.round((item.count / totalAppointments) * 100) : 0
@@ -1114,7 +1114,9 @@ export async function GET(request: NextRequest) {
     // Limpar cache antigo
     if (queryCache.size > 100) {
       const oldestKey = queryCache.keys().next().value
-      queryCache.delete(oldestKey)
+      if (oldestKey) {
+        queryCache.delete(oldestKey)
+      }
     }
 
     console.log('Dados retornados:', { reportType, dataKeys: Object.keys(reportData) })

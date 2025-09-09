@@ -6,12 +6,13 @@ import Product from '@/models/Product'
 // GET - Buscar categoria específica
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
-    const category = await Category.findById(params.id).lean()
+    const { id } = await params
+    const category = await Category.findById(id).lean()
     
     if (!category) {
       return NextResponse.json(
@@ -22,7 +23,7 @@ export async function GET(
     
     // Contar produtos nesta categoria
     const productCount = await Product.countDocuments({ 
-      category: category.name,
+      category: (category as any).name,
       isActive: true 
     })
     
@@ -43,12 +44,13 @@ export async function GET(
 // PUT - Atualizar categoria
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
     const body = await request.json()
+    const { id } = await params
     const { name, description, isActive, isDefault, order } = body
     
     // Validações
@@ -63,7 +65,7 @@ export async function PUT(
     if (name) {
       const existingCategory = await Category.findOne({ 
         name: { $regex: new RegExp(`^${name}$`, 'i') },
-        _id: { $ne: params.id }
+        _id: { $ne: id }
       })
       
       if (existingCategory) {
@@ -84,7 +86,7 @@ export async function PUT(
     
     // Atualizar categoria
     const updatedCategory = await Category.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     ).lean()
@@ -97,9 +99,9 @@ export async function PUT(
     }
     
     // Se o nome foi alterado, atualizar produtos que usam esta categoria
-    if (name && name !== updatedCategory.name) {
+    if (name && name !== (updatedCategory as any).name) {
       await Product.updateMany(
-        { category: updatedCategory.name },
+        { category: (updatedCategory as any).name },
         { category: name }
       )
     }
@@ -118,12 +120,13 @@ export async function PUT(
 // DELETE - Excluir categoria
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
-    const category = await Category.findById(params.id)
+    const { id } = await params
+    const category = await Category.findById(id)
     
     if (!category) {
       return NextResponse.json(
@@ -148,7 +151,7 @@ export async function DELETE(
     }
     
     // Excluir categoria
-    await Category.findByIdAndDelete(params.id)
+    await Category.findByIdAndDelete(id)
     
     return NextResponse.json({
       message: 'Categoria excluída com sucesso'

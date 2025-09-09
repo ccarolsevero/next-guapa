@@ -9,11 +9,9 @@ import {
   Plus, 
   Minus, 
   Trash, 
-  Clock, 
   User, 
   DollarSign,
   Edit,
-  Check,
   X,
   ShoppingBag,
   Scissors,
@@ -26,7 +24,6 @@ export default function ComandaDetalhesPage() {
   const [availableServices, setAvailableServices] = useState<Array<{_id: string, name: string, price: number, category: string}>>([])
   const [availableProducts, setAvailableProducts] = useState<Array<{_id: string, name: string, price: number, category: string, stock: number}>>([])
   const [availableProfessionals, setAvailableProfessionals] = useState<Array<{_id: string, name: string}>>([])
-  const router = useRouter()
   const params = useParams()
   const comandaId = params.id
 
@@ -44,7 +41,27 @@ export default function ComandaDetalhesPage() {
     }
   }, [])
 
-  const [comanda, setComanda] = useState<any>(null)
+  const [comanda, setComanda] = useState<{
+    id: string;
+    clienteNome: string;
+    clienteTelefone: string;
+    profissionalNome: string;
+    inicioAt: string;
+    servicos: Array<{id: string; nome: string; preco: number; quantidade: number}>;
+    produtos: Array<{id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}>;
+    observacoes?: string;
+    valorTotal: number;
+    clienteId: string;
+    profissionalId: string;
+    dataInicio?: string;
+    dataFinalizacao?: string;
+    metodoPagamento?: string;
+    valorFinal?: number;
+    desconto?: number;
+    creditAmount?: number;
+    isFinalizada?: boolean;
+    status?: string;
+  } | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [showAddService, setShowAddService] = useState(false)
@@ -59,11 +76,11 @@ export default function ComandaDetalhesPage() {
     proximaSessao: "",
     observacoesAdicionais: ""
   })
-  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [selectedProduct, setSelectedProduct] = useState<{_id: string; name: string; price: number; category: string; stock: number; discount?: number} | null>(null)
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>('')
-  const [editingProductVendor, setEditingProductVendor] = useState<number | null>(null)
+  const [editingProductVendor, setEditingProductVendor] = useState<string | null>(null)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editingComanda, setEditingComanda] = useState<any>(null)
+  const [editingComanda, setEditingComanda] = useState<typeof comanda>(null)
   const [editLoading, setEditLoading] = useState(false)
   const [isComandaFinalizada, setIsComandaFinalizada] = useState(false)
   const [showDetalhesModal, setShowDetalhesModal] = useState(false)
@@ -90,12 +107,12 @@ export default function ComandaDetalhesPage() {
       return
     }
     
-    const servicesTotal = comanda.servicos.reduce((sum: number, service: any) => {
+    const servicesTotal = comanda.servicos.reduce((sum: number, service: {preco: number; quantidade: number}) => {
       console.log('  - Serviço:', service, 'Preço:', service.preco, 'Qtd:', service.quantidade)
       return sum + (service.preco * service.quantidade)
     }, 0)
     
-    const productsTotal = comanda.produtos.reduce((sum: number, product: any) => {
+    const productsTotal = comanda.produtos.reduce((sum: number, product: {preco: number; quantidade: number}) => {
       console.log('  - Produto:', product, 'Preço:', product.preco, 'Qtd:', product.quantidade)
       return sum + (product.preco * product.quantidade)
     }, 0)
@@ -106,15 +123,18 @@ export default function ComandaDetalhesPage() {
     console.log('  - Total produtos:', productsTotal)
     console.log('  - Total geral:', newTotal)
     
-    setComanda((prev: any) => {
+    setComanda((prev) => {
+      if (!prev) return prev
       console.log('💾 Salvando novo valor total:', newTotal)
       return { ...prev, valorTotal: newTotal }
     })
   }
 
   const openEditModal = () => {
-    setEditingComanda({ ...comanda })
-    setShowEditModal(true)
+    if (comanda) {
+      setEditingComanda({ ...comanda })
+      setShowEditModal(true)
+    }
   }
 
   const saveComandaChanges = async () => {
@@ -241,33 +261,39 @@ export default function ComandaDetalhesPage() {
     fetchData()
   }, [])
 
-  const addService = (service: any) => {
-    const existingService = comanda?.servicos.find((s: any) => s.id === service._id)
+  const addService = (service: {_id: string; name: string; price: number}) => {
+        const existingService = comanda?.servicos.find((s: {id: string; nome: string; preco: number; quantidade: number}) => s.id === service._id)
     
     if (existingService) {
-      setComanda((prev: any) => ({
-        ...prev,
-        servicos: prev.servicos.map((s: any) => 
-          s.id === service._id 
-            ? { ...s, quantidade: s.quantidade + 1 }
-            : s
-        )
-      }))
+      setComanda((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          servicos: prev.servicos.map((s: {id: string; nome: string; preco: number; quantidade: number}) => 
+            s.id === service._id 
+              ? { ...s, quantidade: s.quantidade + 1 }
+              : s
+          )
+        }
+      })
     } else {
-      setComanda((prev: any) => ({
-        ...prev,
-        servicos: [...prev.servicos, { 
-          id: service._id,
-          nome: service.name, 
-          preco: service.price, 
-          quantidade: 1 
-        }]
-      }))
+      setComanda((prev) => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          servicos: [...prev.servicos, { 
+            id: service._id,
+            nome: service.name, 
+            preco: service.price, 
+            quantidade: 1 
+          }]
+        }
+      })
     }
     setShowAddService(false)
   }
 
-  const addProduct = async (product: any, soldByProfessionalId?: string, soldByProfessionalName?: string) => {
+  const addProduct = async (product: {_id: string; name: string; price: number; discount?: number}, soldByProfessionalId?: string, soldByProfessionalName?: string) => {
     try {
       console.log('🔄 Adicionando produto:', product)
       console.log('👩‍💼 Vendedor ID:', soldByProfessionalId)
@@ -291,14 +317,15 @@ export default function ComandaDetalhesPage() {
         }
       }
 
-      const existingProduct = comanda?.produtos.find(p => p.id === product._id)
+      const existingProduct = comanda?.produtos.find((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) => p.id === product._id)
       console.log('🔍 Produto existente:', existingProduct)
     
     if (existingProduct) {
         console.log('📝 Atualizando quantidade do produto existente')
+        if (!comanda) return
         const updatedComanda = {
           ...comanda,
-          produtos: comanda.produtos.map((p: any) => 
+          produtos: comanda.produtos.map((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) => 
             p.id === product._id 
               ? { ...p, quantidade: p.quantidade + 1 }
               : p
@@ -312,8 +339,9 @@ export default function ComandaDetalhesPage() {
         setComanda(updatedComanda)
     } else {
         console.log('🆕 Adicionando novo produto')
+        if (!comanda) return
         // Calcular preço com desconto
-        const finalPrice = product.discount > 0 
+        const finalPrice = (product.discount && product.discount > 0) 
           ? product.price * (1 - product.discount / 100)
           : product.price
         
@@ -324,8 +352,8 @@ export default function ComandaDetalhesPage() {
           precoOriginal: product.price, // Manter preço original para referência
           desconto: product.discount || 0, // Salvar percentual de desconto
           quantidade: 1, 
-          vendidoPor: soldByProfessionalName || comanda?.profissionalVendedora,
-          vendidoPorId: soldByProfessionalId || comanda?.profissionalVendedoraId
+          vendidoPor: soldByProfessionalName || comanda.profissionalNome,
+          vendidoPorId: soldByProfessionalId || comanda.profissionalId
         }
         console.log('🆕 Novo produto:', newProduct)
         
@@ -349,13 +377,14 @@ export default function ComandaDetalhesPage() {
   }
 
   // Função para salvar comanda no banco de dados
-  const saveComandaToDatabase = async (comandaData: any) => {
+  const saveComandaToDatabase = async (comandaData: typeof comanda) => {
+    if (!comandaData) return
     try {
       console.log('💾 Salvando comanda no banco:', comandaData.id)
       
       // Calcular o valor total antes de salvar
-      const servicesTotal = comandaData.servicos.reduce((sum: number, service: any) => sum + (service.preco * service.quantidade), 0)
-      const productsTotal = comandaData.produtos.reduce((sum: number, product: any) => sum + (product.preco * product.quantidade), 0)
+      const servicesTotal = comandaData.servicos.reduce((sum: number, service: {preco: number; quantidade: number}) => sum + (service.preco * service.quantidade), 0)
+      const productsTotal = comandaData.produtos.reduce((sum: number, product: {preco: number; quantidade: number}) => sum + (product.preco * product.quantidade), 0)
       const calculatedTotal = servicesTotal + productsTotal
       
       console.log('🧮 Calculando total antes de salvar:')
@@ -381,6 +410,7 @@ export default function ComandaDetalhesPage() {
         
         // Atualizar o estado local com o valor total calculado
         setComanda(prev => {
+          if (!prev) return prev
           const updatedComanda = { ...prev, valorTotal: calculatedTotal }
           console.log('🔄 Estado local atualizado com novo valor total:', updatedComanda.valorTotal)
           return updatedComanda
@@ -398,13 +428,14 @@ export default function ComandaDetalhesPage() {
     }
   }
 
-  const updateQuantity = async (type: 'service' | 'product', id: number, newQuantity: number) => {
+  const updateQuantity = async (type: 'service' | 'product', id: string, newQuantity: number) => {
     if (newQuantity <= 0) {
       if (type === 'service') {
         // Remover serviço da comanda
+        if (!comanda) return
         const updatedComanda = {
           ...comanda,
-          servicos: comanda.servicos.filter((s: any) => s.id !== id)
+          servicos: comanda.servicos.filter((s: {id: string; nome: string; preco: number; quantidade: number}) => s.id !== id)
         }
         
         // Salvar no banco de dados
@@ -414,7 +445,7 @@ export default function ComandaDetalhesPage() {
         setComanda(updatedComanda)
       } else {
         // Remover produto da comanda
-        const productToRemove = comanda?.produtos.find((p: any) => p.id === id)
+        const productToRemove = comanda?.produtos.find((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) => p.id === id)
         if (productToRemove) {
           // Restaurar estoque do produto removido
           try {
@@ -434,9 +465,10 @@ export default function ComandaDetalhesPage() {
           }
         }
         
+        if (!comanda) return
         const updatedComanda = {
           ...comanda,
-          produtos: comanda.produtos.filter((p: any) => p.id !== id)
+          produtos: comanda.produtos.filter((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) => p.id !== id)
         }
         
         // Salvar no banco de dados
@@ -448,9 +480,10 @@ export default function ComandaDetalhesPage() {
     } else {
       if (type === 'service') {
         // Atualizar quantidade de serviço
+        if (!comanda) return
         const updatedComanda = {
           ...comanda,
-          servicos: comanda.servicos.map((s: any) => 
+          servicos: comanda.servicos.map((s: {id: string; nome: string; preco: number; quantidade: number}) => 
             s.id === id ? { ...s, quantidade: newQuantity } : s
           )
         }
@@ -462,7 +495,7 @@ export default function ComandaDetalhesPage() {
         setComanda(updatedComanda)
       } else {
         // Atualizar quantidade de produto
-        const productToUpdate = comanda?.produtos.find((p: any) => p.id === id)
+        const productToUpdate = comanda?.produtos.find((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) => p.id === id)
         if (productToUpdate) {
           const quantityDifference = newQuantity - productToUpdate.quantidade
           
@@ -496,9 +529,10 @@ export default function ComandaDetalhesPage() {
               })
               
               // Atualizar quantidade na comanda
+              if (!comanda) return
               const updatedComanda = {
                 ...comanda,
-                produtos: comanda.produtos.map((p: any) =>
+                produtos: comanda.produtos.map((p: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; vendidoPorId?: string; desconto?: number; precoOriginal?: number}) =>
                   p.id === id ? { ...p, quantidade: newQuantity } : p
                 )
               }
@@ -518,22 +552,28 @@ export default function ComandaDetalhesPage() {
   }
 
   const saveObservations = () => {
-    setComanda(prev => ({ ...prev, observacoes: newObservation }))
+    setComanda(prev => {
+      if (!prev) return prev
+      return { ...prev, observacoes: newObservation }
+    })
     setEditingObservations(false)
   }
 
-  const updateProductVendor = async (productId: number, newVendorId: string, newVendorName: string) => {
+  const updateProductVendor = async (productId: string, newVendorId: string) => {
     try {
       const professional = availableProfessionals.find(p => p._id === newVendorId)
       if (professional) {
-        setComanda(prev => ({
-          ...prev,
-          produtos: prev.produtos.map(p => 
-            p.id === productId 
-              ? { ...p, vendidoPor: professional.name, vendidoPorId: professional._id }
-              : p
-          )
-        }))
+        setComanda(prev => {
+          if (!prev) return prev
+          return {
+            ...prev,
+            produtos: prev.produtos.map(p => 
+              p.id === productId 
+                ? { ...p, vendidoPor: professional.name, vendidoPorId: professional._id }
+                : p
+            )
+          }
+        })
         setEditingProductVendor(null)
       }
     } catch (error) {
@@ -554,13 +594,13 @@ export default function ComandaDetalhesPage() {
         recomendacoes: prontuario.recomendacoes,
         proximaSessao: prontuario.proximaSessao,
         observacoesAdicionais: prontuario.observacoesAdicionais,
-        servicosRealizados: comanda?.servicos.map((service: any) => ({
+        servicosRealizados: comanda?.servicos.map((service: {id: string; nome: string; preco: number; quantidade: number}) => ({
           servicoId: service.id,
           nome: service.nome,
           preco: service.preco,
           quantidade: service.quantidade
         })),
-        produtosVendidos: comanda?.produtos.map((product: any) => ({
+        produtosVendidos: comanda?.produtos.map((product: {id: string; nome: string; preco: number; quantidade: number; vendidoPorId?: string}) => ({
           produtoId: product.id,
           nome: product.nome,
           preco: product.preco,
@@ -585,13 +625,13 @@ export default function ComandaDetalhesPage() {
         setEditingProntuario(false)
         
         // Baixar estoque final dos produtos vendidos
-        if (comanda?.produtos.length > 0) {
+        if (comanda?.produtos && comanda.produtos.length > 0) {
           try {
             const stockResponse = await fetch('/api/products/update-stock', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                products: comanda?.produtos.map((product: any) => ({
+                products: comanda?.produtos.map((product: {id: string; quantidade: number; nome: string}) => ({
                   productId: product.id,
                   quantity: product.quantidade,
                   productName: product.nome
@@ -820,7 +860,7 @@ export default function ComandaDetalhesPage() {
               )}
 
               <div className="space-y-3">
-                {comanda?.servicos.map((service: any) => (
+                {comanda?.servicos.map((service: {id: string; nome: string; preco: number; quantidade: number}) => (
                   <div key={service.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{service.nome}</div>
@@ -947,13 +987,13 @@ export default function ComandaDetalhesPage() {
               )}
 
               <div className="space-y-3">
-                {comanda?.produtos.map((product: any) => (
+                {comanda?.produtos.map((product: {id: string; nome: string; preco: number; quantidade: number; vendidoPor?: string; desconto?: number; precoOriginal?: number}) => (
                   <div key={product.id} className="flex items-center justify-between p-3 border border-gray-200">
                     <div className="flex-1">
                       <div className="font-semibold text-gray-900">{product.nome}</div>
                       <div className="text-sm text-gray-700 font-medium">
                         R$ {(product.preco || 0).toFixed(2)}
-                        {product.desconto > 0 && (
+                        {product.desconto && product.desconto > 0 && (
                           <span className="ml-2 text-xs text-green-600 font-medium">
                             ({product.desconto}% de desconto)
                           </span>
@@ -979,13 +1019,13 @@ export default function ComandaDetalhesPage() {
                         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">
-                              Selecionar Vendedora para "{product.nome}"
+                              Selecionar Vendedora para &quot;{product.nome}&quot;
                             </h3>
                             <div className="space-y-2 max-h-60 overflow-y-auto">
                               {availableProfessionals.map(professional => (
                                 <button
-                                  key={professional.id}
-                                  onClick={() => updateProductVendor(product.id, professional.id, professional.name)}
+                                  key={professional._id}
+                                  onClick={() => updateProductVendor(product.id, professional._id)}
                                   className="w-full text-left p-3 border border-gray-200 hover:border-black transition-colors rounded"
                                 >
                                   <div className="font-medium text-gray-900">{professional.name}</div>
@@ -1332,7 +1372,7 @@ export default function ComandaDetalhesPage() {
                   </h3>
                   {comanda?.servicos && comanda.servicos.length > 0 ? (
                     <div className="space-y-2">
-                      {comanda.servicos.map((servico: any, index: number) => (
+                      {comanda.servicos.map((servico: {nome: string; quantidade: number; preco: number}, index: number) => (
                         <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
                           <div>
                             <span className="font-medium text-gray-900">{servico.nome}</span>
@@ -1357,7 +1397,7 @@ export default function ComandaDetalhesPage() {
                   </h3>
                   {comanda?.produtos && comanda.produtos.length > 0 ? (
                     <div className="space-y-2">
-                      {comanda.produtos.map((produto: any, index: number) => (
+                      {comanda.produtos.map((produto: {nome: string; quantidade: number; preco: number; vendidoPor?: string}, index: number) => (
                         <div key={index} className="flex justify-between items-center bg-white p-3 rounded border">
                           <div>
                             <span className="font-medium text-gray-900">{produto.nome}</span>
@@ -1411,7 +1451,7 @@ export default function ComandaDetalhesPage() {
                               'transfer': 'Transferência',
                               'dinheiro': 'Dinheiro'
                             }
-                            return metodos[comanda.metodoPagamento] || comanda.metodoPagamento.charAt(0).toUpperCase() + comanda.metodoPagamento.slice(1)
+                            return metodos[comanda.metodoPagamento as keyof typeof metodos] || comanda.metodoPagamento.charAt(0).toUpperCase() + comanda.metodoPagamento.slice(1)
                           })()
                           : 'Não informado'}
                       </p>
@@ -1493,7 +1533,7 @@ export default function ComandaDetalhesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                     <select
                       value={editingComanda?.status || 'em_atendimento'}
-                      onChange={(e) => setEditingComanda(prev => ({ ...prev, status: e.target.value }))}
+                      onChange={(e) => setEditingComanda(prev => prev ? ({ ...prev, status: e.target.value }) : null)}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-0 focus:border-black"
                     >
                       <option value="em_atendimento">Em Atendimento</option>
@@ -1505,7 +1545,7 @@ export default function ComandaDetalhesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">Observações</label>
                     <textarea
                       value={editingComanda?.observacoes || ''}
-                      onChange={(e) => setEditingComanda(prev => ({ ...prev, observacoes: e.target.value }))}
+                      onChange={(e) => setEditingComanda(prev => prev ? ({ ...prev, observacoes: e.target.value }) : null)}
                       rows={3}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-0 focus:border-black"
                       placeholder="Observações da comanda..."
@@ -1518,7 +1558,7 @@ export default function ComandaDetalhesPage() {
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Serviços</h4>
                 <div className="space-y-3">
-                  {editingComanda?.servicos.map((service: any, index: number) => (
+                  {editingComanda?.servicos.map((service: {nome: string; preco: number; quantidade: number}, index: number) => (
                     <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
                       <div className="flex-1">
                         <input
@@ -1527,7 +1567,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newServicos = [...editingComanda.servicos]
                             newServicos[index].nome = e.target.value
-                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, servicos: newServicos }) : null)
                           }}
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
                         />
@@ -1539,7 +1579,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newServicos = [...editingComanda.servicos]
                             newServicos[index].preco = parseFloat(e.target.value) || 0
-                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, servicos: newServicos }) : null)
                           }}
                           step="0.01"
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
@@ -1552,7 +1592,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newServicos = [...editingComanda.servicos]
                             newServicos[index].quantidade = parseInt(e.target.value) || 1
-                            setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, servicos: newServicos }) : null)
                           }}
                           min="1"
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
@@ -1560,8 +1600,8 @@ export default function ComandaDetalhesPage() {
                       </div>
                       <button
                         onClick={() => {
-                          const newServicos = editingComanda.servicos.filter((_: any, i: number) => i !== index)
-                          setEditingComanda(prev => ({ ...prev, servicos: newServicos }))
+                          const newServicos = editingComanda.servicos.filter((_: unknown, i: number) => i !== index)
+                          setEditingComanda(prev => prev ? ({ ...prev, servicos: newServicos }) : null)
                         }}
                         className="text-red-600 hover:text-red-800"
                       >
@@ -1576,7 +1616,7 @@ export default function ComandaDetalhesPage() {
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Produtos</h4>
                 <div className="space-y-3">
-                  {editingComanda?.produtos.map((product: any, index: number) => (
+                  {editingComanda?.produtos.map((product: {nome: string; preco: number; quantidade: number}, index: number) => (
                     <div key={index} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg">
                       <div className="flex-1">
                         <input
@@ -1585,7 +1625,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newProdutos = [...editingComanda.produtos]
                             newProdutos[index].nome = e.target.value
-                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, produtos: newProdutos }) : null)
                           }}
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
                         />
@@ -1597,7 +1637,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newProdutos = [...editingComanda.produtos]
                             newProdutos[index].preco = parseFloat(e.target.value) || 0
-                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, produtos: newProdutos }) : null)
                           }}
                           step="0.01"
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
@@ -1610,7 +1650,7 @@ export default function ComandaDetalhesPage() {
                           onChange={(e) => {
                             const newProdutos = [...editingComanda.produtos]
                             newProdutos[index].quantidade = parseInt(e.target.value) || 1
-                            setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                            setEditingComanda(prev => prev ? ({ ...prev, produtos: newProdutos }) : null)
                           }}
                           min="1"
                           className="w-full p-2 border border-gray-300 rounded focus:ring-0 focus:border-black"
@@ -1618,8 +1658,8 @@ export default function ComandaDetalhesPage() {
                       </div>
                       <button
                         onClick={() => {
-                          const newProdutos = editingComanda.produtos.filter((_: any, i: number) => i !== index)
-                          setEditingComanda(prev => ({ ...prev, produtos: newProdutos }))
+                          const newProdutos = editingComanda.produtos.filter((_: unknown, i: number) => i !== index)
+                          setEditingComanda(prev => prev ? ({ ...prev, produtos: newProdutos }) : null)
                         }}
                         className="text-red-600 hover:text-red-800"
                       >

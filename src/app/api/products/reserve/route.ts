@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
         const { product, quantity } = check
         return Product.findByIdAndUpdate(
           product._id,
-          { $inc: { stock: -quantity } },
+          { $inc: { stock: -(quantity || 0) } },
           { new: true }
         )
       }

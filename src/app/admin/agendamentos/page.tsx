@@ -129,6 +129,9 @@ const serviceIcons = {
 const statusColors = {
   SCHEDULED: 'bg-blue-100 text-blue-800 border-blue-200',
   CONFIRMED: 'bg-green-100 text-green-800 border-green-200',
+  PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  IN_PROGRESS: 'bg-purple-100 text-purple-800 border-purple-200',
+  PAID: 'bg-green-100 text-green-800 border-green-200',
   COMPLETED: 'bg-gray-100 text-gray-800 border-gray-200',
   CANCELLED: 'bg-red-100 text-red-800 border-red-200',
   NO_SHOW: 'bg-yellow-100 text-yellow-800 border-yellow-200'
@@ -139,16 +142,18 @@ export default function AgendamentosPage() {
   const showSuccess = (title: string, message?: string) => {
     if (typeof window !== 'undefined') {
       // Usar react-hot-toast diretamente no cliente
-      const { toast } = require('react-hot-toast')
-      toast.success(message ? `${title}: ${message}` : title)
+      import('react-hot-toast').then(({ toast }) => {
+        toast.success(message ? `${title}: ${message}` : title)
+      })
     }
   }
   
   const showError = (title: string, message?: string) => {
     if (typeof window !== 'undefined') {
       // Usar react-hot-toast diretamente no cliente
-      const { toast } = require('react-hot-toast')
-      toast.error(message ? `${title}: ${message}` : title)
+      import('react-hot-toast').then(({ toast }) => {
+        toast.error(message ? `${title}: ${message}` : title)
+      })
     }
   }
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -777,7 +782,7 @@ export default function AgendamentosPage() {
                       <img src="/assents/ciceraperfil.jpeg" alt="Cicera" className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full bg-white/30 flex items-center justify-center text-xs font-bold">
-                        {professional.name.split(' ').map(n => n[0]).join('')}
+                        {professional.name.split(' ').map((n: string) => n[0]).join('')}
                       </div>
                     )}
                   </div>
@@ -903,7 +908,7 @@ export default function AgendamentosPage() {
                         <img src="/assents/ciceraperfil.jpeg" alt="Cicera" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-white/30 flex items-center justify-center text-xs font-bold">
-                          {professional.name.split(' ').map(n => n[0]).join('')}
+                          {professional.name.split(' ').map((n: string) => n[0]).join('')}
                         </div>
                       )}
                     </div>
@@ -1826,7 +1831,7 @@ export default function AgendamentosPage() {
                               name="status"
                               value={status.value}
                               checked={(editingAppointment.status || selectedAppointment.status) === status.value}
-                              onChange={(e) => setEditingAppointment({...editingAppointment, status: e.target.value})}
+                              onChange={(e) => setEditingAppointment({...editingAppointment, status: e.target.value as 'SCHEDULED' | 'CONFIRMED' | 'PENDING' | 'IN_PROGRESS' | 'PAID' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW'})}
                               className="sr-only"
                             />
                             {status.label}
@@ -1875,10 +1880,10 @@ export default function AgendamentosPage() {
                       <h3 className="text-lg font-medium text-gray-900 mb-4">Auditoria</h3>
                       <div className="space-y-2 text-sm text-gray-600">
                         <div>
-                          <span className="font-medium">Data de Criação:</span> {new Date(selectedAppointment.createdAt).toLocaleString('pt-BR')}
+                          <span className="font-medium">Data de Criação:</span> {(selectedAppointment as any).createdAt ? new Date((selectedAppointment as any).createdAt).toLocaleString('pt-BR') : 'N/A'}
                         </div>
                         <div>
-                          <span className="font-medium">Última Atualização:</span> {new Date(selectedAppointment.updatedAt).toLocaleString('pt-BR')}
+                          <span className="font-medium">Última Atualização:</span> {(selectedAppointment as any).updatedAt ? new Date((selectedAppointment as any).updatedAt).toLocaleString('pt-BR') : 'N/A'}
                         </div>
                       </div>
                     </div>

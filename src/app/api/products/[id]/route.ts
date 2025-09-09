@@ -5,12 +5,13 @@ import Product from '@/models/Product'
 // GET - Buscar produto específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
-    const product = await Product.findById(params.id).lean()
+    const product = await Product.findById(id).lean()
     
     if (!product) {
       return NextResponse.json(
@@ -22,9 +23,9 @@ export async function GET(
     // Calcular preço final com desconto
     const productWithFinalPrice = {
       ...product,
-      finalPrice: product.discount > 0 
-        ? product.price * (1 - product.discount / 100) 
-        : product.price
+      finalPrice: (product as any).discount > 0 
+        ? (product as any).price * (1 - (product as any).discount / 100) 
+        : (product as any).price
     }
     
     return NextResponse.json(productWithFinalPrice)
@@ -41,9 +42,10 @@ export async function GET(
 // PUT - Atualizar produto
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
     const body = await request.json()
@@ -87,7 +89,7 @@ export async function PUT(
     if (sku) {
       const existingProduct = await Product.findOne({ 
         sku, 
-        _id: { $ne: params.id } 
+        _id: { $ne: id } 
       })
       if (existingProduct) {
         return NextResponse.json(
@@ -99,7 +101,7 @@ export async function PUT(
     
     // Atualizar produto
     const updatedProduct = await Product.findByIdAndUpdate(
-      params.id,
+      id,
       {
         name,
         description,
@@ -144,12 +146,13 @@ export async function PUT(
 // DELETE - Excluir produto
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
-    const deletedProduct = await Product.findByIdAndDelete(params.id)
+    const deletedProduct = await Product.findByIdAndDelete(id)
     
     if (!deletedProduct) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import Professional from '@/models/Professional'
+import bcrypt from 'bcryptjs'
 
 export async function GET(
   request: NextRequest,
@@ -110,11 +111,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     
     // Se há uma nova senha, fazer hash dela
     if (newPassword) {
-      const bcrypt = require('bcryptjs')
       updateData.password = await bcrypt.hash(newPassword, 12)
     } else if (password) {
       // Se foi fornecida uma senha (sem newPassword), fazer hash dela
-      const bcrypt = require('bcryptjs')
       updateData.password = await bcrypt.hash(password, 12)
     }
     

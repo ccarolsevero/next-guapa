@@ -4,12 +4,13 @@ import Promotion from '@/models/Promotion'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectToDatabase()
     
-    const promotion = await Promotion.findById(params.id).lean()
+    const promotion = await Promotion.findById(id).lean()
     
     if (!promotion) {
       return NextResponse.json(
@@ -30,16 +31,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectToDatabase()
     
     const body = await request.json()
     const { title, description, imageUrl, isActive, order } = body
     
     const promotion = await Promotion.findByIdAndUpdate(
-      params.id,
+      id,
       {
         title,
         description,
@@ -69,12 +71,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectToDatabase()
     
-    const promotion = await Promotion.findByIdAndDelete(params.id)
+    const promotion = await Promotion.findByIdAndDelete(id)
     
     if (!promotion) {
       return NextResponse.json(

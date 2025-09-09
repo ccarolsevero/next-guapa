@@ -21,7 +21,8 @@ export default function NovoProdutoPage() {
     isActive: true,
     isFeatured: false,
     tags: '',
-    brand: ''
+    brand: '',
+    sku: ''
   })
 
   const handleSubmit = async (e: React.FormEvent) => {

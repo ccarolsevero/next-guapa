@@ -282,7 +282,7 @@ export default function CategoriasPage() {
               <Tag className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">Nenhuma categoria encontrada</p>
               <p className="text-sm text-gray-500 mt-1">
-                Clique em "Nova Categoria" para começar
+                Clique em &quot;Nova Categoria&quot; para começar
               </p>
             </div>
           ) : (

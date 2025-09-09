@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const professionalMap = new Map(professionals.map(p => [p._id.toString(), p]))
 
     // Formatar notificações
-    const notifications = []
+    const notifications: any[] = []
 
     // Adicionar notificações de agendamentos
     newAppointments.forEach(appointment => {

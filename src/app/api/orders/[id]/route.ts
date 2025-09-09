@@ -5,12 +5,13 @@ import Order from '@/models/Order'
 // GET - Buscar pedido específico
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
-    const order = await Order.findById(params.id)
+    const order = await Order.findById(id)
       .populate('items.productId', 'name imageUrl')
     
     if (!order) {
@@ -34,9 +35,10 @@ export async function GET(
 // PUT - Atualizar pedido
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
     const body = await request.json()
@@ -57,7 +59,7 @@ export async function PUT(
     }
     
     const order = await Order.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true }
     ).populate('items.productId', 'name imageUrl')
@@ -87,12 +89,13 @@ export async function PUT(
 // DELETE - Cancelar pedido
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     await connectDB()
     
-    const order = await Order.findById(params.id)
+    const order = await Order.findById(id)
     
     if (!order) {
       return NextResponse.json(

@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
     // Mostrar estrutura das primeiras linhas
     console.log('📋 Estrutura dos dados:')
     if (jsonData.length > 0) {
-      console.log('   Primeira linha:', Object.keys(jsonData[0]))
-      console.log('   Segunda linha:', Object.keys(jsonData[1] || {}))
+      console.log('   Primeira linha:', Object.keys(jsonData[0] as any))
+      console.log('   Segunda linha:', Object.keys((jsonData[1] as any) || {}))
     }
 
     // Retornar preview (primeiros 10 registros)

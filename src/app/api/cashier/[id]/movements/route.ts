@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 const uri = process.env.MONGODB_URI!
 const client = new MongoClient(uri)
@@ -7,10 +7,10 @@ const client = new MongoClient(uri)
 // POST - Adicionar movimentação (sangria ou suprimento)
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params
+    const { id } = await params
     const body = await request.json()
     const { type, amount, description } = body
 
@@ -33,7 +33,7 @@ export async function POST(
 
     // Verificar se o caixa está aberto
     const cashier = await db.collection('cashiers').findOne({
-      _id: id,
+      _id: new ObjectId(id),
       status: 'OPEN'
     })
 

@@ -4,12 +4,13 @@ import Appointment from '@/models/Appointment'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase()
     
-    const appointment = await Appointment.findById(params.id).lean()
+    const { id } = await params
+    const appointment = await Appointment.findById(id).lean()
     
     if (!appointment) {
       return NextResponse.json(
@@ -30,25 +31,26 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase()
     
     const body = await request.json()
+    const { id } = await params
     console.log('🔍 API PUT - Dados recebidos:', JSON.stringify(body, null, 2))
-    console.log('🔍 API PUT - ID do agendamento:', params.id)
+    console.log('🔍 API PUT - ID do agendamento:', id)
     
     // Se estiver alterando horário, validar conflitos
     if (body.startTime || body.endTime || body.date || body.professionalId) {
       const existingAppointment = await Appointment.findOne({
-        _id: { $ne: params.id },
-        professionalId: body.professionalId || (await Appointment.findById(params.id))?.professionalId,
-        date: new Date(body.date || (await Appointment.findById(params.id))?.date),
+        _id: { $ne: id },
+        professionalId: body.professionalId || (await Appointment.findById(id))?.professionalId,
+        date: new Date(body.date || (await Appointment.findById(id))?.date),
         $or: [
           {
-            startTime: { $lt: body.endTime || (await Appointment.findById(params.id))?.endTime },
-            endTime: { $gt: body.startTime || (await Appointment.findById(params.id))?.startTime }
+            startTime: { $lt: body.endTime || (await Appointment.findById(id))?.endTime },
+            endTime: { $gt: body.startTime || (await Appointment.findById(id))?.startTime }
           }
         ]
       })
@@ -62,7 +64,7 @@ export async function PUT(
     }
     
     const appointment = await Appointment.findByIdAndUpdate(
-      params.id,
+      id,
       {
         ...body,
         ...(body.date && { date: new Date(body.date) })
@@ -80,9 +82,9 @@ export async function PUT(
     return NextResponse.json(appointment)
   } catch (error) {
     console.error('❌ Erro ao atualizar agendamento:', error)
-    console.error('❌ Stack trace:', error.stack)
+    console.error('❌ Stack trace:', (error as Error).stack)
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: (error as Error).message },
       { status: 500 }
     )
   }
@@ -90,14 +92,15 @@ export async function PUT(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase()
     
     const body = await request.json()
+    const { id } = await params
     console.log('🔍 API PATCH - Dados recebidos:', JSON.stringify(body, null, 2))
-    console.log('🔍 API PATCH - ID do agendamento:', params.id)
+    console.log('🔍 API PATCH - ID do agendamento:', id)
     
     // Preparar dados para atualização
     const updateData: any = { ...body }
@@ -108,7 +111,7 @@ export async function PATCH(
     }
     
     const appointment = await Appointment.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true, runValidators: true }
     )
@@ -123,9 +126,9 @@ export async function PATCH(
     return NextResponse.json(appointment)
   } catch (error) {
     console.error('❌ Erro ao atualizar agendamento (PATCH):', error)
-    console.error('❌ Stack trace:', error.stack)
+    console.error('❌ Stack trace:', (error as Error).stack)
     return NextResponse.json(
-      { error: 'Erro interno do servidor', details: error.message },
+      { error: 'Erro interno do servidor', details: (error as Error).message },
       { status: 500 }
     )
   }
@@ -133,12 +136,13 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase()
     
-    const appointment = await Appointment.findByIdAndDelete(params.id)
+    const { id } = await params
+    const appointment = await Appointment.findByIdAndDelete(id)
     
     if (!appointment) {
       return NextResponse.json(

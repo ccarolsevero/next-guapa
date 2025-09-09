@@ -303,7 +303,7 @@ export default function EditarSite() {
       alert('Foto adicionada com sucesso!')
     } catch (error) {
       console.error('Erro ao adicionar foto:', error)
-      alert('Erro ao adicionar foto: ' + error.message)
+      alert('Erro ao adicionar foto: ' + (error instanceof Error ? error.message : String(error)))
     }
   }
 
@@ -314,7 +314,7 @@ export default function EditarSite() {
         
         // Excluir todas as fotos uma por uma
         for (const photo of homeGallery) {
-          await deleteHomePhoto(photo._id || photo.id)
+          await deleteHomePhoto(photo._id || (photo as any).id)
         }
         
         alert('Galeria da home limpa com sucesso!')
@@ -925,7 +925,7 @@ export default function EditarSite() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {homeGallery.map((photo, index) => (
               <div
-                key={photo._id || photo.id}
+                key={photo._id || (photo as any).id}
                 className="relative group border border-gray-200 rounded-lg overflow-hidden cursor-move shadow-sm hover:shadow-md transition-all duration-200"
                 draggable
                 onDragStart={(e) => {
@@ -963,7 +963,7 @@ export default function EditarSite() {
                           'Content-Type': 'application/json',
                         },
                         body: JSON.stringify(items.map((item, idx) => ({
-                          id: item._id || item.id,
+                          id: item._id || (item as any).id,
                           order: idx + 1
                         })))
                       })
@@ -1018,7 +1018,7 @@ export default function EditarSite() {
                 {/* Botão Excluir */}
                 <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
-                    onClick={() => deleteHomePhoto(photo._id || photo.id)}
+                    onClick={() => deleteHomePhoto(photo._id || (photo as any).id)}
                     className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm font-medium transition-colors duration-200"
                     title="Excluir foto"
                   >

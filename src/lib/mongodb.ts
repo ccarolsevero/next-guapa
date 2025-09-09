@@ -6,6 +6,14 @@ if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable inside .env')
 }
 
+// Extend global type
+declare global {
+  var mongoose: {
+    conn: typeof mongoose | null
+    promise: Promise<typeof mongoose> | null
+  } | undefined
+}
+
 let cached = global.mongoose
 
 if (!cached) {
@@ -13,6 +21,10 @@ if (!cached) {
 }
 
 async function connectDB() {
+  if (!cached) {
+    cached = global.mongoose = { conn: null, promise: null }
+  }
+  
   if (cached.conn) {
     return cached.conn
   }
@@ -22,9 +34,7 @@ async function connectDB() {
       bufferCommands: false,
     }
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      return mongoose
-    })
+    cached.promise = mongoose.connect(MONGODB_URI, opts) as any
   }
 
   try {
@@ -41,5 +51,8 @@ export default connectDB
 
 export async function connectToDatabase() {
   const conn = await connectDB()
-  return { db: conn.connection.db }
+  if (!conn) {
+    throw new Error('Failed to connect to database')
+  }
+  return { db: (conn as any).connection.db }
 }

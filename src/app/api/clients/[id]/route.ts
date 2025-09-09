@@ -4,11 +4,12 @@ import Client from '@/models/Client'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     console.log('🔍 === API CLIENTES [ID] - GET ===')
-    console.log('🔍 Buscando cliente ID:', params.id)
+    console.log('🔍 Buscando cliente ID:', id)
     
     // Conectar ao MongoDB diretamente
     const { MongoClient } = await import('mongodb')
@@ -21,7 +22,7 @@ export async function GET(
     
     // Buscar cliente por ID
     const clientData = await db.collection('clients').findOne({
-      _id: new (await import('mongodb')).ObjectId(params.id)
+      _id: new (await import('mongodb')).ObjectId(id)
     })
     
     console.log('🔍 Cliente encontrado:', clientData ? 'SIM' : 'NÃO')
@@ -37,14 +38,14 @@ export async function GET(
 
     // Buscar comandas do cliente
     const comandas = await db.collection('comandas').find({
-      clientId: new (await import('mongodb')).ObjectId(params.id)
+      clientId: new (await import('mongodb')).ObjectId(id)
     }).toArray()
     
     console.log('📊 Comandas encontradas:', comandas.length)
     
     // Buscar finalizações do cliente
     const finalizacoes = await db.collection('finalizacoes').find({
-      clienteId: params.id
+      clienteId: id
     }).toArray()
     
     console.log('📊 Finalizações encontradas:', finalizacoes.length)
@@ -80,16 +81,17 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
     const body = await request.json()
+    const { id } = await params
     const { name, email, phone, birthDate, address, notes } = body
 
     // Verificar se o cliente existe
-    const existingClient = await Client.findById(params.id)
+    const existingClient = await Client.findById(id)
 
     if (!existingClient) {
       return NextResponse.json(
@@ -112,7 +114,7 @@ export async function PUT(
 
     // Atualizar cliente
     const updatedClient = await Client.findByIdAndUpdate(
-      params.id,
+      id,
       {
         name,
         email,
@@ -138,13 +140,14 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB()
     
+    const { id } = await params
     // Verificar se o cliente existe
-    const existingClient = await Client.findById(params.id)
+    const existingClient = await Client.findById(id)
 
     if (!existingClient) {
       return NextResponse.json(
@@ -154,7 +157,7 @@ export async function DELETE(
     }
 
     // Deletar cliente
-    await Client.findByIdAndDelete(params.id)
+    await Client.findByIdAndDelete(id)
 
     return NextResponse.json(
       { message: 'Cliente deletado com sucesso' },

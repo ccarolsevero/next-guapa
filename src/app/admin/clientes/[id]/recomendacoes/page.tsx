@@ -172,7 +172,7 @@ export default function RecomendacoesPage() {
       setFormData({
         titulo: '',
         descricao: '',
-        tipo: 'produto',
+        tipo: 'pos-atendimento',
         prioridade: 'media',
         dataValidade: '',
         observacoes: ''

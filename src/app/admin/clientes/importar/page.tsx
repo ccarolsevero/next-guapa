@@ -209,7 +209,7 @@ export default function ImportarClientesPage() {
               <li>• <strong>Celular</strong> - Telefone do cliente</li>
             </ul>
             <p className="text-xs text-blue-600 mt-2">
-              <strong>Email:</strong> Se não informado, será gerado automaticamente como "nome.cliente@guapa.com"
+              <strong>Email:</strong> Se não informado, será gerado automaticamente como &quot;nome.cliente@guapa.com&quot;
             </p>
           </div>
           <div>
@@ -315,11 +315,11 @@ export default function ImportarClientesPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {previewData.slice(0, 5).map((row, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.Cliente || row.nome || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.Email || row.email || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.Celular || row.telefone || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.Cadastrado || row.dataCadastro || '-'}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{row.TotalVisitas || row.totalVisitas || '0'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{(row as any).Cliente || row.nome || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{(row as any).Email || row.email || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{(row as any).Celular || row.telefone || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{(row as any).Cadastrado || (row as any).dataCadastro || '-'}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{(row as any).TotalVisitas || row.totalVisitas || '0'}</td>
                     </tr>
                   ))}
                 </tbody>
