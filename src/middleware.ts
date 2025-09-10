@@ -27,9 +27,14 @@ export function middleware(request: NextRequest) {
   // Block common attack patterns
   const url = request.nextUrl.pathname
   
-  // Block SQL injection attempts
+  // Block SQL injection attempts (but allow API DELETE methods)
   if (url.includes('union') || url.includes('select') || url.includes('drop') || 
-      url.includes('insert') || url.includes('delete') || url.includes('update')) {
+      url.includes('insert') || url.includes('update')) {
+    return new NextResponse('Forbidden', { status: 403 })
+  }
+  
+  // Only block 'delete' in query parameters or non-API paths
+  if (url.includes('delete') && !pathname.startsWith('/api/')) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 

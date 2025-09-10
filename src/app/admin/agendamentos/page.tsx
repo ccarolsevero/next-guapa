@@ -824,7 +824,7 @@ export default function AgendamentosPage() {
         </div>
 
         {/* Header Mobile - Mais compacto */}
-        <div className="lg:hidden border-b border-gray-200 p-3 relative overflow-visible">
+        <div className="lg:hidden border-b border-gray-200 p-3 relative" style={{ overflow: 'visible', zIndex: 100 }}>
           <div className="text-center mb-3">
             <h3 className="text-sm font-semibold text-gray-900">
               {formatDate(selectedDate)}
@@ -849,7 +849,7 @@ export default function AgendamentosPage() {
           </div>
           
           {/* Seletor de Profissional (Mobile) */}
-          <div className="relative professional-dropdown">
+          <div className="relative professional-dropdown" style={{ zIndex: 1000 }}>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Selecionar Profissional:
             </label>
@@ -871,7 +871,7 @@ export default function AgendamentosPage() {
             
             {/* Dropdown Customizado */}
             {showProfessionalDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg overflow-y-auto" style={{ maxHeight: '200px', zIndex: 9999 }}>
                 <button
                   onClick={() => {
                     setSelectedProfessional('all')
