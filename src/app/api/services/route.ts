@@ -107,6 +107,15 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, category, description, price, order, isFeatured, duration } = body
 
+    console.log('📝 Dados recebidos para novo serviço:', {
+      name,
+      category,
+      description,
+      price,
+      order,
+      isFeatured,
+      duration
+    })
     console.log('Adicionando novo serviço no MongoDB...')
     
     // Conectar diretamente ao MongoDB
@@ -118,24 +127,46 @@ export async function POST(request: NextRequest) {
     const servicesCollection = db.collection('services')
     const serviceCategoriesCollection = db.collection('servicecategories')
     
-    // Validar se a categoria existe
-    const categoryExists = await serviceCategoriesCollection.findOne({ 
-      name: category, 
-      isActive: true 
-    })
+    // Verificar se já existe um serviço com o mesmo nome
+    const existingService = await servicesCollection.findOne({ name })
     
-    if (!categoryExists) {
+    if (existingService) {
       return NextResponse.json(
-        { error: 'Categoria de serviço não encontrada ou inativa' },
+        { error: 'Já existe um serviço com este nome' },
         { status: 400 }
       )
     }
     
+    // Verificar se a categoria existe (opcional - se não existir, será criada automaticamente)
+    if (category && category !== 'Geral') {
+      const categoryExists = await serviceCategoriesCollection.findOne({ 
+        name: category,
+        isActive: true 
+      })
+      
+      if (!categoryExists) {
+        console.log('⚠️ Categoria não encontrada, criando automaticamente:', category)
+        // Criar categoria automaticamente se não existir
+        const newCategory = {
+          name: category,
+          description: `Categoria criada automaticamente para ${category}`,
+          color: '#D15556',
+          icon: '',
+          order: 999,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+        await serviceCategoriesCollection.insertOne(newCategory)
+        console.log('✅ Categoria criada automaticamente:', category)
+      }
+    }
+    
     const newService = {
-      name,
-      category,
-      description,
-      price,
+      name: name || '',
+      category: category || 'Geral',
+      description: description || '',
+      price: price || 0,
       duration: duration || 60,
       order: order || 0,
       isActive: true,
@@ -145,9 +176,14 @@ export async function POST(request: NextRequest) {
     }
     
     const result = await servicesCollection.insertOne(newService)
-    console.log('Serviço adicionado com sucesso:', result.insertedId)
+    console.log('✅ Serviço adicionado com sucesso:', result.insertedId)
+    console.log('📋 Serviço criado:', { ...newService, _id: result.insertedId })
     
-    return NextResponse.json({ ...newService, _id: result.insertedId }, { status: 201 })
+    return NextResponse.json({ 
+      success: true,
+      message: 'Serviço criado com sucesso',
+      service: { ...newService, _id: result.insertedId }
+    }, { status: 201 })
   } catch (error) {
     console.error('Erro ao adicionar serviço:', error)
     return NextResponse.json(
