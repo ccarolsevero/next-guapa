@@ -14,6 +14,11 @@ export async function GET(request: NextRequest) {
     await connectDB()
     console.log('✅ Conectado ao banco de dados')
     
+    // Debug: verificar se o modelo Service está funcionando
+    console.log('🔧 Modelo Service:', Service.modelName)
+    const serviceCount = await Service.countDocuments()
+    console.log('📊 Total de documentos na coleção services:', serviceCount)
+    
     let services
     
     if (professionalId) {
@@ -43,8 +48,21 @@ export async function GET(request: NextRequest) {
       console.log('✅ Serviços do profissional encontrados:', services.length)
     } else {
       // Buscar todos os serviços ativos
+      console.log('🔍 Buscando todos os serviços ativos...')
       services = await Service.find({ isActive: true }).sort({ category: 1, order: 1 })
       console.log('✅ Todos os serviços ativos encontrados:', services.length)
+      
+      // Debug: verificar se há serviços inativos também
+      const allServices = await Service.find({}).sort({ category: 1, order: 1 })
+      console.log('📊 Total de serviços no banco (ativos + inativos):', allServices.length)
+      
+      if (allServices.length > 0) {
+        console.log('📋 Primeiro serviço encontrado:', {
+          name: allServices[0].name,
+          isActive: allServices[0].isActive,
+          category: allServices[0].category
+        })
+      }
     }
     
     if (services.length === 0) {

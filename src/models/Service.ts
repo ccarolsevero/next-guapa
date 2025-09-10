@@ -46,4 +46,7 @@ const serviceSchema = new mongoose.Schema({
 
 const Service = mongoose.models.Service || mongoose.model('Service', serviceSchema)
 
+// Debug: verificar se o modelo está sendo criado corretamente
+console.log('🔧 Modelo Service criado:', Service.modelName)
+
 export default Service

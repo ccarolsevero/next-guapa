@@ -26,6 +26,13 @@ const serviceSchema = new mongoose.Schema({
     required: true,
     min: 0
   },
+  duration: {
+    type: Number,
+    required: true,
+    min: 15,
+    max: 480,
+    default: 60
+  },
   isActive: {
     type: Boolean,
     default: true
@@ -33,6 +40,10 @@ const serviceSchema = new mongoose.Schema({
   order: {
     type: Number,
     default: 0
+  },
+  isFeatured: {
+    type: Boolean,
+    default: false
   }
 }, {
   timestamps: true
@@ -59,6 +70,7 @@ async function seedServices() {
         category: 'Consultoria e Avaliação',
         description: 'Avaliação completa do couro cabeludo e fios para identificar necessidades específicas.',
         price: 60.00,
+        duration: 30,
         isActive: true,
         order: 1
       },
@@ -67,6 +79,7 @@ async function seedServices() {
         category: 'Consultoria e Avaliação',
         description: 'Consultoria de visagismo + corte personalizado para valorizar seu tipo de cabelo.',
         price: 198.00,
+        duration: 90,
         isActive: true,
         order: 2
       },
@@ -75,6 +88,7 @@ async function seedServices() {
         category: 'Consultoria e Avaliação',
         description: 'Avaliação + tratamento personalizado para resultados mais eficazes.',
         price: 140.00,
+        duration: 60,
         isActive: true,
         order: 3
       },
