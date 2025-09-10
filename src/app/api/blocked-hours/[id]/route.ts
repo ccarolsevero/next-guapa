@@ -5,12 +5,13 @@ import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
     
-    const blockedHour = await BlockedHours.findById(params.id)
+    const { id } = await params;
+    const blockedHour = await BlockedHours.findById(id)
       .populate('professionalId', 'name')
       .populate('createdBy', 'name');
 
@@ -37,11 +38,12 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
     
+    const { id } = await params;
     const body = await request.json();
     const {
       type,
@@ -97,7 +99,7 @@ export async function PUT(
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const blockedHour = await BlockedHours.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true }
     )
@@ -128,12 +130,13 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
     
-    const blockedHour = await BlockedHours.findByIdAndDelete(params.id);
+    const { id } = await params;
+    const blockedHour = await BlockedHours.findByIdAndDelete(id);
 
     if (!blockedHour) {
       return NextResponse.json(
