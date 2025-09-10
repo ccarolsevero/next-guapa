@@ -254,8 +254,48 @@ export default function EditarServicoPage() {
     setMessage('')
 
     try {
-      // Simular salvamento
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      console.log('📝 Salvando serviço:', service)
+      
+      // Preparar dados para envio
+      const serviceData = {
+        name: service.name,
+        category: service.category,
+        description: service.description,
+        price: service.price,
+        duration: service.duration,
+        order: service.order || 0,
+        isFeatured: service.isFeatured || false,
+        isActive: service.isActive !== false
+      }
+
+      let response
+      if (serviceId === 'novo') {
+        // Criar novo serviço
+        response = await fetch('/api/services', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(serviceData)
+        })
+      } else {
+        // Atualizar serviço existente
+        response = await fetch(`/api/services/${serviceId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(serviceData)
+        })
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Erro ao salvar serviço')
+      }
+
+      const result = await response.json()
+      console.log('✅ Serviço salvo com sucesso:', result)
       
       setMessage('Serviço salvo com sucesso!')
       
@@ -264,7 +304,8 @@ export default function EditarServicoPage() {
         router.push('/admin/servicos')
       }, 2000)
     } catch (error) {
-      setMessage('Erro ao salvar serviço. Tente novamente.')
+      console.error('❌ Erro ao salvar serviço:', error)
+      setMessage(`Erro ao salvar serviço: ${error.message}`)
     } finally {
       setIsLoading(false)
     }
