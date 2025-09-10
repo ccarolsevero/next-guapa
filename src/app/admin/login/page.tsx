@@ -102,14 +102,6 @@ export default function EmployeeLoginPage() {
             )}
           </button>
         </form>
-
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">Níveis de Acesso:</h3>
-          <ul className="text-xs text-blue-800 space-y-1">
-            <li><strong>Admin (Bruna):</strong> Acesso total a todas as funcionalidades</li>
-            <li><strong>Professional:</strong> Acesso limitado (sem financeiro, editar site, metas e relatórios)</li>
-          </ul>
-        </div>
       </div>
     </div>
   )
