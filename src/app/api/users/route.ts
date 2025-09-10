@@ -20,6 +20,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  let client;
   try {
     const body = await request.json()
     const { 
@@ -47,10 +48,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await connectDB()
+    // Conectar diretamente ao MongoDB para usar a coleção professionals
+    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
+    await client.connect();
+    
+    const db = client.db('guapa');
+    const collection = db.collection('professionals');
 
     // Verificar se o username já existe
-    const existingUser = await User.findOne({ username })
+    const existingUser = await collection.findOne({ username: username.toLowerCase() })
     if (existingUser) {
       return NextResponse.json(
         { error: 'Username já existe' },
@@ -61,22 +67,24 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const hashedPassword = await bcrypt.hash(password, 12)
 
-    const newUser = new User({
+    const newUser = {
       name,
-      username,
+      username: username.toLowerCase(),
       password: hashedPassword,
       role: role || 'professional',
       canAccessFinancial: canAccessFinancial || false,
       canAccessSiteEdit: canAccessSiteEdit || false,
       canAccessGoals: canAccessGoals || false,
       canAccessReports: canAccessReports || false,
-      isActive: true
-    })
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
 
-    await newUser.save()
+    const result = await collection.insertOne(newUser)
 
     // Retornar sem a senha
-    const userResponse = newUser.toObject()
+    const userResponse = { ...newUser, _id: result.insertedId }
     delete userResponse.password
 
     return NextResponse.json(userResponse, { status: 201 })
@@ -86,6 +94,10 @@ export async function POST(request: NextRequest) {
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
+  } finally {
+    if (client) {
+      await client.close();
+    }
   }
 }
 export const dynamic = 'force-dynamic'

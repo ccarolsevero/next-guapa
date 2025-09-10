@@ -27,20 +27,20 @@ export async function POST(request: NextRequest) {
     console.log('✅ Conectado ao MongoDB')
     
     const db = client.db('guapa');
-    const collection = db.collection('professionals');
+    const collection = db.collection('users');
     
-    // Buscar profissional
+    // Buscar usuário
     const searchQuery = { 
       username: username.toLowerCase(),
       isActive: true 
     }
-    console.log('🔍 Buscando profissional com query:', searchQuery)
+    console.log('🔍 Buscando usuário com query:', searchQuery)
     
-    const professional = await collection.findOne(searchQuery);
-    console.log('👤 Profissional encontrado:', professional ? 'Sim' : 'Não')
+    const user = await collection.findOne(searchQuery);
+    console.log('👤 Usuário encontrado:', user ? 'Sim' : 'Não')
     
-    if (!professional) {
-      console.log('❌ Profissional não encontrado ou inativo')
+    if (!user) {
+      console.log('❌ Usuário não encontrado ou inativo')
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -50,9 +50,9 @@ export async function POST(request: NextRequest) {
     // Verificar senha
     console.log('🔑 Verificando senha...')
     console.log('📝 Senha fornecida:', password)
-    console.log('🔐 Hash da senha no banco:', professional.password?.substring(0, 20) + '...')
+    console.log('🔐 Hash da senha no banco:', user.password?.substring(0, 20) + '...')
     
-    const isPasswordValid = await bcrypt.compare(password, professional.password);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
     console.log('✅ Senha válida:', isPasswordValid)
     
     if (!isPasswordValid) {
@@ -65,29 +65,29 @@ export async function POST(request: NextRequest) {
     
     // Atualizar último login
     await collection.updateOne(
-      { _id: professional._id },
+      { _id: user._id },
       { $set: { lastLogin: new Date() } }
     );
     
     // Gerar token JWT
     const token = jwt.sign(
       { 
-        id: professional._id.toString(),
-        username: professional.username,
-        role: professional.role,
-        name: professional.name
+        id: user._id.toString(),
+        username: user.username,
+        role: user.role,
+        name: user.name
       },
       process.env.JWT_SECRET || 'fallback-secret',
       { expiresIn: '24h' }
     );
     
-    // Retornar dados do profissional (sem senha)
-    const { password: _, ...professionalData } = professional;
+    // Retornar dados do usuário (sem senha)
+    const { password: _, ...userData } = user;
     
     return NextResponse.json({
       message: 'Login realizado com sucesso',
       token,
-      professional: professionalData
+      professional: userData
     })
     
   } catch (error) {
