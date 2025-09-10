@@ -25,28 +25,28 @@ export function middleware(request: NextRequest) {
   }
 
   // Block common attack patterns
-  const url = request.nextUrl.pathname
-  
-  // Block SQL injection attempts (but allow API DELETE methods)
-  if (url.includes('union') || url.includes('select') || url.includes('drop') || 
-      url.includes('insert') || url.includes('update')) {
-    return new NextResponse('Forbidden', { status: 403 })
-  }
-  
-  // Only block 'delete' in query parameters or non-API paths
-  if (url.includes('delete') && pathname && !pathname.startsWith('/api/')) {
-    return new NextResponse('Forbidden', { status: 403 })
-  }
+  if (pathname) {
+    // Block SQL injection attempts (but allow API DELETE methods)
+    if (pathname.includes('union') || pathname.includes('select') || pathname.includes('drop') || 
+        pathname.includes('insert') || pathname.includes('update')) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
+    
+    // Only block 'delete' in query parameters or non-API paths
+    if (pathname.includes('delete') && !pathname.startsWith('/api/')) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
 
-  // Block XSS attempts
-  if (url.includes('<script') || url.includes('javascript:') || 
-      url.includes('onload=') || url.includes('onerror=')) {
-    return new NextResponse('Forbidden', { status: 403 })
-  }
+    // Block XSS attempts
+    if (pathname.includes('<script') || pathname.includes('javascript:') || 
+        pathname.includes('onload=') || pathname.includes('onerror=')) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
 
-  // Block path traversal attempts
-  if (url.includes('../') || url.includes('..\\') || url.includes('%2e%2e')) {
-    return new NextResponse('Forbidden', { status: 403 })
+    // Block path traversal attempts
+    if (pathname.includes('../') || pathname.includes('..\\') || pathname.includes('%2e%2e')) {
+      return new NextResponse('Forbidden', { status: 403 })
+    }
   }
 
   return response
