@@ -7,8 +7,10 @@ export async function POST(request: NextRequest) {
   let client;
   try {
     const { username, password } = await request.json()
+    console.log('🔐 Tentativa de login:', { username, passwordLength: password?.length })
     
     if (!username || !password) {
+      console.log('❌ Username ou senha não fornecidos')
       return NextResponse.json(
         { error: 'Username e senha são obrigatórios' },
         { status: 400 }
@@ -18,17 +20,23 @@ export async function POST(request: NextRequest) {
     // Conectar diretamente ao MongoDB
     client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
     await client.connect();
+    console.log('✅ Conectado ao MongoDB')
     
     const db = client.db('guapa');
     const collection = db.collection('professionals');
     
     // Buscar profissional
-    const professional = await collection.findOne({ 
+    const searchQuery = { 
       username: username.toLowerCase(),
       isActive: true 
-    });
+    }
+    console.log('🔍 Buscando profissional com query:', searchQuery)
+    
+    const professional = await collection.findOne(searchQuery);
+    console.log('👤 Profissional encontrado:', professional ? 'Sim' : 'Não')
     
     if (!professional) {
+      console.log('❌ Profissional não encontrado ou inativo')
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -36,10 +44,15 @@ export async function POST(request: NextRequest) {
     }
     
     // Verificar senha
+    console.log('🔑 Verificando senha...')
+    console.log('📝 Senha fornecida:', password)
+    console.log('🔐 Hash da senha no banco:', professional.password?.substring(0, 20) + '...')
+    
     const isPasswordValid = await bcrypt.compare(password, professional.password);
-    console.log('Password valid:', isPasswordValid)
+    console.log('✅ Senha válida:', isPasswordValid)
     
     if (!isPasswordValid) {
+      console.log('❌ Senha inválida')
       return NextResponse.json(
         { error: 'Credenciais inválidas' },
         { status: 401 }
@@ -85,4 +98,3 @@ export async function POST(request: NextRequest) {
     }
   }
 }
-export const dynamic = 'force-dynamic'
