@@ -36,8 +36,20 @@ export async function POST(request: NextRequest) {
     }
     console.log('🔍 Buscando usuário com query:', searchQuery)
     
+    // Primeiro, vamos ver todos os usuários na coleção
+    const allUsers = await collection.find({}).toArray();
+    console.log('📋 Todos os usuários na coleção:', allUsers.map(u => ({ username: u.username, isActive: u.isActive })));
+    
     const user = await collection.findOne(searchQuery);
     console.log('👤 Usuário encontrado:', user ? 'Sim' : 'Não')
+    if (user) {
+      console.log('👤 Dados do usuário encontrado:', { 
+        username: user.username, 
+        name: user.name, 
+        role: user.role, 
+        isActive: user.isActive 
+      });
+    }
     
     if (!user) {
       console.log('❌ Usuário não encontrado ou inativo')
