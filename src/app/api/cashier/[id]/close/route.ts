@@ -111,4 +111,3 @@ export async function POST(
     await client.close()
   }
 }
-export const dynamic = 'force-dynamic'

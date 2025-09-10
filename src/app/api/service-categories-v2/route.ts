@@ -73,4 +73,3 @@ export async function GET(request: NextRequest) {
     await client.close()
   }
 }
-export const dynamic = 'force-dynamic'
