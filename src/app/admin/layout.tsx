@@ -46,8 +46,14 @@ function AdminLayoutContent({
     !item.permission || hasPermission(item.permission)
   )
 
-  if (!professional || pathname === '/admin/login') {
+  if (pathname === '/admin/login') {
     return <>{children}</>
+  }
+
+  if (!professional) {
+    // Redirecionar para login se não estiver autenticado
+    router.push('/admin/login')
+    return null
   }
 
   return (
