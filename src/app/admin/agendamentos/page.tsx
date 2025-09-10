@@ -43,6 +43,19 @@ interface Appointment {
   }>
 }
 
+interface BlockedHour {
+  _id: string
+  professionalId: string
+  type: 'weekly' | 'date_range' | 'lunch_break' | 'vacation' | 'custom'
+  title: string
+  description: string
+  startTime: string
+  endTime: string
+  dayOfWeek?: number
+  startDate?: string
+  endDate?: string
+}
+
 const timeSlots = [
   "08:00", "08:15", "08:30", "08:45", "09:00", "09:15", "09:30", "09:45",
   "10:00", "10:15", "10:30", "10:45", "11:00", "11:15", "11:30", "11:45",
@@ -162,6 +175,7 @@ export default function AgendamentosPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [professionals, setProfessionals] = useState<any[]>([])
+  const [blockedHours, setBlockedHours] = useState<BlockedHour[]>([])
   const [loading, setLoading] = useState(true)
   const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -200,6 +214,7 @@ export default function AgendamentosPage() {
     fetchAppointments()
     fetchProfessionals()
     fetchServices()
+    fetchBlockedHours()
   }, [selectedDate, filterStatus])
 
   // Fechar dropdown quando clicar fora
@@ -240,6 +255,120 @@ export default function AgendamentosPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchBlockedHours = async () => {
+    try {
+      const response = await fetch('/api/blocked-hours')
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setBlockedHours(data.data)
+        }
+      } else {
+        console.error('Erro ao buscar horários bloqueados')
+      }
+    } catch (error) {
+      console.error('Erro ao buscar horários bloqueados:', error)
+    }
+  }
+
+  // Função para verificar se um horário está bloqueado para um profissional
+  const isTimeBlocked = (time: string, professionalId: string) => {
+    const checkDate = selectedDate
+    const dayOfWeek = checkDate.getDay()
+    
+    return blockedHours.some(block => {
+      if (block.professionalId !== professionalId) return false
+      
+      // Verificar se o bloqueio se aplica à data atual
+      let appliesToDate = false
+      
+      switch (block.type) {
+        case 'weekly':
+          appliesToDate = block.dayOfWeek === dayOfWeek
+          break
+        case 'date_range':
+          if (block.startDate && block.endDate) {
+            const startDate = new Date(block.startDate)
+            const endDate = new Date(block.endDate)
+            appliesToDate = checkDate >= startDate && checkDate <= endDate
+          }
+          break
+        case 'lunch_break':
+        case 'vacation':
+        case 'custom':
+          if (block.startDate && block.endDate) {
+            const startDate = new Date(block.startDate)
+            const endDate = new Date(block.endDate)
+            appliesToDate = checkDate >= startDate && checkDate <= endDate
+          } else if (block.dayOfWeek === dayOfWeek) {
+            appliesToDate = true
+          }
+          break
+      }
+      
+      if (!appliesToDate) return false
+      
+      // Verificar se o horário está no intervalo bloqueado
+      const [checkHour, checkMin] = time.split(':').map(Number)
+      const [startHour, startMin] = block.startTime.split(':').map(Number)
+      const [endHour, endMin] = block.endTime.split(':').map(Number)
+      
+      const checkMinutes = checkHour * 60 + checkMin
+      const startMinutes = startHour * 60 + startMin
+      const endMinutes = endHour * 60 + endMin
+      
+      return checkMinutes >= startMinutes && checkMinutes < endMinutes
+    })
+  }
+
+  // Função para obter informações do bloqueio
+  const getBlockedHourInfo = (time: string, professionalId: string) => {
+    const checkDate = selectedDate
+    const dayOfWeek = checkDate.getDay()
+    
+    return blockedHours.find(block => {
+      if (block.professionalId !== professionalId) return false
+      
+      let appliesToDate = false
+      
+      switch (block.type) {
+        case 'weekly':
+          appliesToDate = block.dayOfWeek === dayOfWeek
+          break
+        case 'date_range':
+          if (block.startDate && block.endDate) {
+            const startDate = new Date(block.startDate)
+            const endDate = new Date(block.endDate)
+            appliesToDate = checkDate >= startDate && checkDate <= endDate
+          }
+          break
+        case 'lunch_break':
+        case 'vacation':
+        case 'custom':
+          if (block.startDate && block.endDate) {
+            const startDate = new Date(block.startDate)
+            const endDate = new Date(block.endDate)
+            appliesToDate = checkDate >= startDate && checkDate <= endDate
+          } else if (block.dayOfWeek === dayOfWeek) {
+            appliesToDate = true
+          }
+          break
+      }
+      
+      if (!appliesToDate) return false
+      
+      const [checkHour, checkMin] = time.split(':').map(Number)
+      const [startHour, startMin] = block.startTime.split(':').map(Number)
+      const [endHour, endMin] = block.endTime.split(':').map(Number)
+      
+      const checkMinutes = checkHour * 60 + checkMin
+      const startMinutes = startHour * 60 + startMin
+      const endMinutes = endHour * 60 + endMin
+      
+      return checkMinutes >= startMinutes && checkMinutes < endMinutes
+    })
   }
 
   const fetchProfessionals = async () => {
@@ -922,6 +1051,10 @@ export default function AgendamentosPage() {
                         apt.startTime === time && apt.professionalId === professional._id
                       )
                       
+                      // Verificar se o horário está bloqueado
+                      const isBlocked = isTimeBlocked(time, professional._id)
+                      const blockedInfo = isBlocked ? getBlockedHourInfo(time, professional._id) : null
+                      
                       // Verificar se é horário de almoço - só renderizar no primeiro horário
                       if (isLunchTime(time) && time === '13:00') {
                         return (
@@ -931,6 +1064,38 @@ export default function AgendamentosPage() {
                             style={{ height: '240px' }} // 4 slots de 15min = 240px
                           >
                             <div className="text-sm text-orange-800 font-bold">🍽️ Almoço</div>
+                          </div>
+                        )
+                      }
+                      
+                      // Se o horário está bloqueado, renderizar como bloqueado
+                      if (isBlocked && blockedInfo) {
+                        const blockTypeColors = {
+                          weekly: 'from-red-100 to-red-200 border-red-300 text-red-800',
+                          date_range: 'from-purple-100 to-purple-200 border-purple-300 text-purple-800',
+                          lunch_break: 'from-orange-100 to-orange-200 border-orange-300 text-orange-800',
+                          vacation: 'from-blue-100 to-blue-200 border-blue-300 text-blue-800',
+                          custom: 'from-gray-100 to-gray-200 border-gray-300 text-gray-800'
+                        }
+                        
+                        const blockTypeIcons = {
+                          weekly: '📅',
+                          date_range: '📆',
+                          lunch_break: '🍽️',
+                          vacation: '✈️',
+                          custom: '🚫'
+                        }
+                        
+                        return (
+                          <div
+                            key={`blocked-${time}-${professional._id}`}
+                            className={`bg-gradient-to-br ${blockTypeColors[blockedInfo.type]} border rounded-lg p-2 text-center flex items-center justify-center shadow-sm mb-1`}
+                            style={{ height: '40px' }}
+                            title={`${blockedInfo.title}${blockedInfo.description ? ': ' + blockedInfo.description : ''}`}
+                          >
+                            <div className="text-xs font-medium">
+                              {blockTypeIcons[blockedInfo.type]} {blockedInfo.title}
+                            </div>
                           </div>
                         )
                       }

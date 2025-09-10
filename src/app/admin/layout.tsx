@@ -4,7 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { 
   LayoutDashboard, Users, Calendar, Scissors, DollarSign, BarChart3, Settings, 
-  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe, Target
+  LogOut, Menu, X, ShoppingBag, Package, ChevronDown, User, Globe, Target, Clock
 } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { EmployeeAuthProvider, useEmployeeAuth } from '@/hooks/useEmployeeAuth'
@@ -27,6 +27,7 @@ function AdminLayoutContent({
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, permission: null },
     { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar, permission: null },
+    { name: 'Horários Bloqueados', href: '/admin/horarios-bloqueados', icon: Clock, permission: null },
     { name: 'Clientes', href: '/admin/clientes', icon: Users, permission: null },
     { name: 'Serviços', href: '/admin/servicos', icon: Scissors, permission: null },
     { name: 'Pacotes', href: '/admin/pacotes', icon: Package, permission: null },
