@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
               "connect-src 'self' https://api.vercel.com https://vercel.live",
-              "frame-src 'self' https://vercel.live",
+              "frame-src 'self' https://vercel.live https://www.google.com https://maps.google.com",
               "object-src 'none'",
               "base-uri 'self'",
               "form-action 'self'",
