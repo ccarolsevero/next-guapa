@@ -54,6 +54,8 @@ interface Service {
   cost: number
   returnDays: number
   isActive: boolean
+  order?: number
+  isFeatured?: boolean
   commissions: Commission[]
 }
 
@@ -98,6 +100,8 @@ export default function EditarServicoPage() {
     cost: 0,
     returnDays: 0,
     isActive: true,
+    order: 0,
+    isFeatured: false,
     commissions: []
   })
 
@@ -215,6 +219,8 @@ export default function EditarServicoPage() {
         cost: 15.00,
         returnDays: 30,
         isActive: true,
+        order: 1,
+        isFeatured: true,
         commissions: existingCommissions
       })
     }
@@ -303,9 +309,9 @@ export default function EditarServicoPage() {
       setTimeout(() => {
         router.push('/admin/servicos')
       }, 2000)
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Erro ao salvar serviço:', error)
-      setMessage(`Erro ao salvar serviço: ${error.message}`)
+      setMessage(`Erro ao salvar serviço: ${error.message || 'Erro desconhecido'}`)
     } finally {
       setIsLoading(false)
     }
