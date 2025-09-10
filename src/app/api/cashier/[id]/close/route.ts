@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient, ObjectId } from 'mongodb'
 
+export const dynamic = 'force-dynamic'
+
 // Remover inicialização no nível do módulo
 
 export async function POST(
@@ -109,3 +111,4 @@ export async function POST(
     await client.close()
   }
 }
+export const dynamic = 'force-dynamic'

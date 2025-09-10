@@ -446,3 +446,4 @@ async function processClientBatch(clientData: ExcelClient[], startIndex: number,
     console.log(`✅ Lote ${batchNumber} concluído`)
   }
 }
+export const dynamic = 'force-dynamic'

@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb'
 import Service from '@/models/Service'
 import mongoose from 'mongoose'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -120,10 +122,10 @@ export async function DELETE(
     }
     
     return NextResponse.json({ message: 'Serviço deletado com sucesso' })
-  } catch (error) {
-    console.error('Erro ao deletar serviço:', error)
-    if (error instanceof Error) {
-      console.error('Stack trace:', error.stack)
+  } catch (err: unknown) {
+    console.error('Erro ao deletar serviço:', err)
+    if (err instanceof Error) {
+      console.error('Stack trace:', err.stack)
     }
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
@@ -131,3 +133,4 @@ export async function DELETE(
     )
   }
 }
+export const dynamic = 'force-dynamic'

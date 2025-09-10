@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient, ObjectId } from 'mongodb'
 
+export const dynamic = 'force-dynamic'
+
 // Remover inicialização no nível do módulo
 
 // POST - Adicionar movimentação (sangria ou suprimento)
@@ -73,3 +75,4 @@ export async function POST(
     await client.close()
   }
 }
+export const dynamic = 'force-dynamic'

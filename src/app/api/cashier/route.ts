@@ -121,3 +121,4 @@ export async function POST(request: NextRequest) {
     await client.close()
   }
 }
+export const dynamic = 'force-dynamic'

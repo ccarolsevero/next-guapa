@@ -87,4 +87,4 @@ if (!uri) {
       ]
     })
   }
-}
+}export const dynamic = 'force-dynamic'

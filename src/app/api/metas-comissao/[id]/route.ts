@@ -136,3 +136,4 @@ export async function DELETE(
     await client.close()
   }
 }
+export const dynamic = 'force-dynamic'
