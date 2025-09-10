@@ -78,12 +78,12 @@ export default function ServicosPage() {
     try {
       setCategoriesLoading(true)
       // Para o modal de gerenciamento, carregar todas as categorias (ativas e inativas)
-      const response = await fetch('/api/service-categories-v2')
+      const response = await fetch('/api/service-categories')
       if (!response.ok) {
         throw new Error('Erro ao carregar categorias de serviços')
       }
       const data = await response.json()
-      console.log('📋 Todas as categorias carregadas:', data)
+      console.log('📋 Todas as categorias carregadas do banco:', data)
       // Mapear _id para id para compatibilidade
       const categoriesWithId = data.map((category: any) => ({
         ...category,
@@ -109,7 +109,7 @@ export default function ServicosPage() {
   // Carregar apenas categorias ativas (para o select de filtro)
   const loadActiveCategories = async () => {
     try {
-      const response = await fetch('/api/service-categories-v2?isActive=true')
+      const response = await fetch('/api/service-categories?active=true')
       if (!response.ok) {
         throw new Error('Erro ao carregar categorias ativas')
       }
