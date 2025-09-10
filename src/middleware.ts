@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname
 
   // Verificar autenticação para rotas admin (exceto login)
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  if (pathname && pathname.startsWith('/admin') && pathname !== '/admin/login') {
     const token = request.cookies.get('employeeToken')
     
     if (!token) {
@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
   }
 
   // Security headers for API routes
-  if (pathname.startsWith('/api/')) {
+  if (pathname && pathname.startsWith('/api/')) {
     // Rate limiting headers
     response.headers.set('X-RateLimit-Limit', '100')
     response.headers.set('X-RateLimit-Remaining', '99')
