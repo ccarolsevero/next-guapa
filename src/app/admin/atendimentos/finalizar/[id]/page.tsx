@@ -20,6 +20,7 @@ interface Comanda {
   clienteId: string
   clienteNome: string
   clienteTelefone: string
+  clienteCredits?: number
   profissionalId: string
   profissionalNome: string
   inicioAt: string
@@ -56,7 +57,8 @@ const paymentMethods = [
   { id: 'credit', name: 'Cartão de Crédito', icon: '💳' },
   { id: 'debit', name: 'Cartão de Débito', icon: '💳' },
   { id: 'cash', name: 'Dinheiro', icon: '💵' },
-  { id: 'transfer', name: 'Transferência', icon: '🏦' }
+  { id: 'transfer', name: 'Transferência', icon: '🏦' },
+  { id: 'credits', name: 'Créditos', icon: '💰' }
 ]
 
 export default function FinalizarAtendimentoPage() {
@@ -81,6 +83,8 @@ export default function FinalizarAtendimentoPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('fixed')
+  const [useCredits, setUseCredits] = useState(false)
+  const [creditsToUse, setCreditsToUse] = useState(0)
 
   // Buscar dados da comanda
   useEffect(() => {
@@ -119,6 +123,31 @@ export default function FinalizarAtendimentoPage() {
 
     fetchComanda()
   }, [comandaId])
+
+  // Carregar créditos do cliente quando a comanda for carregada
+  useEffect(() => {
+    const fetchClientCredits = async () => {
+      if (!comanda?.clienteId) return
+      
+      try {
+        const response = await fetch(`/api/clients/${comanda.clienteId}`)
+        if (response.ok) {
+          const clientData = await response.json()
+          if (clientData.credits > 0) {
+            const creditsToUse = Math.min(clientData.credits, comanda.valorTotal)
+            setCreditsToUse(creditsToUse)
+            // Preencher automaticamente o campo "Sinal" com os créditos disponíveis
+            setFinalizacao(prev => ({ ...prev, creditAmount: creditsToUse }))
+            console.log(`💰 Créditos do cliente carregados: R$ ${clientData.credits}, aplicando R$ ${creditsToUse} no sinal`)
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar créditos do cliente:', error)
+      }
+    }
+    
+    fetchClientCredits()
+  }, [comanda])
 
   // Preencher automaticamente o valor recebido com o valor final
   useEffect(() => {
@@ -516,7 +545,7 @@ export default function FinalizarAtendimentoPage() {
 
               <div>
                 <label className="block text-sm font-bold text-gray-900 mb-2">
-                  Sinal (R$)
+                  Créditos/Sinal (R$)
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
@@ -543,7 +572,7 @@ export default function FinalizarAtendimentoPage() {
                 </div>
                 {finalizacao.creditAmount > 0 && (
                   <p className="text-xs text-blue-600 mt-1">
-                    Sinal de R$ {finalizacao.creditAmount.toFixed(2)} já pago para reserva
+                    Créditos de R$ {finalizacao.creditAmount.toFixed(2)} aplicados automaticamente
                   </p>
                 )}
               </div>

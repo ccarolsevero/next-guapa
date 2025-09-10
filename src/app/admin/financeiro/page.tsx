@@ -111,6 +111,13 @@ export default function FinanceiroPage() {
         icon: <DollarSign className="w-5 h-5 text-green-600 mr-2" />,
         count: 0,
         amount: 0
+      },
+      {
+        id: 'credits',
+        name: 'Créditos',
+        icon: <CheckCircle className="w-5 h-5 text-purple-600 mr-2" />,
+        count: 0,
+        amount: 0
       }
     ]
 

@@ -79,6 +79,7 @@ export async function GET(
       clienteNome: comanda.clientId.name,
       clienteTelefone: comanda.clientId.phone,
       clienteEmail: comanda.clientId.email,
+      clienteCredits: comanda.clientId.credits || 0,
       profissionalId: comanda.professionalId._id,
       profissionalNome: comanda.professionalId.name,
       status: comanda.status,

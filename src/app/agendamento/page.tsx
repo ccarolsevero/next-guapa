@@ -22,8 +22,8 @@ export default function AgendamentoPage() {
     time: '',
     notes: ''
   })
-  const [step, setStep] = useState(1)
-  const [selectedService, setSelectedService] = useState<any>(null)
+  const [step, setStep] = useState(0)
+  const [selectedServices, setSelectedServices] = useState<any[]>([])
   const [selectedProfessional, setSelectedProfessional] = useState<any>(null)
   const [professionals, setProfessionals] = useState<any[]>([])
   const [services, setServices] = useState<any[]>([])
@@ -100,10 +100,16 @@ export default function AgendamentoPage() {
         email: client.email || '',
         phone: client.phone
       }))
-      // Clientes logados começam na etapa 1 (escolha do profissional)
-      setStep(1)
+      // Clientes logados também começam na etapa 0 (informações sobre pagamento)
+      // Só executa se ainda estiver no step inicial
+      if (step === 0) {
+        setStep(0)
+      }
     }
+  }, [isLoggedIn, client])
 
+  // useEffect separado para parâmetros da URL
+  useEffect(() => {
     // Pegar parâmetros da URL
     const urlParams = new URLSearchParams(window.location.search)
     const serviceParam = urlParams.get('service')
@@ -120,11 +126,11 @@ export default function AgendamentoPage() {
     if (serviceParam && services.length > 0) {
       const service = services.find(s => s.name === serviceParam)
       if (service) {
-        setFormData(prev => ({ ...prev, service: service.name }))
-        setSelectedService(service)
+        setSelectedServices([service])
+        // Não definir horário automaticamente, deixar o usuário escolher
       }
     }
-  }, [isLoggedIn, client, professionals, services])
+  }, [professionals, services])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -132,17 +138,25 @@ export default function AgendamentoPage() {
   }
 
   const handleServiceSelect = (service: any) => {
-    setSelectedService(service)
-    setFormData(prev => ({ ...prev, service: service.name }))
+    setSelectedServices(prev => {
+      const isSelected = prev.some(s => s._id === service._id)
+      if (isSelected) {
+        // Remove o serviço se já estiver selecionado
+        return prev.filter(s => s._id !== service._id)
+      } else {
+        // Adiciona o serviço se não estiver selecionado
+        return [...prev, service]
+      }
+    })
   }
 
   const handleProfessionalSelect = (professional: any) => {
     setSelectedProfessional(professional)
     setFormData(prev => ({ ...prev, professional: professional.name }))
-    // Limpar serviço selecionado quando trocar de profissional
-    setSelectedService(null)
-    setFormData(prev => ({ ...prev, service: '' }))
+    // Limpar serviços selecionados quando trocar de profissional
+    setSelectedServices([])
   }
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,28 +164,32 @@ export default function AgendamentoPage() {
     try {
       setLoading(true)
       
-      // Calcular horário de fim baseado na duração do serviço
+      // Calcular horário de fim baseado na duração total dos serviços
       const startTime = formData.time
-      const duration = selectedService?.duration || 60
+      const totalDuration = selectedServices.reduce((total, service) => total + (service.duration || 60), 0)
       const [hours, minutes] = startTime.split(':').map(Number)
       const startDate = new Date()
       startDate.setHours(hours, minutes, 0, 0)
-      const endDate = new Date(startDate.getTime() + duration * 60000)
+      const endDate = new Date(startDate.getTime() + totalDuration * 60000)
       const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`
+
+      const totalPrice = selectedServices.reduce((total, service) => total + (service.price || 0), 0)
+      const servicesNames = selectedServices.map(service => service.name).join(' + ')
       
       const appointmentData = {
         clientName: formData.name,
         clientPhone: formData.phone,
         clientEmail: formData.email,
         clientId: isLoggedIn && client ? client._id : null,
-        service: formData.service,
+        service: servicesNames,
+        services: selectedServices,
         professional: formData.professional,
         professionalId: selectedProfessional?._id?.toString() || '',
         date: formData.date,
         startTime: formData.time,
         endTime: endTime,
-        duration: duration,
-        price: selectedService?.price || 0,
+        duration: totalDuration,
+        price: totalPrice,
         notes: formData.notes,
         status: 'SCHEDULED'
       }
@@ -201,7 +219,7 @@ export default function AgendamentoPage() {
         },
         body: JSON.stringify({
           appointmentId: appointmentResult.appointmentId,
-          services: [selectedService]
+          services: selectedServices
         }),
       })
       
@@ -215,7 +233,7 @@ export default function AgendamentoPage() {
       setSignalValue(paymentResult.signalValue)
       
       setShowDateTimeModal(false)
-      setStep(3) // Mostrar página de pagamento
+      setStep(4) // Mostrar página de pagamento
       
     } catch (error) {
       console.error('Erro ao agendar:', error)
@@ -240,8 +258,154 @@ export default function AgendamentoPage() {
     }).format(value)
   }
 
-  // Página de pagamento (step 3)
-  if (step === 3) {
+  // Etapa 0: Informações sobre pagamento
+  if (step === 0) {
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#022b28' }}>
+        {/* Header */}
+        <header className="bg-[#D15556] border-b border-[#c04546] fixed top-0 left-0 right-0 z-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-2">
+              <div className="flex items-center">
+                <Link href="/" className="flex items-center">
+                  <img 
+                    src="/assents/logonavbar.svg" 
+                    alt="Espaço Guapa" 
+                    style={{ 
+                      height: '60px', 
+                      width: 'auto'
+                    }}
+                  />
+                </Link>
+              </div>
+              <nav className="hidden md:flex space-x-12">
+                <Link href="/" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+                  Início
+                </Link>
+                <Link href="/servicos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+                  Serviços
+                </Link>
+                <Link href="/profissionais" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+                  Nosso Time
+                </Link>
+                <Link href="/produtos" className="text-white hover:text-[#EED7B6] transition-colors font-medium">
+                  Produtos
+                </Link>
+              </nav>
+              <Link 
+                href="/agendamento"
+                className="bg-white text-[#D15556] px-8 py-3 rounded-lg hover:bg-[#EED7B6] transition-colors font-medium tracking-wide"
+              >
+                Agendar
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        {/* Spacer para compensar navbar fixa */}
+        <div className="h-20"></div>
+
+        {/* Conteúdo Principal */}
+        <div className="py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-[#006D5B] mb-4">
+                {isLoggedIn ? (
+                  <>Olá, {client?.name}! <span className="text-[#D15556]">Agende seu Horário</span></>
+                ) : (
+                  <>Agende seu <span className="text-[#D15556]">Horário</span></>
+                )}
+              </h1>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#D15556] rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-white text-2xl font-bold">R$</span>
+                </div>
+                
+                <h2 className="text-2xl font-bold text-[#006D5B] mb-6">Informações sobre Pagamento</h2>
+                
+                <div className="bg-[#F5F0E8] p-6 rounded-lg mb-8">
+                  <p className="text-lg text-gray-700 mb-4 font-medium">
+                    Para realizar um agendamento, é necessário realizar o pagamento de <strong className="text-[#D15556]">30% do valor do serviço escolhido</strong>.
+                  </p>
+                  <p className="text-gray-700 font-medium">
+                    Após definir seu horário, você será redirecionada a uma página de pagamento.
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-8">
+                  <h3 className="font-semibold text-blue-800 mb-2">Como funciona:</h3>
+                  <ul className="text-left text-blue-700 space-y-2">
+                    <li className="flex items-start">
+                      <span className="text-blue-500 mr-2">1.</span>
+                      Escolha seu profissional e serviço
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-500 mr-2">2.</span>
+                      Defina data e horário disponível
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-500 mr-2">3.</span>
+                      Pague o sinal de 30% para confirmar
+                    </li>
+                    <li className="flex items-start">
+                      <span className="text-blue-500 mr-2">4.</span>
+                      Pague o restante no dia do atendimento
+                    </li>
+                  </ul>
+                </div>
+
+                <button
+                  onClick={() => setStep(1)}
+                  className="bg-[#D15556] text-white px-8 py-3 rounded-lg font-semibold hover:bg-[#c04546] transition-colors text-lg"
+                >
+                  Entendi, Continuar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="text-gray-900 py-16 border-t border-[#D15556] relative" style={{ backgroundColor: 'rgba(245, 240, 232, 0.95)' }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid md:grid-cols-3 gap-12">
+              <div>
+                <h3 className="text-2xl font-light text-gray-900 mb-6">Espaço Guapa</h3>
+                <p className="text-gray-600 leading-relaxed">
+                  Transformando vidas através da beleza e autoestima.
+                </p>
+              </div>
+              <div>
+                <h4 className="text-lg font-medium mb-6">Links Rápidos</h4>
+                <ul className="space-y-3">
+                  <li><Link href="/servicos" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Serviços</Link></li>
+                  <li><Link href="/profissionais" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Profissionais</Link></li>
+                  <li><Link href="/agendamento" className="text-gray-600 hover:text-[#D15556] transition-all duration-300">Agendamento</Link></li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-lg font-medium mb-6">Contato</h4>
+                <div className="space-y-3 text-gray-600">
+                  <p>Rua Doutor Gonçalves da Cunha, 682 - Centro, Leme - SP</p>
+                  <p>(11) 99999-9999</p>
+                  <p>contato@espacoguapa.com</p>
+                </div>
+              </div>
+            </div>
+            <div className="border-t border-[#EED7B6] mt-12 pt-8 text-center text-gray-600">
+              <p>&copy; 2024 Espaço Guapa. Todos os direitos reservados.</p>
+            </div>
+          </div>
+        </footer>
+      </div>
+    )
+  }
+
+  // Página de pagamento (step 4)
+  if (step === 4) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E8' }}>
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
@@ -256,12 +420,25 @@ export default function AgendamentoPage() {
             
             <div className="bg-[#F5F0E8] p-4 rounded-lg mb-6">
               <h3 className="font-semibold text-[#006D5B] mb-3">Resumo do Agendamento:</h3>
-              <p className="text-sm text-gray-700 font-medium"><strong>Serviço:</strong> {formData.service}</p>
               <p className="text-sm text-gray-700 font-medium"><strong>Profissional:</strong> {formData.professional}</p>
               <p className="text-sm text-gray-700 font-medium"><strong>Data:</strong> {formData.date}</p>
-              <p className="text-sm text-gray-700 font-medium"><strong>Horário:</strong> {formData.time}</p>
+              
+              <div className="mt-3">
+                <p className="text-sm text-gray-700 font-medium mb-2"><strong>Serviços:</strong></p>
+                <div className="space-y-1">
+                  {selectedServices.map((service) => (
+                    <p key={service._id} className="text-sm text-gray-600">
+                      • {service.name} - {service.duration} min - {formatCurrency(service.price)}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700 font-medium mt-2">
+                  <strong>Horário:</strong> {formData.time} (Duração total: {selectedServices.reduce((total, service) => total + service.duration, 0)} min)
+                </p>
+              </div>
+              
               <div className="border-t border-gray-300 mt-3 pt-3">
-                <p className="text-sm text-gray-700 font-medium"><strong>Valor Total:</strong> {formatCurrency(selectedService?.price || 0)}</p>
+                <p className="text-sm text-gray-700 font-medium"><strong>Valor Total:</strong> {formatCurrency(selectedServices.reduce((total, service) => total + service.price, 0))}</p>
                 <p className="text-lg font-bold text-[#D15556]"><strong>Sinal (30%):</strong> {formatCurrency(signalValue)}</p>
               </div>
             </div>
@@ -280,10 +457,28 @@ export default function AgendamentoPage() {
                   Você será redirecionado para uma página segura de pagamento
                 </p>
                 <button
-                  onClick={() => setStep(4)}
+                  onClick={() => setStep(5)}
                   className="w-full border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
                 >
                   Já Paguei - Verificar Status
+                </button>
+              </div>
+            ) : signalValue > 0 ? (
+              <div className="space-y-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                    <p className="text-green-800 font-medium">Agendamento Confirmado!</p>
+                  </div>
+                  <p className="text-green-700 text-sm mt-2">
+                    Modo desenvolvimento ativo - Sicoob não configurado. O agendamento foi confirmado automaticamente.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setStep(5)}
+                  className="w-full bg-[#D15556] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#c04546] transition-colors"
+                >
+                  Ver Confirmação
                 </button>
               </div>
             ) : (
@@ -298,8 +493,8 @@ export default function AgendamentoPage() {
     )
   }
 
-  // Página de confirmação final (step 4)
-  if (step === 4) {
+  // Página de confirmação final (step 5)
+  if (step === 5) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F5F0E8' }}>
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
@@ -311,10 +506,22 @@ export default function AgendamentoPage() {
             </p>
             <div className="bg-[#F5F0E8] p-4 rounded-lg mb-6">
               <h3 className="font-semibold text-[#006D5B] mb-2">Resumo do Agendamento:</h3>
-              <p className="text-sm text-gray-700 font-medium"><strong>Serviço:</strong> {formData.service}</p>
               <p className="text-sm text-gray-700 font-medium"><strong>Profissional:</strong> {formData.professional}</p>
               <p className="text-sm text-gray-700 font-medium"><strong>Data:</strong> {formData.date}</p>
-              <p className="text-sm text-gray-700 font-medium"><strong>Horário:</strong> {formData.time}</p>
+              
+              <div className="mt-2">
+                <p className="text-sm text-gray-700 font-medium mb-1"><strong>Serviços:</strong></p>
+                <div className="space-y-1">
+                  {selectedServices.map((service) => (
+                    <p key={service._id} className="text-sm text-gray-600">
+                      • {service.name} - {service.duration} min - {formatCurrency(service.price)}
+                    </p>
+                  ))}
+                </div>
+                <p className="text-sm text-gray-700 font-medium mt-2">
+                  <strong>Horário:</strong> {formData.time} (Duração total: {selectedServices.reduce((total, service) => total + service.duration, 0)} min)
+                </p>
+              </div>
             </div>
             <Link 
               href={isLoggedIn ? "/painel-cliente" : "/"}
@@ -375,7 +582,7 @@ export default function AgendamentoPage() {
 
       {/* Progress Bar */}
       <div className="bg-white border-b">
-        <div className="max-w-3xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-center">
             <div className={`flex items-center ${step >= 1 ? 'text-[#D15556]' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 1 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
@@ -383,12 +590,19 @@ export default function AgendamentoPage() {
               </div>
               <span className="ml-2 font-semibold">Profissional</span>
             </div>
-            <div className={`flex-1 h-1 mx-4 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
+            <div className={`flex-1 h-1 mx-2 ${step >= 2 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
             <div className={`flex items-center ${step >= 2 ? 'text-[#D15556]' : 'text-gray-400'}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 2 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
                 2
               </div>
               <span className="ml-2 font-semibold">Serviço</span>
+            </div>
+            <div className={`flex-1 h-1 mx-2 ${step >= 3 ? 'bg-[#D15556]' : 'bg-gray-200'}`}></div>
+            <div className={`flex items-center ${step >= 3 ? 'text-[#D15556]' : 'text-gray-400'}`}>
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step >= 3 ? 'bg-[#D15556] text-white' : 'bg-gray-200'}`}>
+                3
+              </div>
+              <span className="ml-2 font-semibold">Pagamento</span>
             </div>
           </div>
         </div>
@@ -531,7 +745,8 @@ export default function AgendamentoPage() {
             {/* Etapa 2: Escolha do Serviço (para logados) ou Etapa 3 (para não logados) */}
             {((step === 2 && isLoggedIn) || (step === 3 && !isLoggedIn)) && (
               <div>
-                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Escolha o Serviço</h2>
+                <h2 className="text-2xl font-semibold text-[#006D5B] mb-6">Escolha os Serviços</h2>
+                <p className="text-gray-600 mb-4 font-medium">Você pode selecionar múltiplos serviços para o mesmo agendamento</p>
                 
                 {selectedProfessional && (
                   <div className="mb-4 p-3 bg-[#F5F0E8] rounded-lg">
@@ -541,26 +756,74 @@ export default function AgendamentoPage() {
                   </div>
                 )}
                 
+                {/* Resumo dos serviços selecionados */}
+                {selectedServices.length > 0 && (
+                  <div className="mb-6 p-4 bg-[#F5F0E8] rounded-lg">
+                    <h3 className="font-semibold text-[#006D5B] mb-3">Serviços Selecionados:</h3>
+                    <div className="space-y-2">
+                      {selectedServices.map((service) => (
+                        <div key={service._id} className="flex justify-between items-center">
+                          <div>
+                            <span className="font-medium text-gray-700">{service.name}</span>
+                            <span className="text-sm text-gray-600 ml-2">({service.duration} min)</span>
+                          </div>
+                          <span className="text-[#D15556] font-bold">R$ {service.price.toFixed(2)}</span>
+                        </div>
+                      ))}
+                      <div className="border-t border-gray-300 pt-2 mt-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-[#006D5B]">Total:</span>
+                          <span className="text-lg font-bold text-[#D15556]">
+                            R$ {selectedServices.reduce((total, service) => total + service.price, 0).toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium text-gray-700">Sinal (30%):</span>
+                          <span className="font-bold text-[#D15556]">
+                            R$ {(selectedServices.reduce((total, service) => total + service.price, 0) * 0.3).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid md:grid-cols-2 gap-4 max-h-96 overflow-y-auto mb-8">
-                  {services.map((service) => (
+                  {services.map((service) => {
+                    const isSelected = selectedServices.some(s => s._id === service._id)
+                    return (
                     <div
                       key={service._id}
                       onClick={() => handleServiceSelect(service)}
                       className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        selectedService?._id === service._id
+                          isSelected
                           ? 'border-[#D15556] bg-[#F5F0E8]'
                           : 'border-gray-200 hover:border-[#D15556]'
                       }`}
                     >
                       <div className="flex justify-between items-start">
+                          <div className="flex items-start">
+                            <div className={`w-5 h-5 border-2 rounded mr-3 mt-0.5 ${
+                              isSelected 
+                                ? 'bg-[#D15556] border-[#D15556]' 
+                                : 'border-gray-300'
+                            }`}>
+                              {isSelected && (
+                                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              )}
+                            </div>
                         <div>
                           <h4 className="font-bold text-[#006D5B]">{service.name}</h4>
                           <p className="text-sm text-gray-600 font-medium">{service.duration} min</p>
+                            </div>
                         </div>
                         <span className="text-[#D15556] font-bold">R$ {service.price.toFixed(2)}</span>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
 
                 <div className="flex justify-between">
@@ -574,7 +837,7 @@ export default function AgendamentoPage() {
                   <button
                     type="button"
                     onClick={() => setShowDateTimeModal(true)}
-                    disabled={!selectedService}
+                    disabled={selectedServices.length === 0}
                     className="bg-[#D15556] text-white px-6 py-2 rounded-lg hover:bg-[#c04546] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold"
                   >
                     Escolher Data e Horário
@@ -606,23 +869,39 @@ export default function AgendamentoPage() {
 
               {/* Resumo da Seleção */}
               <div className="mb-6 p-4 bg-[#F5F0E8] rounded-lg">
-                <h4 className="font-semibold text-[#006D5B] mb-2">Resumo do Agendamento</h4>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
+                <h4 className="font-semibold text-[#006D5B] mb-3">Resumo do Agendamento</h4>
+                <div className="space-y-3">
                   <div>
                     <span className="font-medium">Profissional:</span>
                     <p className="text-gray-700">{selectedProfessional?.name}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Serviço:</span>
-                    <p className="text-gray-700">{selectedService?.name}</p>
+                    <span className="font-medium">Data:</span>
+                    <p className="text-gray-700">{formData.date}</p>
                   </div>
                   <div>
-                    <span className="font-medium">Duração:</span>
-                    <p className="text-gray-700">{selectedService?.duration} minutos</p>
+                    <span className="font-medium">Serviços:</span>
+                    <div className="mt-1 space-y-1">
+                      {selectedServices.map((service) => (
+                        <p key={service._id} className="text-gray-700 text-sm">
+                          • {service.name} - {service.duration} min - R$ {service.price.toFixed(2)}
+                        </p>
+                      ))}
                   </div>
-                  <div>
-                    <span className="font-medium">Valor:</span>
-                    <p className="text-[#D15556] font-semibold">R$ {selectedService?.price?.toFixed(2)}</p>
+                  </div>
+                  <div className="border-t border-gray-300 pt-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Duração Total:</span>
+                      <span className="text-gray-700">{selectedServices.reduce((total, service) => total + service.duration, 0)} minutos</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Valor Total:</span>
+                      <span className="text-[#D15556] font-semibold">R$ {selectedServices.reduce((total, service) => total + service.price, 0).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Sinal (30%):</span>
+                      <span className="text-[#D15556] font-bold">R$ {(selectedServices.reduce((total, service) => total + service.price, 0) * 0.3).toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -650,7 +929,7 @@ export default function AgendamentoPage() {
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">
                       <Clock className="w-4 h-4 inline mr-2" />
-                      Horário *
+                      Horário de Início *
                     </label>
                     <select
                       name="time"
@@ -672,6 +951,11 @@ export default function AgendamentoPage() {
                     {formData.date && availableTimes.length === 0 && (
                       <p className="text-sm text-red-600 mt-1">
                         Não há horários disponíveis para esta data. Tente outra data.
+                      </p>
+                    )}
+                    {formData.time && selectedServices.length > 0 && (
+                      <p className="text-sm text-gray-600 mt-1">
+                        Duração total: {selectedServices.reduce((total, service) => total + service.duration, 0)} minutos
                       </p>
                     )}
                   </div>

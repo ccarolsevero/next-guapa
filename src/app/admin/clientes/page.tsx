@@ -35,6 +35,15 @@ interface Client {
   firstAccess: boolean
   profileCompletionDate: string | null
   isCompleteProfile?: boolean
+  credits: number
+  creditHistory: Array<{
+    amount: number
+    type: string
+    description: string
+    appointmentId?: string
+    comandaId?: string
+    createdAt: string
+  }>
   createdAt: string
   updatedAt: string
 }
@@ -331,6 +340,9 @@ export default function ClientesPage() {
                   Contato
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Créditos
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -341,7 +353,7 @@ export default function ClientesPage() {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredAndSortedClients.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     {searchTerm ? 'Nenhum cliente encontrado com esses critérios.' : 'Nenhum cliente cadastrado ainda.'}
                   </td>
                 </tr>
@@ -377,6 +389,19 @@ export default function ClientesPage() {
                           {client.phone}
                         </div>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <DollarSign className="w-4 h-4 mr-2 text-green-600" />
+                        <span className={`text-sm font-medium ${client.credits > 0 ? 'text-green-600' : 'text-gray-500'}`}>
+                          R$ {client.credits?.toFixed(2) || '0,00'}
+                        </span>
+                      </div>
+                      {client.credits > 0 && (
+                        <div className="text-xs text-green-600 mt-1">
+                          {client.creditHistory?.length || 0} transação(ões)
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {client.onboardingRequired ? (

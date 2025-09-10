@@ -61,7 +61,41 @@ const clientSchema = new mongoose.Schema({
   isCompleteProfile: {
     type: Boolean,
     default: false
-  }
+  },
+  credits: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  creditHistory: [{
+    amount: {
+      type: Number,
+      required: true
+    },
+    type: {
+      type: String,
+      enum: ['signal_payment', 'comanda_usage', 'manual_adjustment'],
+      required: true
+    },
+    description: {
+      type: String,
+      required: true
+    },
+    appointmentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Appointment',
+      default: null
+    },
+    comandaId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Comanda',
+      default: null
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }]
 }, {
   timestamps: true
 })

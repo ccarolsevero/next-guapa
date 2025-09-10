@@ -379,6 +379,34 @@ export async function POST(request: NextRequest) {
       console.log('ℹ️ Nenhum dado de prontuário fornecido, pulando criação do prontuário')
     }
 
+    // 8. Descontar créditos do cliente se foi usado
+    if (finalizacaoData.creditAmount && finalizacaoData.creditAmount > 0 && comanda.clienteId) {
+      console.log('💰 Descontando créditos do cliente:', finalizacaoData.creditAmount)
+      
+      try {
+        const creditUpdateResult = await db.collection('clients').updateOne(
+          { _id: new ObjectId(comanda.clienteId) },
+          {
+            $inc: { credits: -finalizacaoData.creditAmount },
+            $push: {
+              creditHistory: {
+                amount: -finalizacaoData.creditAmount,
+                type: 'comanda_usage' as const,
+                description: `Uso de créditos na comanda ${comandaId}`,
+                comandaId: comandaId,
+                createdAt: new Date()
+              }
+            }
+          }
+        )
+        
+        console.log('✅ Créditos descontados do cliente:', creditUpdateResult.modifiedCount > 0)
+      } catch (creditError) {
+        console.error('❌ Erro ao descontar créditos:', creditError)
+        // Não falhar a finalização por causa dos créditos
+      }
+    }
+
     console.log('✅ Comanda finalizada com sucesso!')
     console.log('💰 Faturamento atualizado:', faturamentoResult)
     console.log('💳 Comissões salvas:', finalizacaoData.detalhesComissao?.length || 0)

@@ -104,7 +104,11 @@ export async function POST(request: NextRequest) {
     
     console.log('✅ Agendamento salvo com sucesso:', appointment._id)
     
-    return NextResponse.json(appointment, { status: 201 })
+    return NextResponse.json({
+      success: true,
+      appointmentId: appointment._id,
+      appointment: appointment
+    }, { status: 201 })
   } catch (error) {
     console.error('❌ Erro ao criar agendamento:', error)
     return NextResponse.json(

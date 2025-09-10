@@ -808,9 +808,10 @@ export default function HomePage() {
                   <div className="mb-6">
                     <div className="h-24 w-24 mx-auto mb-4 flex items-center justify-center">
                       <img 
-                        src="/assents/keunehome.png" 
+                        src="/assents/keunehome.svg" 
                         alt="Keune Haircosmetics" 
                         className="h-full w-full object-contain"
+                        style={{ filter: 'brightness(0) saturate(100%) invert(89%) sepia(15%) saturate(500%) hue-rotate(30deg) brightness(105%) contrast(95%)' }}
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
                           target.src = '/assents/fotobruna.jpeg'
@@ -1260,3 +1261,4 @@ export default function HomePage() {
     </>
   )
 }
+
