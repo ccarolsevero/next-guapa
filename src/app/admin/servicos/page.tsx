@@ -219,14 +219,15 @@ export default function ServicosPage() {
     }
 
     try {
-      const response = await fetch('/api/service-categories', {
+      // Encontrar a categoria pelo nome para obter o ID
+      const category = categories.find(cat => cat.name === categoryName)
+      if (!category) {
+        alert('Categoria não encontrada')
+        return
+      }
+
+      const response = await fetch(`/api/service-categories/${category.id}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: categoryName
-        }),
       })
 
       if (response.ok) {
