@@ -19,6 +19,13 @@ function AdminLayoutContent({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { professional, logout, hasPermission } = useEmployeeAuth()
 
+  // Proteção de rotas - redirecionar para login se não autenticado
+  useEffect(() => {
+    if (pathname !== '/admin/login' && !professional) {
+      router.push('/admin/login')
+    }
+  }, [professional, pathname, router])
+
   const handleLogout = () => {
     logout()
     router.push('/admin/login')
