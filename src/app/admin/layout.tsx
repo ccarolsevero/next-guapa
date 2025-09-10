@@ -19,6 +19,18 @@ function AdminLayoutContent({
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { professional, logout, hasPermission } = useEmployeeAuth()
 
+  // Scroll para o item ativo quando o menu mobile for aberto
+  useEffect(() => {
+    if (sidebarOpen) {
+      setTimeout(() => {
+        const activeItem = document.querySelector('.mobile-nav .bg-\\[\\#D15556\\]')
+        if (activeItem) {
+          activeItem.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+      }, 100)
+    }
+  }, [sidebarOpen, pathname])
+
   // Proteção de rotas - redirecionar para login se não autenticado
   useEffect(() => {
     if (pathname !== '/admin/login' && !professional) {
@@ -87,8 +99,8 @@ function AdminLayoutContent({
               <X className="w-6 h-6" style={{ color: '#d34d4c' }} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto">
-            <nav className="p-4 space-y-1">
+          <div className="flex-1 overflow-y-auto menu-scroll">
+            <nav className="p-4 space-y-1 mobile-nav">
               {filteredNavigation.map((item) => {
                 const Icon = item.icon
                 const isActive = pathname === item.href
@@ -119,7 +131,7 @@ function AdminLayoutContent({
           <div className="flex items-center h-16 px-6 border-b" style={{ borderColor: '#e6d1b8' }}>
             <h1 className="text-xl font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
           </div>
-          <div className="flex-1 flex flex-col overflow-y-auto">
+          <div className="flex-1 flex flex-col overflow-y-auto menu-scroll">
             <nav className="flex-1 px-6 py-6 space-y-2">
               {filteredNavigation.map((item) => {
                 const Icon = item.icon
@@ -134,8 +146,8 @@ function AdminLayoutContent({
                         : 'text-gray-700 hover:bg-[#EED7B6]/50 hover:text-[#D15556]'
                     }`}
                   >
-                    <Icon className="w-5 h-5 mr-3" />
-                    {item.name}
+                    <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
                   </Link>
                 )
               })}
