@@ -122,7 +122,9 @@ export async function DELETE(
     return NextResponse.json({ message: 'Serviço deletado com sucesso' })
   } catch (error) {
     console.error('Erro ao deletar serviço:', error)
-    console.error('Stack trace:', error.stack)
+    if (error instanceof Error) {
+      console.error('Stack trace:', error.stack)
+    }
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
