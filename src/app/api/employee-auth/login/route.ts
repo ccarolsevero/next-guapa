@@ -37,6 +37,7 @@ export async function POST(request: NextRequest) {
     
     // Verificar senha
     const isPasswordValid = await bcrypt.compare(password, professional.password);
+    console.log('Password valid:', isPasswordValid)
     
     if (!isPasswordValid) {
       return NextResponse.json(

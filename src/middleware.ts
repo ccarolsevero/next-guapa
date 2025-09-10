@@ -6,7 +6,7 @@ export function middleware(request: NextRequest) {
 
   // Verificar autenticação para rotas admin (exceto login)
   if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
-    const token = request.cookies.get('admin-token')
+    const token = request.cookies.get('employeeToken')
     
     if (!token) {
       // Redirecionar para login se não tiver token

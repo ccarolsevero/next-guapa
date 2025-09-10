@@ -79,6 +79,11 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
         setToken(data.token)
         setProfessional(data.professional)
         localStorage.setItem('employeeToken', data.token)
+        
+        // Salvar token como cookie também para o middleware
+        const isProduction = process.env.NODE_ENV === 'production'
+        document.cookie = `employeeToken=${data.token}; path=/; max-age=${24 * 60 * 60}; ${isProduction ? 'secure;' : ''} samesite=strict`
+        
         return true
       } else {
         const error = await response.json()
@@ -96,6 +101,9 @@ export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
     setProfessional(null)
     setToken(null)
     localStorage.removeItem('employeeToken')
+    
+    // Remover cookie também
+    document.cookie = 'employeeToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   }
 
   const hasPermission = (permission: string): boolean => {

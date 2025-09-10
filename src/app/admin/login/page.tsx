@@ -22,17 +22,24 @@ export default function EmployeeLoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
     if (!username || !password) {
       alert('Por favor, preencha todos os campos')
       return
     }
 
     setLoading(true)
-    const success = await login(username, password)
-    setLoading(false)
+    
+    try {
+      const success = await login(username, password)
+      setLoading(false)
 
-    if (success) {
-      router.push('/admin/dashboard')
+      if (success) {
+        router.push('/admin/dashboard')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setLoading(false)
     }
   }
 
@@ -92,7 +99,7 @@ export default function EmployeeLoginPage() {
 
           <button
             type="submit"
-            disabled={loading || !username || !password}
+            disabled={loading}
             className="w-full bg-[#D15556] text-white py-3 rounded-lg hover:bg-[#c04546] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {loading ? (

@@ -18,7 +18,8 @@ import {
   Trash,
   Filter,
   Search,
-  AlertTriangle
+  AlertTriangle,
+  Ban
 } from 'lucide-react'
 // import { useToast } from '@/contexts/ToastContext'
 
@@ -208,6 +209,7 @@ export default function AgendamentosPage() {
   const [existingComanda, setExistingComanda] = useState<any>(null)
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all')
   const [showProfessionalDropdown, setShowProfessionalDropdown] = useState(false)
+  const [showBlockHoursModal, setShowBlockHoursModal] = useState(false)
 
   // Buscar dados da API
   useEffect(() => {
@@ -807,6 +809,13 @@ export default function AgendamentosPage() {
               >
                 Hoje
               </button>
+              <button
+                onClick={() => setShowBlockHoursModal(true)}
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium flex items-center space-x-2"
+              >
+                <Ban className="w-4 h-4" />
+                <span>Bloquear Horário</span>
+              </button>
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
               {formatDate(selectedDate)}
@@ -820,6 +829,23 @@ export default function AgendamentosPage() {
             <h3 className="text-sm font-semibold text-gray-900">
               {formatDate(selectedDate)}
             </h3>
+          </div>
+          
+          {/* Botões Mobile */}
+          <div className="flex space-x-2 mb-3">
+            <button
+              onClick={goToToday}
+              className="flex-1 px-3 py-2 bg-[#D15556] text-white rounded-lg hover:bg-[#c04546] transition-colors text-sm font-medium"
+            >
+              Hoje
+            </button>
+            <button
+              onClick={() => setShowBlockHoursModal(true)}
+              className="flex-1 px-3 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium flex items-center justify-center space-x-1"
+            >
+              <Ban className="w-4 h-4" />
+              <span>Bloquear</span>
+            </button>
           </div>
           
           {/* Seletor de Profissional (Mobile) */}
@@ -2146,6 +2172,169 @@ export default function AgendamentosPage() {
                     Criar
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Bloqueio de Horários */}
+        {showBlockHoursModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] overflow-hidden">
+              {/* Header do Modal */}
+              <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-900">Bloquear Horários</h3>
+                <button
+                  onClick={() => setShowBlockHoursModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Conteúdo do Modal */}
+              <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(95vh-140px)] sm:max-h-[calc(90vh-160px)]">
+                <div className="space-y-6">
+                  {/* Tipo de Bloqueio */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Tipo de Bloqueio
+                    </label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {[
+                        { value: 'weekly', label: 'Semanal', icon: '📅', description: 'Repetir toda semana' },
+                        { value: 'date_range', label: 'Período', icon: '📆', description: 'Data específica' },
+                        { value: 'lunch_break', label: 'Almoço', icon: '🍽️', description: 'Horário de almoço' },
+                        { value: 'vacation', label: 'Férias', icon: '✈️', description: 'Período de férias' },
+                        { value: 'custom', label: 'Personalizado', icon: '🚫', description: 'Bloqueio customizado' }
+                      ].map((type) => (
+                        <button
+                          key={type.value}
+                          className="p-3 border-2 border-gray-200 rounded-lg hover:border-orange-300 hover:bg-orange-50 transition-colors text-left"
+                        >
+                          <div className="text-2xl mb-1">{type.icon}</div>
+                          <div className="text-sm font-medium text-gray-900">{type.label}</div>
+                          <div className="text-xs text-gray-500">{type.description}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Profissional */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Profissional
+                    </label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900">
+                      <option value="">Selecione um profissional</option>
+                      {professionals.map((prof) => (
+                        <option key={prof._id} value={prof._id}>
+                          {prof.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Título */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Título do Bloqueio
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Almoço, Férias, Reunião..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900"
+                    />
+                  </div>
+
+                  {/* Descrição */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Descrição (opcional)
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="Adicione uma descrição para este bloqueio..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900 resize-none"
+                    />
+                  </div>
+
+                  {/* Horários */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Horário de Início
+                      </label>
+                      <input
+                        type="time"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Horário de Fim
+                      </label>
+                      <input
+                        type="time"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Data/Período */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data de Início
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data de Fim
+                      </label>
+                      <input
+                        type="date"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dia da Semana (para bloqueio semanal) */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Dia da Semana (para bloqueio semanal)
+                    </label>
+                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white text-gray-900">
+                      <option value="">Selecione o dia</option>
+                      <option value="0">Domingo</option>
+                      <option value="1">Segunda-feira</option>
+                      <option value="2">Terça-feira</option>
+                      <option value="3">Quarta-feira</option>
+                      <option value="4">Quinta-feira</option>
+                      <option value="5">Sexta-feira</option>
+                      <option value="6">Sábado</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer do Modal */}
+              <div className="flex items-center justify-end space-x-3 p-4 sm:p-6 border-t border-gray-200 bg-gray-50">
+                <button
+                  onClick={() => setShowBlockHoursModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+                  Bloquear Horário
+                </button>
               </div>
             </div>
           </div>

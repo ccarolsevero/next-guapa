@@ -25,26 +25,37 @@ function AdminLayoutContent({
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, permission: null },
-    { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar, permission: null },
-    { name: 'Horários Bloqueados', href: '/admin/horarios-bloqueados', icon: Clock, permission: null },
-    { name: 'Clientes', href: '/admin/clientes', icon: Users, permission: null },
-    { name: 'Serviços', href: '/admin/servicos', icon: Scissors, permission: null },
-    { name: 'Pacotes', href: '/admin/pacotes', icon: Package, permission: null },
-    { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag, permission: null },
-    { name: 'Pedidos', href: '/admin/pedidos', icon: Package, permission: null },
-    { name: 'Comandas', href: '/admin/comandas', icon: Package, permission: null },
-    { name: 'Metas/Comissão', href: '/admin/metas-comissao', icon: Target, permission: 'goals' },
-    { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign, permission: 'financial' },
-    { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3, permission: 'reports' },
-    { name: 'Editar Site', href: '/admin/editar-site', icon: Globe, permission: 'siteEdit' },
-    { name: 'Configurações', href: '/admin/configuracoes', icon: Settings, permission: null },
+    { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard, permission: null, adminOnly: false },
+    { name: 'Agenda', href: '/admin/agendamentos', icon: Calendar, permission: null, adminOnly: false },
+    { name: 'Horários Bloqueados', href: '/admin/horarios-bloqueados', icon: Clock, permission: null, adminOnly: true },
+    { name: 'Clientes', href: '/admin/clientes', icon: Users, permission: null, adminOnly: false },
+    { name: 'Serviços', href: '/admin/servicos', icon: Scissors, permission: null, adminOnly: false },
+    { name: 'Pacotes', href: '/admin/pacotes', icon: Package, permission: null, adminOnly: false },
+    { name: 'Produtos', href: '/admin/produtos', icon: ShoppingBag, permission: null, adminOnly: false },
+    { name: 'Pedidos', href: '/admin/pedidos', icon: Package, permission: null, adminOnly: false },
+    { name: 'Comandas', href: '/admin/comandas', icon: Package, permission: null, adminOnly: false },
+    { name: 'Metas/Comissão', href: '/admin/metas-comissao', icon: Target, permission: 'goals', adminOnly: true },
+    { name: 'Financeiro', href: '/admin/financeiro', icon: DollarSign, permission: 'financial', adminOnly: true },
+    { name: 'Relatórios', href: '/admin/relatorios', icon: BarChart3, permission: 'reports', adminOnly: true },
+    { name: 'Editar Site', href: '/admin/editar-site', icon: Globe, permission: 'siteEdit', adminOnly: true },
+    { name: 'Configurações', href: '/admin/configuracoes', icon: Settings, permission: null, adminOnly: true },
   ]
 
-  // Filtrar navegação baseada nas permissões
-  const filteredNavigation = navigation.filter(item => 
-    !item.permission || hasPermission(item.permission)
-  )
+  // Filtrar navegação baseada nas permissões e role do usuário
+  const filteredNavigation = navigation.filter(item => {
+    // Se é admin, tem acesso a tudo
+    if (professional?.role === 'admin') {
+      return !item.permission || hasPermission(item.permission)
+    }
+    
+    // Se é professional, só tem acesso aos módulos permitidos
+    if (professional?.role === 'professional') {
+      return !item.adminOnly
+    }
+    
+    // Fallback para outros casos
+    return !item.permission || hasPermission(item.permission)
+  })
 
   if (pathname === '/admin/login') {
     return <>{children}</>
