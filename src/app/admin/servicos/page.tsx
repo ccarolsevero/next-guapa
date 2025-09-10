@@ -59,7 +59,12 @@ export default function ServicosPage() {
         throw new Error('Erro ao carregar serviços')
       }
       const data = await response.json()
-      setServices(data)
+      // Mapear _id para id para compatibilidade
+      const servicesWithId = data.map((service: any) => ({
+        ...service,
+        id: service._id
+      }))
+      setServices(servicesWithId)
     } catch (error) {
       console.error('Erro ao carregar serviços:', error)
       alert('Erro ao carregar serviços')
@@ -79,15 +84,20 @@ export default function ServicosPage() {
       }
       const data = await response.json()
       console.log('📋 Todas as categorias carregadas:', data)
-      setCategories(data)
+      // Mapear _id para id para compatibilidade
+      const categoriesWithId = data.map((category: any) => ({
+        ...category,
+        id: category._id
+      }))
+      setCategories(categoriesWithId)
     } catch (error) {
       console.error('Erro ao carregar categorias de serviços:', error)
       // Fallback para categorias padrão se a API falhar
       const fallbackCategories = [
-        { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
-        { _id: '2', name: 'Cortes', isActive: true, order: 2 },
-        { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
-        { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+        { _id: '1', id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+        { _id: '2', id: '2', name: 'Cortes', isActive: true, order: 2 },
+        { _id: '3', id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+        { _id: '4', id: '4', name: 'Tratamentos', isActive: true, order: 4 }
       ]
       console.log('📋 Usando categorias fallback:', fallbackCategories)
       setCategories(fallbackCategories)
@@ -105,15 +115,20 @@ export default function ServicosPage() {
       }
       const data = await response.json()
       console.log('📋 Categorias ativas carregadas:', data)
-      setActiveCategories(data)
+      // Mapear _id para id para compatibilidade
+      const activeCategoriesWithId = data.map((category: any) => ({
+        ...category,
+        id: category._id
+      }))
+      setActiveCategories(activeCategoriesWithId)
     } catch (error) {
       console.error('Erro ao carregar categorias ativas:', error)
       // Fallback para categorias padrão se a API falhar
       const fallbackCategories = [
-        { _id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
-        { _id: '2', name: 'Cortes', isActive: true, order: 2 },
-        { _id: '3', name: 'Colorimetria', isActive: true, order: 3 },
-        { _id: '4', name: 'Tratamentos', isActive: true, order: 4 }
+        { _id: '1', id: '1', name: 'Consultoria e Avaliação', isActive: true, order: 1 },
+        { _id: '2', id: '2', name: 'Cortes', isActive: true, order: 2 },
+        { _id: '3', id: '3', name: 'Colorimetria', isActive: true, order: 3 },
+        { _id: '4', id: '4', name: 'Tratamentos', isActive: true, order: 4 }
       ]
       setActiveCategories(fallbackCategories)
     }
