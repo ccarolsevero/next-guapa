@@ -391,11 +391,11 @@ export async function POST(request: NextRequest) {
             $push: {
               creditHistory: {
                 amount: -finalizacaoData.creditAmount,
-                type: 'comanda_usage' as const,
+                type: 'comanda_usage',
                 description: `Uso de créditos na comanda ${comandaId}`,
                 comandaId: comandaId,
                 createdAt: new Date()
-              }
+              } as any
             }
           }
         )
