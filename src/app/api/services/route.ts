@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { MongoClient } from 'mongodb'
+import { MongoClient, ObjectId } from 'mongodb'
 
 export async function GET(request: NextRequest) {
   let client;
@@ -24,12 +24,24 @@ export async function GET(request: NextRequest) {
     const totalCount = await servicesCollection.countDocuments()
     console.log('📊 Total de documentos na coleção services:', totalCount)
     
+    // Verificar documentos ativos
+    const activeCount = await servicesCollection.countDocuments({ isActive: true })
+    console.log('📊 Documentos ativos na coleção services:', activeCount)
+    
+    // Buscar um exemplo de documento
+    const sampleDoc = await servicesCollection.findOne({})
+    console.log('📋 Exemplo de documento:', sampleDoc ? {
+      name: sampleDoc.name,
+      isActive: sampleDoc.isActive,
+      category: sampleDoc.category
+    } : 'Nenhum documento encontrado')
+    
     let services
     
     if (professionalId) {
       // Buscar serviços específicos do profissional
       const professionalsCollection = db.collection('professionals')
-      const professional = await professionalsCollection.findOne({ _id: professionalId })
+      const professional = await professionalsCollection.findOne({ _id: new ObjectId(professionalId) })
       
       if (!professional) {
         console.log('❌ Profissional não encontrado:', professionalId)
