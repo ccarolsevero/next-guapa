@@ -101,17 +101,25 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  let client;
+  
   try {
     const body = await request.json()
-    const { name, category, description, price, order, isFeatured } = body
+    const { name, category, description, price, order, isFeatured, duration } = body
 
     console.log('Adicionando novo serviço no MongoDB...')
     
-    await connectDB()
+    // Conectar diretamente ao MongoDB
+    client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    console.log('✅ Conectado ao banco de dados')
+    
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
+    const serviceCategoriesCollection = db.collection('servicecategories')
     
     // Validar se a categoria existe
-    const ServiceCategory = (await import('@/models/ServiceCategory')).default
-    const categoryExists = await ServiceCategory.findOne({ 
+    const categoryExists = await serviceCategoriesCollection.findOne({ 
       name: category, 
       isActive: true 
     })
@@ -123,51 +131,73 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const newService = await Service.create({
+    const newService = {
       name,
       category,
       description,
       price,
+      duration: duration || 60,
       order: order || 0,
       isActive: true,
-      isFeatured: isFeatured || false
-    })
+      isFeatured: isFeatured || false,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
     
-    console.log('Serviço adicionado com sucesso:', newService._id)
+    const result = await servicesCollection.insertOne(newService)
+    console.log('Serviço adicionado com sucesso:', result.insertedId)
     
-    return NextResponse.json(newService, { status: 201 })
+    return NextResponse.json({ ...newService, _id: result.insertedId }, { status: 201 })
   } catch (error) {
     console.error('Erro ao adicionar serviço:', error)
     return NextResponse.json(
       { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     )
+  } finally {
+    if (client) {
+      await client.close()
+      console.log('🔌 Conexão MongoDB fechada')
+    }
   }
 }
 
 export async function PUT(request: NextRequest) {
+  let client;
+  
   try {
     const body = await request.json()
     const { id, ...updateData } = body
 
     console.log('Atualizando serviço no MongoDB...')
     
-    await connectDB()
+    // Conectar diretamente ao MongoDB
+    client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    console.log('✅ Conectado ao banco de dados')
     
-    const updatedService = await Service.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true, runValidators: true }
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
+    
+    const result = await servicesCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { 
+          ...updateData, 
+          updatedAt: new Date() 
+        } 
+      }
     )
     
-    if (!updatedService) {
+    if (result.matchedCount === 0) {
       return NextResponse.json(
         { error: 'Serviço não encontrado' },
         { status: 404 }
       )
     }
     
-    console.log('Serviço atualizado com sucesso:', updatedService._id)
+    const updatedService = await servicesCollection.findOne({ _id: new ObjectId(id) })
+    console.log('Serviço atualizado com sucesso:', updatedService?._id)
     
     return NextResponse.json(updatedService)
   } catch (error) {
@@ -176,6 +206,11 @@ export async function PUT(request: NextRequest) {
       { error: 'Erro interno do servidor', details: error instanceof Error ? error.message : 'Erro desconhecido' },
       { status: 500 }
     )
+  } finally {
+    if (client) {
+      await client.close()
+      console.log('🔌 Conexão MongoDB fechada')
+    }
   }
 }
 export const dynamic = 'force-dynamic'
