@@ -48,7 +48,12 @@ export default function PacotesPage() {
         throw new Error('Erro ao carregar pacotes')
       }
       const data = await response.json()
-      setPackages(data)
+      // Mapear _id para id para compatibilidade
+      const packagesWithId = data.map((packageItem: any) => ({
+        ...packageItem,
+        id: packageItem._id
+      }))
+      setPackages(packagesWithId)
     } catch (error) {
       console.error('Erro ao carregar pacotes:', error)
       alert('Erro ao carregar pacotes')
