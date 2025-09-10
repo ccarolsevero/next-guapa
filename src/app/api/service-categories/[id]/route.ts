@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 import ServiceCategory from '@/models/ServiceCategory'
-import { ObjectId } from 'mongodb'
+import mongoose from 'mongoose'
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +11,7 @@ export async function GET(
     await connectToDatabase()
 
     const { id } = await params
-    if (!ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'ID inválido' },
         { status: 400 }
@@ -45,7 +45,7 @@ export async function PUT(
     await connectToDatabase()
 
     const { id } = await params
-    if (!ObjectId.isValid(id)) {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'ID inválido' },
         { status: 400 }
@@ -112,7 +112,11 @@ export async function DELETE(
     await connectToDatabase()
 
     const { id } = await params
-    if (!ObjectId.isValid(id)) {
+    console.log('🗑️ Tentando deletar categoria de serviço:', id)
+    console.log('🔍 ID válido:', mongoose.Types.ObjectId.isValid(id))
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.log('❌ ID inválido:', id)
       return NextResponse.json(
         { error: 'ID inválido' },
         { status: 400 }
@@ -120,8 +124,10 @@ export async function DELETE(
     }
 
     const category = await ServiceCategory.findById(id)
+    console.log('📋 Categoria encontrada:', category ? 'Sim' : 'Não')
     
     if (!category) {
+      console.log('❌ Categoria não encontrada no banco')
       return NextResponse.json(
         { error: 'Categoria não encontrada' },
         { status: 404 }
@@ -133,8 +139,12 @@ export async function DELETE(
     const servicesUsingCategory = await Service.countDocuments({ 
       category: category.name 
     })
+    
+    console.log('🔍 Serviços usando a categoria:', servicesUsingCategory)
+    console.log('📝 Nome da categoria:', category.name)
 
     if (servicesUsingCategory > 0) {
+      console.log('❌ Não é possível excluir - categoria em uso')
       return NextResponse.json(
         { 
           error: `Não é possível excluir esta categoria. Ela está sendo usada por ${servicesUsingCategory} serviço(s).`,
@@ -144,7 +154,9 @@ export async function DELETE(
       )
     }
 
+    console.log('✅ Deletando categoria...')
     await ServiceCategory.findByIdAndDelete(id)
+    console.log('✅ Categoria deletada com sucesso')
 
     return NextResponse.json({
       success: true,
