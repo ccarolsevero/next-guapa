@@ -81,3 +81,61 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await connectToDatabase()
+
+    const body = await request.json()
+    const { name } = body
+
+    if (!name || name.trim() === '') {
+      return NextResponse.json(
+        { error: 'Nome da categoria é obrigatório' },
+        { status: 400 }
+      )
+    }
+
+    // Buscar categoria pelo nome
+    const category = await ServiceCategory.findOne({ 
+      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+    })
+    
+    if (!category) {
+      return NextResponse.json(
+        { error: 'Categoria não encontrada' },
+        { status: 404 }
+      )
+    }
+
+    // Verificar se há serviços usando esta categoria
+    const Service = (await import('@/models/Service')).default
+    const servicesUsingCategory = await Service.countDocuments({ 
+      category: category.name 
+    })
+
+    if (servicesUsingCategory > 0) {
+      return NextResponse.json(
+        { 
+          error: `Não é possível excluir esta categoria. Ela está sendo usada por ${servicesUsingCategory} serviço(s).`,
+          servicesCount: servicesUsingCategory
+        },
+        { status: 400 }
+      )
+    }
+
+    await ServiceCategory.findByIdAndDelete(category._id)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Categoria de serviço excluída com sucesso'
+    })
+
+  } catch (error) {
+    console.error('Erro ao excluir categoria de serviço:', error)
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    )
+  }
+}

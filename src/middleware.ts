@@ -34,7 +34,7 @@ export function middleware(request: NextRequest) {
   }
   
   // Only block 'delete' in query parameters or non-API paths
-  if (url.includes('delete') && !pathname.startsWith('/api/')) {
+  if (url.includes('delete') && pathname && !pathname.startsWith('/api/')) {
     return new NextResponse('Forbidden', { status: 403 })
   }
 
