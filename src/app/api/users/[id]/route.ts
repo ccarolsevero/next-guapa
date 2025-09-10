@@ -102,20 +102,14 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  let client;
   try {
     const { id } = await params
     
-    // Conectar diretamente ao MongoDB para usar a coleção professionals
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
-    await client.connect();
+    await connectDB()
     
-    const db = client.db('guapa');
-    const collection = db.collection('professionals');
+    const deletedUser = await User.findByIdAndDelete(id)
     
-    const result = await collection.deleteOne({ _id: new ObjectId(id) })
-    
-    if (result.deletedCount === 0) {
+    if (!deletedUser) {
       return NextResponse.json(
         { error: 'Usuário não encontrado' },
         { status: 404 }
@@ -129,10 +123,7 @@ export async function DELETE(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
-  } finally {
-    if (client) {
-      await client.close();
-    }
   }
 }
+
 export const dynamic = 'force-dynamic'
