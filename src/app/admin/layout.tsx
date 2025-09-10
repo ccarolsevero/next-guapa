@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { EmployeeAuthProvider, useEmployeeAuth } from '@/hooks/useEmployeeAuth'
+import { useResponsiveMenu } from '@/hooks/useResponsiveMenu'
 
 function AdminLayoutContent({
   children,
@@ -18,6 +19,7 @@ function AdminLayoutContent({
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const { professional, logout, hasPermission } = useEmployeeAuth()
+  const { needsScroll, maxHeight, screenHeight, menuHeight } = useResponsiveMenu()
 
   // Scroll para o item ativo quando o menu mobile for aberto
   useEffect(() => {
@@ -99,7 +101,10 @@ function AdminLayoutContent({
               <X className="w-6 h-6" style={{ color: '#d34d4c' }} />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto menu-scroll">
+          <div 
+            className={`flex-1 overflow-y-auto menu-scroll ${needsScroll ? 'has-scroll' : ''}`}
+            style={{ maxHeight: needsScroll ? maxHeight : 'none' }}
+          >
             <nav className="p-4 space-y-1 mobile-nav">
               {filteredNavigation.map((item) => {
                 const Icon = item.icon
@@ -131,7 +136,10 @@ function AdminLayoutContent({
           <div className="flex items-center h-16 px-6 border-b" style={{ borderColor: '#e6d1b8' }}>
             <h1 className="text-xl font-light" style={{ color: '#d34d4c' }}>Espaço Guapa</h1>
           </div>
-          <div className="flex-1 flex flex-col overflow-y-auto menu-scroll">
+          <div 
+            className={`flex-1 flex flex-col overflow-y-auto menu-scroll ${needsScroll ? 'has-scroll' : ''}`}
+            style={{ maxHeight: needsScroll ? maxHeight : 'none' }}
+          >
             <nav className="flex-1 px-6 py-6 space-y-2">
               {filteredNavigation.map((item) => {
                 const Icon = item.icon
@@ -172,6 +180,12 @@ function AdminLayoutContent({
               <h2 className="text-base sm:text-lg font-medium truncate" style={{ color: '#d34d4c' }}>
                 {filteredNavigation.find(item => item.href === pathname)?.name || 'Dashboard'}
               </h2>
+              {needsScroll && (
+                <div className="hidden lg:flex items-center ml-4 text-xs text-gray-500">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-2 animate-pulse"></div>
+                  <span>Menu com scroll</span>
+                </div>
+              )}
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
