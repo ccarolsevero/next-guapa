@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
     }
     
     // Conectar diretamente ao MongoDB
-    client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa');
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/guapa';
+    console.log('🔗 MongoDB URI configurada:', mongoUri ? 'Sim' : 'Não')
+    console.log('🔗 MongoDB URI (primeiros 20 chars):', mongoUri?.substring(0, 20) + '...')
+    
+    client = new MongoClient(mongoUri);
     await client.connect();
     console.log('✅ Conectado ao MongoDB')
     
