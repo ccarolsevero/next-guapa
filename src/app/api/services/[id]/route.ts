@@ -46,6 +46,22 @@ export async function PUT(
     
     await connectDB()
     
+    // Validar se a categoria existe (se fornecida)
+    if (body.category) {
+      const ServiceCategory = (await import('@/models/ServiceCategory')).default
+      const categoryExists = await ServiceCategory.findOne({ 
+        name: body.category, 
+        isActive: true 
+      })
+      
+      if (!categoryExists) {
+        return NextResponse.json(
+          { error: 'Categoria de serviço não encontrada ou inativa' },
+          { status: 400 }
+        )
+      }
+    }
+    
     const updatedService = await Service.findByIdAndUpdate(
       id,
       body,

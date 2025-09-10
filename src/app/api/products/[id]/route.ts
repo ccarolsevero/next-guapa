@@ -99,6 +99,22 @@ export async function PUT(
       }
     }
     
+    // Validar se a categoria existe (se fornecida)
+    if (category && category !== 'Geral') {
+      const ProductCategory = (await import('@/models/ProductCategory')).default
+      const categoryExists = await ProductCategory.findOne({ 
+        name: category, 
+        isActive: true 
+      })
+      
+      if (!categoryExists) {
+        return NextResponse.json(
+          { error: 'Categoria de produto não encontrada ou inativa' },
+          { status: 400 }
+        )
+      }
+    }
+    
     // Atualizar produto
     const updatedProduct = await Product.findByIdAndUpdate(
       id,

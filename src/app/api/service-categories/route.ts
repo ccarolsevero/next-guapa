@@ -39,14 +39,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar se já existe uma categoria com o mesmo nome
+    // Verificar se já existe uma categoria ativa com o mesmo nome
     const existingCategory = await ServiceCategory.findOne({ 
-      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') }
+      name: { $regex: new RegExp(`^${name.trim()}$`, 'i') },
+      isActive: true
     })
 
     if (existingCategory) {
       return NextResponse.json(
-        { error: 'Já existe uma categoria com este nome' },
+        { error: 'Já existe uma categoria ativa com este nome' },
         { status: 400 }
       )
     }
