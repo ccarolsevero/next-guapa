@@ -1,30 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server'
-import connectDB from '@/lib/mongodb'
-import Service from '@/models/Service'
+import { MongoClient } from 'mongodb'
 
 export async function GET(request: NextRequest) {
+  let client;
+  
   try {
     const { searchParams } = new URL(request.url)
     const professionalId = searchParams.get('professionalId')
     
-    console.log('🔍 Buscando serviços do MongoDB...')
+    console.log('🔍 Buscando serviços do MongoDB (driver nativo)...')
     console.log('📡 MONGODB_URI:', process.env.MONGODB_URI ? 'Configurada' : 'NÃO CONFIGURADA')
     console.log('👤 ProfessionalId:', professionalId || 'Nenhum (todos os serviços)')
     
-    await connectDB()
+    // Conectar diretamente ao MongoDB
+    client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
     console.log('✅ Conectado ao banco de dados')
     
-    // Debug: verificar se o modelo Service está funcionando
-    console.log('🔧 Modelo Service:', Service.modelName)
-    const serviceCount = await Service.countDocuments()
-    console.log('📊 Total de documentos na coleção services:', serviceCount)
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
+    
+    // Verificar total de documentos
+    const totalCount = await servicesCollection.countDocuments()
+    console.log('📊 Total de documentos na coleção services:', totalCount)
     
     let services
     
     if (professionalId) {
       // Buscar serviços específicos do profissional
-      const Professional = (await import('@/models/Professional')).default
-      const professional = await Professional.findById(professionalId)
+      const professionalsCollection = db.collection('professionals')
+      const professional = await professionalsCollection.findOne({ _id: professionalId })
       
       if (!professional) {
         console.log('❌ Profissional não encontrado:', professionalId)
@@ -40,20 +45,20 @@ export async function GET(request: NextRequest) {
       }
       
       // Buscar serviços que correspondem aos nomes do profissional
-      services = await Service.find({ 
+      services = await servicesCollection.find({ 
         isActive: true,
         name: { $in: professional.services }
-      }).sort({ category: 1, order: 1 })
+      }).sort({ category: 1, order: 1 }).toArray()
       
       console.log('✅ Serviços do profissional encontrados:', services.length)
     } else {
       // Buscar todos os serviços ativos
       console.log('🔍 Buscando todos os serviços ativos...')
-      services = await Service.find({ isActive: true }).sort({ category: 1, order: 1 })
+      services = await servicesCollection.find({ isActive: true }).sort({ category: 1, order: 1 }).toArray()
       console.log('✅ Todos os serviços ativos encontrados:', services.length)
       
       // Debug: verificar se há serviços inativos também
-      const allServices = await Service.find({}).sort({ category: 1, order: 1 })
+      const allServices = await servicesCollection.find({}).sort({ category: 1, order: 1 }).toArray()
       console.log('📊 Total de serviços no banco (ativos + inativos):', allServices.length)
       
       if (allServices.length > 0) {
@@ -75,6 +80,11 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('❌ Erro ao buscar serviços:', error)
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+  } finally {
+    if (client) {
+      await client.close()
+      console.log('🔌 Conexão MongoDB fechada')
+    }
   }
 }
 
