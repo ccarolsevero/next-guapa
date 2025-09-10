@@ -40,7 +40,10 @@ export async function GET(request: NextRequest) {
     
     
     // Conectar ao MongoDB
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     if (!uri) {
       console.error('❌ MONGODB_URI não configurada')
       return NextResponse.json({ error: 'Configuração do banco não encontrada' }, { status: 500 })

@@ -8,7 +8,10 @@ export async function GET() {
     console.log('🔍 === API CONFIGURAÇÕES - GET ===')
     
     // Conectar ao MongoDB
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     client = new MongoClient(uri)
     await client.connect()
     const db = client.db(process.env.DB_NAME || 'guapa')
@@ -93,7 +96,10 @@ export async function PUT(request: NextRequest) {
     console.log('📝 Dados recebidos:', body)
     
     // Conectar ao MongoDB
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     client = new MongoClient(uri)
     await client.connect()
     const db = client.db(process.env.DB_NAME || 'guapa')

@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MongoClient, ObjectId } from 'mongodb'
 
-const uri = process.env.MONGODB_URI!
-const client = new MongoClient(uri)
+// Remover inicialização no nível do módulo
 
 // POST - Adicionar movimentação (sangria ou suprimento)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const uri = process.env.MONGODB_URI!
+  const client = new MongoClient(uri)
+  
   try {
     const { id } = await params
     const body = await request.json()

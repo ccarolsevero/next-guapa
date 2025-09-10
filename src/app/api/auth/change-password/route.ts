@@ -27,7 +27,10 @@ export async function POST(request: NextRequest) {
     }
     
     // Conectar ao MongoDB
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     client = new MongoClient(uri)
     await client.connect()
     const db = client.db(process.env.DB_NAME || 'guapa')

@@ -31,7 +31,10 @@ export async function GET(request: NextRequest) {
     
     // Usar conexão direta do MongoDB (Mongoose não está funcionando)
     const { MongoClient } = await import('mongodb')
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     const client = new MongoClient(uri)
     await client.connect()
     
@@ -165,7 +168,10 @@ export async function POST(request: NextRequest) {
 
     // Conectar ao MongoDB diretamente
     const { MongoClient } = await import('mongodb')
-    const uri = process.env.MONGODB_URI!
+    const uri = process.env.MONGODB_URI
+if (!uri) {
+  throw new Error("MONGODB_URI environment variable is not defined")
+}
     const client = new MongoClient(uri)
     await client.connect()
     const db = client.db(process.env.DB_NAME || 'guapa')
