@@ -43,8 +43,7 @@ const serviceCategorySchema = new Schema<IServiceCategory>({
   timestamps: true
 })
 
-// Índices para melhor performance
-serviceCategorySchema.index({ name: 1 })
+// Índices para melhor performance (name já tem unique: true)
 serviceCategorySchema.index({ isActive: 1 })
 serviceCategorySchema.index({ order: 1 })
 

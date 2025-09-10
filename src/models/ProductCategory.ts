@@ -43,8 +43,7 @@ const productCategorySchema = new Schema<IProductCategory>({
   timestamps: true
 })
 
-// Índices para melhor performance
-productCategorySchema.index({ name: 1 })
+// Índices para melhor performance (name já tem unique: true)
 productCategorySchema.index({ isActive: 1 })
 productCategorySchema.index({ order: 1 })
 
