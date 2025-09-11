@@ -149,31 +149,37 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let client;
+  
   try {
     const { id } = await params
 
-    console.log('Deletando serviço:', id)
-    console.log('Tipo do ID:', typeof id)
-    console.log('ID válido:', mongoose.Types.ObjectId.isValid(id))
+    console.log('🗑️ Deletando serviço:', id)
+    console.log('🔍 Tipo do ID:', typeof id)
+    console.log('✅ ID válido:', ObjectId.isValid(id))
     
     // Validar se o ID é um ObjectId válido
-    if (!mongoose.Types.ObjectId.isValid(id)) {
+    if (!ObjectId.isValid(id)) {
       return NextResponse.json(
         { error: 'ID inválido' },
         { status: 400 }
       )
     }
     
-    console.log('Conectando ao banco de dados...')
-    await connectDB()
-    console.log('Conectado ao banco de dados com sucesso')
+    // Conectar diretamente ao MongoDB
+    client = new MongoClient(process.env.MONGODB_URI!)
+    await client.connect()
+    console.log('✅ Conectado ao banco de dados')
+    
+    const db = client.db('guapa')
+    const servicesCollection = db.collection('services')
     
     // Verificar se o serviço existe antes de deletar
-    console.log('Buscando serviço no banco...')
-    const existingService = await Service.findById(id)
-    console.log('Serviço encontrado:', existingService ? 'Sim' : 'Não')
+    console.log('🔍 Buscando serviço no banco...')
+    const existingService = await servicesCollection.findOne({ _id: new ObjectId(id) })
+    console.log('📋 Serviço encontrado:', existingService ? 'Sim' : 'Não')
     if (existingService) {
-      console.log('Detalhes do serviço:', {
+      console.log('📋 Detalhes do serviço:', {
         id: existingService._id,
         name: existingService.name,
         category: existingService.category
@@ -187,10 +193,10 @@ export async function DELETE(
       )
     }
     
-    const deletedService = await Service.findByIdAndDelete(id)
-    console.log('Serviço deletado:', deletedService ? 'Sim' : 'Não')
+    const result = await servicesCollection.deleteOne({ _id: new ObjectId(id) })
+    console.log('🗑️ Serviço deletado:', result.deletedCount > 0 ? 'Sim' : 'Não')
     
-    if (!deletedService) {
+    if (result.deletedCount === 0) {
       return NextResponse.json(
         { error: 'Erro ao deletar serviço' },
         { status: 500 }
@@ -199,7 +205,7 @@ export async function DELETE(
     
     return NextResponse.json({ message: 'Serviço deletado com sucesso' })
   } catch (err: unknown) {
-    console.error('Erro ao deletar serviço:', err)
+    console.error('❌ Erro ao deletar serviço:', err)
     if (err instanceof Error) {
       console.error('Stack trace:', err.stack)
     }
@@ -207,5 +213,10 @@ export async function DELETE(
       { error: 'Erro interno do servidor' },
       { status: 500 }
     )
+  } finally {
+    if (client) {
+      await client.close()
+      console.log('🔌 Conexão MongoDB fechada')
+    }
   }
 }
