@@ -269,6 +269,11 @@ export default function EditarServicoPage() {
         description: service.description,
         price: service.price,
         duration: service.duration,
+        breakTime: service.breakTime,
+        allowOnlineBooking: service.allowOnlineBooking,
+        valueType: service.valueType,
+        cost: service.cost,
+        returnDays: service.returnDays,
         order: service.order || 0,
         isFeatured: service.isFeatured || false,
         isActive: service.isActive !== false

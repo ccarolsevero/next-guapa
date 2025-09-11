@@ -105,16 +105,36 @@ export async function POST(request: NextRequest) {
   
   try {
     const body = await request.json()
-    const { name, category, description, price, order, isFeatured, duration } = body
+    const { 
+      name, 
+      category, 
+      description, 
+      price, 
+      duration, 
+      breakTime, 
+      allowOnlineBooking, 
+      valueType, 
+      cost, 
+      returnDays, 
+      order, 
+      isFeatured, 
+      isActive 
+    } = body
 
     console.log('📝 Dados recebidos para novo serviço:', {
       name,
       category,
       description,
       price,
+      duration,
+      breakTime,
+      allowOnlineBooking,
+      valueType,
+      cost,
+      returnDays,
       order,
       isFeatured,
-      duration
+      isActive
     })
     console.log('Adicionando novo serviço no MongoDB...')
     
@@ -168,8 +188,13 @@ export async function POST(request: NextRequest) {
       description: description || '',
       price: price || 0,
       duration: duration || 60,
+      breakTime: breakTime || 0,
+      allowOnlineBooking: allowOnlineBooking !== false,
+      valueType: valueType || 'fixed',
+      cost: cost || 0,
+      returnDays: returnDays || 0,
       order: order || 0,
-      isActive: true,
+      isActive: isActive !== false,
       isFeatured: isFeatured || false,
       createdAt: new Date(),
       updatedAt: new Date()
