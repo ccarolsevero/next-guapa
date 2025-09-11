@@ -174,6 +174,49 @@ export default function EditarServicoPage() {
     }
   }
 
+  const loadExistingService = async (id: string) => {
+    try {
+      console.log('🔍 Carregando serviço existente:', id)
+      const response = await fetch(`/api/services/${id}`)
+      if (response.ok) {
+        const serviceData = await response.json()
+        console.log('✅ Dados do serviço carregados:', serviceData)
+        
+        // Preparar comissões iniciais
+        const existingCommissions = professionals.map(prof => ({
+          professionalId: prof._id,
+          professionalName: prof.name,
+          commission: 0, // Será preenchido pelos dados reais se existirem
+          assistantCommission: 0 // Será preenchido pelos dados reais se existirem
+        }))
+        
+        setService({
+          id: serviceData._id,
+          name: serviceData.name || '',
+          category: serviceData.category || '',
+          duration: serviceData.duration || 60,
+          breakTime: serviceData.breakTime || 0,
+          allowOnlineBooking: serviceData.allowOnlineBooking !== false,
+          description: serviceData.description || '',
+          valueType: serviceData.valueType || 'fixed',
+          price: serviceData.price || 0,
+          cost: serviceData.cost || 0,
+          returnDays: serviceData.returnDays || 0,
+          isActive: serviceData.isActive !== false,
+          order: serviceData.order || 0,
+          isFeatured: serviceData.isFeatured || false,
+          commissions: existingCommissions
+        })
+      } else {
+        console.error('❌ Erro ao carregar serviço:', response.status)
+        setMessage('Erro ao carregar dados do serviço')
+      }
+    } catch (error) {
+      console.error('❌ Erro ao carregar serviço:', error)
+      setMessage('Erro ao carregar dados do serviço')
+    }
+  }
+
   useEffect(() => {
     // Carregar profissionais e categorias
     loadProfessionals()
@@ -198,31 +241,8 @@ export default function EditarServicoPage() {
         commissions: initialCommissions
       }))
     } else {
-      // Serviço existente - simular dados
-      const existingCommissions = professionals.map(prof => ({
-        professionalId: prof._id,
-        professionalName: prof.name,
-        commission: Math.floor(Math.random() * 20) + 10, // 10-30%
-        assistantCommission: Math.floor(Math.random() * 15) + 5 // 5-20%
-      }))
-      
-      setService({
-        id: serviceId as string,
-        name: 'Corte Feminino',
-        category: 'Cortes',
-        duration: 60,
-        breakTime: 15,
-        allowOnlineBooking: true,
-        description: 'Corte personalizado para mulheres com lavagem incluída',
-        valueType: 'fixed',
-        price: 45.00,
-        cost: 15.00,
-        returnDays: 30,
-        isActive: true,
-        order: 1,
-        isFeatured: true,
-        commissions: existingCommissions
-      })
+      // Serviço existente - carregar dados reais do banco
+      loadExistingService(serviceId as string)
     }
   }, [serviceId, professionals])
 
