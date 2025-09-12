@@ -108,7 +108,7 @@ export default function EditarProdutoPage() {
   const loadCategories = async () => {
     try {
       console.log('🔄 Carregando categorias para edição...')
-      const response = await fetch('/api/categories?isActive=true')
+      const response = await fetch('/api/product-categories?active=true')
       
       if (response.ok) {
         const data = await response.json()

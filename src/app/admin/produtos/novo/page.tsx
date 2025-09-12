@@ -1,13 +1,68 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Save, Upload, X } from 'lucide-react'
 
+interface ProductCategory {
+  _id: string
+  name: string
+  description?: string
+  isActive: boolean
+  order: number
+}
+
 export default function NovoProdutoPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [categories, setCategories] = useState<ProductCategory[]>([])
+  const [categoriesLoading, setCategoriesLoading] = useState(true)
+
+  // Carregar categorias do banco de dados
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true)
+      const response = await fetch('/api/product-categories?active=true')
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📋 Categorias de produtos carregadas:', data)
+        setCategories(data)
+      } else {
+        console.error('Erro ao carregar categorias de produtos')
+        // Fallback para categorias padrão
+        setCategories([
+          { _id: '1', name: 'Geral', isActive: true, order: 1 },
+          { _id: '2', name: 'Shampoos', isActive: true, order: 2 },
+          { _id: '3', name: 'Condicionadores', isActive: true, order: 3 },
+          { _id: '4', name: 'Máscaras', isActive: true, order: 4 },
+          { _id: '5', name: 'Cremes de Tratamento', isActive: true, order: 5 },
+          { _id: '6', name: 'Maquiagem', isActive: true, order: 6 },
+          { _id: '7', name: 'Acessórios', isActive: true, order: 7 }
+        ])
+      }
+    } catch (error) {
+      console.error('Erro ao carregar categorias de produtos:', error)
+      // Fallback para categorias padrão
+      setCategories([
+        { _id: '1', name: 'Geral', isActive: true, order: 1 },
+        { _id: '2', name: 'Shampoos', isActive: true, order: 2 },
+        { _id: '3', name: 'Condicionadores', isActive: true, order: 3 },
+        { _id: '4', name: 'Máscaras', isActive: true, order: 4 },
+        { _id: '5', name: 'Cremes de Tratamento', isActive: true, order: 5 },
+        { _id: '6', name: 'Maquiagem', isActive: true, order: 6 },
+        { _id: '7', name: 'Acessórios', isActive: true, order: 7 }
+      ])
+    } finally {
+      setCategoriesLoading(false)
+    }
+  }
+
+  // Carregar categorias quando o componente montar
+  useEffect(() => {
+    loadCategories()
+  }, [])
+
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -124,14 +179,17 @@ export default function NovoProdutoPage() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
                   style={{ color: '#000000' }}
+                  disabled={categoriesLoading}
                 >
-                  <option value="Geral">Geral</option>
-                  <option value="Shampoos">Shampoos</option>
-                  <option value="Condicionadores">Condicionadores</option>
-                  <option value="Máscaras">Máscaras</option>
-                  <option value="Cremes de Tratamento">Cremes de Tratamento</option>
-                  <option value="Maquiagem">Maquiagem</option>
-                  <option value="Acessórios">Acessórios</option>
+                  {categoriesLoading ? (
+                    <option value="">Carregando categorias...</option>
+                  ) : (
+                    categories.map((category) => (
+                      <option key={category._id} value={category.name}>
+                        {category.name}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
 
