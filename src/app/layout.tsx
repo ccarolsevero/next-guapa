@@ -17,6 +17,16 @@ const lato = Lato({
 export const metadata: Metadata = {
   title: "Espaço Guapa - Beleza Natural",
   description: "Salão especializado em cabelos naturais - Espaço Guapa",
+  icons: {
+    icon: [
+      {
+        url: '/favicon.svg',
+        type: 'image/svg+xml',
+      },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({
