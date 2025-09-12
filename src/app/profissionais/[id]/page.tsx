@@ -73,28 +73,7 @@ export default function ProfessionalPage() {
       setProfessional(data)
     } catch (error) {
       console.error('Erro ao carregar profissional:', error)
-      // Fallback para dados da Bruna se não encontrar
-      setProfessional({
-        _id: 'bruna',
-        name: 'Bruna',
-        title: 'Cabeleireira Visagista',
-        email: 'bruna@guapa.com',
-        phone: '(19) 99999-9999',
-        shortDescription: 'Especialista em coloração e tratamentos capilares',
-        fullDescription: 'Especialista em cabelos naturais com mais de 8 anos de experiência em consultoria de visagismo, cortes e colorações dos mais variados tipos. Trabalha com técnicas modernas mantendo sempre a saúde dos fios, desde iluminados e loiros até coloridos fantasia.',
-        services: ['Coloração', 'Tratamentos', 'Cortes', 'Hidratação', 'Escova', 'Penteado', 'Finalização', 'Avaliação Capilar'],
-        profileImage: '/assents/fotobruna.jpeg',
-        gallery: [
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16.jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (1).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (2).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (3).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (4).jpeg",
-          "/assents/galeriabruna/WhatsApp Image 2025-08-26 at 20.37.16 (5).jpeg"
-        ],
-        isActive: true,
-        isFeatured: true
-      })
+      setProfessional(null)
     } finally {
       setLoading(false)
     }

@@ -20,23 +20,26 @@ export async function GET(
       professional = await Professional.findById(id)
     } else {
       // Se não é um ObjectId, busca por nome
-      // Busca por nome que contenha o termo (case-insensitive)
-      professional = await Professional.findOne({ 
-        name: { $regex: new RegExp(id, 'i') } 
-      })
+      // Normalizar o termo de busca removendo acentos
+      const normalizeString = (str: string) => {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      }
+      
+      const normalizedId = normalizeString(id)
+      
+      // Buscar todos os profissionais e filtrar localmente para lidar com acentos
+      const allProfessionals = await Professional.find({})
+      
+      // Buscar por nome que contenha o termo (case-insensitive e sem acentos)
+      professional = allProfessionals.find(p => 
+        normalizeString(p.name).includes(normalizedId)
+      )
       
       // Se não encontrar, tenta buscar por nome que comece com o termo
       if (!professional) {
-        professional = await Professional.findOne({ 
-          name: { $regex: new RegExp(`^${id}`, 'i') } 
-        })
-      }
-      
-      // Se ainda não encontrar, tenta buscar por nome que contenha o termo em qualquer parte
-      if (!professional) {
-        professional = await Professional.findOne({ 
-          name: { $regex: new RegExp(`.*${id}.*`, 'i') } 
-        })
+        professional = allProfessionals.find(p => 
+          normalizeString(p.name).startsWith(normalizedId)
+        )
       }
     }
     
