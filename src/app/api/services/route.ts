@@ -41,7 +41,18 @@ export async function GET(request: NextRequest) {
     if (professionalId) {
       // Buscar serviços específicos do profissional
       const professionalsCollection = db.collection('professionals')
-      const professional = await professionalsCollection.findOne({ _id: new ObjectId(professionalId) })
+      
+      // Tentar buscar por ObjectId primeiro, depois por nome
+      let professional
+      try {
+        // Tentar como ObjectId
+        professional = await professionalsCollection.findOne({ _id: new ObjectId(professionalId) })
+      } catch (error) {
+        // Se falhar, tentar buscar por nome (case insensitive)
+        professional = await professionalsCollection.findOne({ 
+          name: { $regex: new RegExp(professionalId, 'i') }
+        })
+      }
       
       if (!professional) {
         console.log('❌ Profissional não encontrado:', professionalId)
