@@ -22,16 +22,25 @@ export default function NovoProdutoPage() {
   // Carregar categorias do banco de dados
   const loadCategories = async () => {
     try {
+      console.log('🔄 Iniciando carregamento de categorias...')
       setCategoriesLoading(true)
+      
       const response = await fetch('/api/product-categories?active=true')
+      console.log('📡 Response status:', response.status)
+      console.log('📡 Response ok:', response.ok)
+      
       if (response.ok) {
         const data = await response.json()
         console.log('📋 Categorias de produtos carregadas:', data)
+        console.log('📊 Total de categorias:', data.length)
         setCategories(data)
       } else {
-        console.error('Erro ao carregar categorias de produtos')
+        console.error('❌ Erro ao carregar categorias de produtos - Status:', response.status)
+        const errorText = await response.text()
+        console.error('❌ Erro response:', errorText)
+        
         // Fallback para categorias padrão
-        setCategories([
+        const fallbackCategories = [
           { _id: '1', name: 'Geral', isActive: true, order: 1 },
           { _id: '2', name: 'Shampoos', isActive: true, order: 2 },
           { _id: '3', name: 'Condicionadores', isActive: true, order: 3 },
@@ -39,12 +48,15 @@ export default function NovoProdutoPage() {
           { _id: '5', name: 'Cremes de Tratamento', isActive: true, order: 5 },
           { _id: '6', name: 'Maquiagem', isActive: true, order: 6 },
           { _id: '7', name: 'Acessórios', isActive: true, order: 7 }
-        ])
+        ]
+        console.log('🔄 Usando categorias fallback:', fallbackCategories)
+        setCategories(fallbackCategories)
       }
     } catch (error) {
-      console.error('Erro ao carregar categorias de produtos:', error)
+      console.error('❌ Erro ao carregar categorias de produtos:', error)
+      
       // Fallback para categorias padrão
-      setCategories([
+      const fallbackCategories = [
         { _id: '1', name: 'Geral', isActive: true, order: 1 },
         { _id: '2', name: 'Shampoos', isActive: true, order: 2 },
         { _id: '3', name: 'Condicionadores', isActive: true, order: 3 },
@@ -52,14 +64,18 @@ export default function NovoProdutoPage() {
         { _id: '5', name: 'Cremes de Tratamento', isActive: true, order: 5 },
         { _id: '6', name: 'Maquiagem', isActive: true, order: 6 },
         { _id: '7', name: 'Acessórios', isActive: true, order: 7 }
-      ])
+      ]
+      console.log('🔄 Usando categorias fallback após erro:', fallbackCategories)
+      setCategories(fallbackCategories)
     } finally {
+      console.log('✅ Finalizando carregamento de categorias')
       setCategoriesLoading(false)
     }
   }
 
   // Carregar categorias quando o componente montar
   useEffect(() => {
+    console.log('🚀 useEffect executado - carregando categorias')
     loadCategories()
   }, [])
 
@@ -183,6 +199,8 @@ export default function NovoProdutoPage() {
                 >
                   {categoriesLoading ? (
                     <option value="">Carregando categorias...</option>
+                  ) : categories.length === 0 ? (
+                    <option value="">Nenhuma categoria encontrada</option>
                   ) : (
                     categories.map((category) => (
                       <option key={category._id} value={category.name}>
@@ -191,6 +209,10 @@ export default function NovoProdutoPage() {
                     ))
                   )}
                 </select>
+                {/* Debug info */}
+                <div className="text-xs text-gray-500 mt-1">
+                  Debug: {categoriesLoading ? 'Carregando...' : `${categories.length} categorias carregadas`}
+                </div>
               </div>
 
               <div>
