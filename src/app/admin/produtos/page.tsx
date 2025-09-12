@@ -135,13 +135,13 @@ export default function ProdutosPage() {
       
       // Tentar URL absoluta primeiro
       try {
-        const url = `${baseUrl}/api/categories?isActive=true`
+        const url = `${baseUrl}/api/product-categories?active=true`
         console.log('🔗 Tentando URL:', url)
         response = await fetch(url)
         console.log('✅ Categorias carregadas com URL absoluta')
       } catch (error) {
         console.log('❌ Erro com URL absoluta, tentando relativa...')
-        response = await fetch('/api/categories?isActive=true')
+        response = await fetch('/api/product-categories?active=true')
         console.log('✅ Categorias carregadas com URL relativa')
       }
       
@@ -287,7 +287,7 @@ export default function ProdutosPage() {
     try {
       if (editingCategory) {
         // Editar categoria existente
-        const response = await fetch(`/api/categories/${editingCategory._id}`, {
+        const response = await fetch(`/api/product-categories/${editingCategory._id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -306,7 +306,7 @@ export default function ProdutosPage() {
         }
       } else {
         // Nova categoria
-        const response = await fetch('/api/categories', {
+        const response = await fetch('/api/product-categories', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -337,7 +337,7 @@ export default function ProdutosPage() {
     if (!confirm(`Tem certeza que deseja excluir a categoria "${category.name}"?`)) return
 
     try {
-      const response = await fetch(`/api/categories/${category._id}`, {
+      const response = await fetch(`/api/product-categories/${category._id}`, {
         method: 'DELETE'
       })
 
