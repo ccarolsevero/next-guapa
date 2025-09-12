@@ -74,6 +74,13 @@ export async function GET(request: NextRequest) {
       }).sort({ category: 1, order: 1 }).toArray()
       
       console.log('✅ Serviços do profissional encontrados:', services.length)
+      
+      // Se não encontrou serviços específicos, retornar todos os serviços ativos
+      if (services.length === 0) {
+        console.log('⚠️ Nenhum serviço específico encontrado, retornando todos os serviços ativos')
+        services = await servicesCollection.find({ isActive: true }).sort({ category: 1, order: 1 }).toArray()
+        console.log('✅ Todos os serviços ativos retornados:', services.length)
+      }
     } else {
       // Buscar todos os serviços ativos
       console.log('🔍 Buscando todos os serviços ativos...')
