@@ -4,20 +4,28 @@ import ProductCategory from '@/models/ProductCategory'
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 [DEBUG] Iniciando busca de categorias de produtos...')
     await connectToDatabase()
+    console.log('✅ [DEBUG] Conectado ao banco de dados')
 
     const { searchParams } = new URL(request.url)
     const activeOnly = searchParams.get('active') === 'true'
+    console.log('🔍 [DEBUG] Parâmetros:', { activeOnly, searchParams: Object.fromEntries(searchParams.entries()) })
 
     const query = activeOnly ? { isActive: true } : {}
+    console.log('🔍 [DEBUG] Query:', query)
+    
     const categories = await ProductCategory.find(query)
       .sort({ order: 1, name: 1 })
+    
+    console.log('📊 [DEBUG] Categorias encontradas:', categories.length)
+    console.log('📋 [DEBUG] Categorias:', categories.map(c => ({ name: c.name, isActive: c.isActive })))
 
     return NextResponse.json(categories)
   } catch (error) {
-    console.error('Erro ao buscar categorias de produtos:', error)
+    console.error('❌ [DEBUG] Erro ao buscar categorias de produtos:', error)
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Erro interno do servidor', details: error.message },
       { status: 500 }
     )
   }

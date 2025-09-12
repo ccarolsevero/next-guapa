@@ -19,21 +19,58 @@ export default function NovoProdutoPage() {
   const [categories, setCategories] = useState<ProductCategory[]>([])
   const [categoriesLoading, setCategoriesLoading] = useState(true)
 
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    costPrice: '',
+    commissionValue: '',
+    discount: '',
+    category: '', // Será definida quando as categorias carregarem
+    imageUrl: '',
+    stock: '',
+    isActive: true,
+    isFeatured: false,
+    tags: '',
+    brand: '',
+    sku: ''
+  })
+
   // Carregar categorias do banco de dados
   const loadCategories = async () => {
     try {
       console.log('🔄 Iniciando carregamento de categorias...')
       setCategoriesLoading(true)
       
-      const response = await fetch('/api/product-categories?active=true')
+      // Teste direto da URL
+      const url = '/api/product-categories?active=true'
+      console.log('🌐 Fazendo requisição para:', url)
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
       console.log('📡 Response status:', response.status)
       console.log('📡 Response ok:', response.ok)
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()))
       
       if (response.ok) {
         const data = await response.json()
         console.log('📋 Categorias de produtos carregadas:', data)
         console.log('📊 Total de categorias:', data.length)
         setCategories(data)
+        
+        // Definir a primeira categoria como selecionada se não houver nenhuma selecionada
+        if (data.length > 0) {
+          setFormData(prev => ({
+            ...prev,
+            category: prev.category || data[0].name
+          }))
+          console.log('🎯 Primeira categoria selecionada:', data[0].name)
+        }
       } else {
         console.error('❌ Erro ao carregar categorias de produtos - Status:', response.status)
         const errorText = await response.text()
@@ -51,6 +88,13 @@ export default function NovoProdutoPage() {
         ]
         console.log('🔄 Usando categorias fallback:', fallbackCategories)
         setCategories(fallbackCategories)
+        
+        // Definir a primeira categoria fallback como selecionada
+        setFormData(prev => ({
+          ...prev,
+          category: prev.category || fallbackCategories[0].name
+        }))
+        console.log('🎯 Primeira categoria fallback selecionada:', fallbackCategories[0].name)
       }
     } catch (error) {
       console.error('❌ Erro ao carregar categorias de produtos:', error)
@@ -67,6 +111,13 @@ export default function NovoProdutoPage() {
       ]
       console.log('🔄 Usando categorias fallback após erro:', fallbackCategories)
       setCategories(fallbackCategories)
+      
+      // Definir a primeira categoria fallback como selecionada
+      setFormData(prev => ({
+        ...prev,
+        category: prev.category || fallbackCategories[0].name
+      }))
+      console.log('🎯 Primeira categoria fallback após erro selecionada:', fallbackCategories[0].name)
     } finally {
       console.log('✅ Finalizando carregamento de categorias')
       setCategoriesLoading(false)
@@ -78,23 +129,6 @@ export default function NovoProdutoPage() {
     console.log('🚀 useEffect executado - carregando categorias')
     loadCategories()
   }, [])
-
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    costPrice: '',
-    commissionValue: '',
-    discount: '',
-    category: 'Geral',
-    imageUrl: '',
-    stock: '',
-    isActive: true,
-    isFeatured: false,
-    tags: '',
-    brand: '',
-    sku: ''
-  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
