@@ -166,19 +166,26 @@ export async function POST(request: NextRequest) {
       
       if (!categoryExists) {
         console.log('⚠️ Categoria não encontrada, criando automaticamente:', category)
+        
+        // Verificar qual é o próximo order
+        const lastCategory = await serviceCategoriesCollection.findOne({}, { sort: { order: -1 } })
+        const nextOrder = lastCategory ? lastCategory.order + 1 : 1
+        
         // Criar categoria automaticamente se não existir
         const newCategory = {
           name: category,
           description: `Categoria criada automaticamente para ${category}`,
           color: '#D15556',
           icon: '',
-          order: 999,
+          order: nextOrder,
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date()
         }
         await serviceCategoriesCollection.insertOne(newCategory)
         console.log('✅ Categoria criada automaticamente:', category)
+      } else {
+        console.log('✅ Categoria encontrada:', category)
       }
     }
     

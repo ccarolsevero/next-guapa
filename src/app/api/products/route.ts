@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // Validar se a categoria existe (se fornecida)
+    // Validar se a categoria existe (se fornecida) - criar automaticamente se não existir
     if (category && category !== 'Geral') {
       const ProductCategory = (await import('@/models/ProductCategory')).default
       const categoryExists = await ProductCategory.findOne({ 
@@ -143,10 +143,25 @@ export async function POST(request: NextRequest) {
       })
       
       if (!categoryExists) {
-        return NextResponse.json(
-          { error: 'Categoria de produto não encontrada ou inativa' },
-          { status: 400 }
-        )
+        console.log('⚠️ Categoria de produto não encontrada, criando automaticamente:', category)
+        
+        // Verificar qual é o próximo order
+        const lastCategory = await ProductCategory.findOne().sort({ order: -1 })
+        const nextOrder = lastCategory ? lastCategory.order + 1 : 1
+        
+        // Criar categoria automaticamente se não existir
+        const newCategory = new ProductCategory({
+          name: category,
+          description: `Categoria criada automaticamente para ${category}`,
+          color: '#006D5B',
+          icon: '',
+          order: nextOrder,
+          isActive: true
+        })
+        await newCategory.save()
+        console.log('✅ Categoria de produto criada automaticamente:', category)
+      } else {
+        console.log('✅ Categoria de produto encontrada:', category)
       }
     }
     
