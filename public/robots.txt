@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://espacoguapa.com/sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /login-cliente/
+Disallow: /cadastro/
+Disallow: /painel-cliente/
+
+# Allow important pages
+Allow: /
+Allow: /servicos/
+Allow: /produtos/
+Allow: /profissionais/
+Allow: /agendamento/
