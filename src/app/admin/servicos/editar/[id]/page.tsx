@@ -182,13 +182,22 @@ export default function EditarServicoPage() {
         const serviceData = await response.json()
         console.log('✅ Dados do serviço carregados:', serviceData)
         
-        // Preparar comissões iniciais
-        const existingCommissions = professionals.map(prof => ({
-          professionalId: prof._id,
-          professionalName: prof.name,
-          commission: 0, // Será preenchido pelos dados reais se existirem
-          assistantCommission: 0 // Será preenchido pelos dados reais se existirem
-        }))
+        // Preparar comissões - usar dados do banco se existirem, senão inicializar com 0
+        const savedCommissions = serviceData.commissions || []
+        const existingCommissions = professionals.map(prof => {
+          // Buscar comissão salva para este profissional
+          const savedCommission = savedCommissions.find((comm: any) => comm.professionalId === prof._id)
+          
+          return {
+            professionalId: prof._id,
+            professionalName: prof.name,
+            commission: savedCommission ? savedCommission.commission : 0,
+            assistantCommission: savedCommission ? savedCommission.assistantCommission : 0
+          }
+        })
+        
+        console.log('💰 Comissões carregadas do banco:', savedCommissions)
+        console.log('💰 Comissões processadas:', existingCommissions)
         
         setService({
           id: serviceData._id,
