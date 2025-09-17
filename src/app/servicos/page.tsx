@@ -5,7 +5,6 @@ import LayoutPublic from '../layout-public'
 
 // Forçar revalidação da página
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 interface Service {
   _id: string
@@ -57,7 +56,7 @@ export default function ServicosPage() {
       
       const data = await response.json()
       console.log('📦 Dados recebidos da API:', data.length, 'serviços')
-      console.log('📋 Primeiros serviços:', data.slice(0, 3).map(s => ({ name: s.name, category: s.category })))
+      console.log('📋 Primeiros serviços:', data.slice(0, 3).map((s: Service) => ({ name: s.name, category: s.category })))
       
       setServices(data)
     } catch (error) {
