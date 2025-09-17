@@ -21,6 +21,7 @@ export interface IProfessional extends Document {
   canAccessSiteEdit: boolean
   canAccessGoals: boolean
   canAccessReports: boolean
+  isAssistant: boolean
   lastLogin?: Date
   createdAt: Date
   updatedAt: Date
@@ -109,6 +110,10 @@ const professionalSchema = new Schema<IProfessional>({
     default: false
   },
   canAccessReports: {
+    type: Boolean,
+    default: false
+  },
+  isAssistant: {
     type: Boolean,
     default: false
   },

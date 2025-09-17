@@ -175,6 +175,105 @@ if (!uri) {
     // 5. Salvar dados da finalização em uma nova coleção
     console.log('💳 Salvando dados da finalização...')
     
+    // 5.1. Calcular comissões específicas dos serviços
+    console.log('💰 Calculando comissões específicas dos serviços...')
+    let totalComissao = 0
+    const detalhesComissao: any[] = []
+    
+    if (comanda.servicos && Array.isArray(comanda.servicos)) {
+      for (const servico of comanda.servicos) {
+        try {
+          // Buscar dados do serviço para obter comissões
+          const serviceData = await db.collection('services').findOne({ 
+            _id: new ObjectId(servico.servicoId || servico.id) 
+          })
+          
+          if (serviceData && serviceData.commissions) {
+            const valorServico = (servico.preco || 0) * (servico.quantidade || 1)
+            const profissionalId = finalizacaoData.profissionalId || comanda.profissionalId
+            
+            // Buscar comissão específica para o profissional
+            const comissaoData = serviceData.commissions.find((comm: any) => 
+              comm.professionalId === profissionalId
+            )
+            
+            // Verificar se o profissional é assistente
+            const profissional = await db.collection('professionals').findOne({ _id: new ObjectId(profissionalId) })
+            const isAssistant = profissional?.isAssistant || false
+            
+            let percentualComissao = 10 // Fallback para 10%
+            if (comissaoData) {
+              // Usar comissão de assistente se o profissional for assistente
+              percentualComissao = isAssistant ? comissaoData.assistantCommission : comissaoData.commission
+            }
+            const comissao = valorServico * (percentualComissao / 100)
+            
+            totalComissao += comissao
+            detalhesComissao.push({
+              tipo: 'servico',
+              item: servico.nome || 'Serviço',
+              valor: valorServico,
+              comissao: comissao,
+              percentualComissao: percentualComissao,
+              profissionalId: profissionalId,
+              profissionalNome: profissionalNome
+            })
+            
+            console.log(`💰 Comissão do serviço ${servico.nome}: ${percentualComissao}% = R$ ${comissao.toFixed(2)}`)
+          } else {
+            // Fallback para 10% se não conseguir buscar o serviço
+            const valorServico = (servico.preco || 0) * (servico.quantidade || 1)
+            const comissao = valorServico * 0.10
+            totalComissao += comissao
+            detalhesComissao.push({
+              tipo: 'servico',
+              item: servico.nome || 'Serviço',
+              valor: valorServico,
+              comissao: comissao,
+              percentualComissao: 10,
+              profissionalId: finalizacaoData.profissionalId || comanda.profissionalId,
+              profissionalNome: profissionalNome
+            })
+          }
+        } catch (error) {
+          console.error('Erro ao calcular comissão do serviço:', error)
+          // Fallback para 10%
+          const valorServico = (servico.preco || 0) * (servico.quantidade || 1)
+          const comissao = valorServico * 0.10
+          totalComissao += comissao
+          detalhesComissao.push({
+            tipo: 'servico',
+            item: servico.nome || 'Serviço',
+            valor: valorServico,
+            comissao: comissao,
+            percentualComissao: 10,
+            profissionalId: finalizacaoData.profissionalId || comanda.profissionalId,
+            profissionalNome: profissionalNome
+          })
+        }
+      }
+    }
+    
+    // Calcular comissões dos produtos (15% para quem vendeu)
+    if (comanda.produtos && Array.isArray(comanda.produtos)) {
+      for (const produto of comanda.produtos) {
+        const valorProduto = (produto.preco || 0) * (produto.quantidade || 1)
+        const comissao = valorProduto * 0.15
+        totalComissao += comissao
+        detalhesComissao.push({
+          tipo: 'produto',
+          item: produto.nome || 'Produto',
+          valor: valorProduto,
+          comissao: comissao,
+          percentualComissao: 15,
+          vendidoPor: produto.vendidoPor || 'Não definido',
+          vendidoPorId: produto.vendidoPorId
+        })
+      }
+    }
+    
+    console.log(`💰 Total de comissões calculado: R$ ${totalComissao.toFixed(2)}`)
+
     // Preparar dados da finalização
     const dadosFinalizacao = {
       comandaId: new ObjectId(comandaId),
@@ -186,8 +285,9 @@ if (!uri) {
       metodoPagamento: finalizacaoData.paymentMethod || finalizacaoData.metodoPagamento || 'Não definido',
       desconto: finalizacaoData.desconto || 0,
       creditAmount: finalizacaoData.creditAmount || 0,
+      totalComissao: totalComissao,
+      detalhesComissao: detalhesComissao,
       valorSinal: finalizacaoData.valorSinal || 0,
-      totalComissao: finalizacaoData.totalComissao || 0,
       servicos: finalizacaoData.servicos || comanda.servicos || [],
       produtos: finalizacaoData.produtos || comanda.produtos || [],
       dataCriacao: new Date(),

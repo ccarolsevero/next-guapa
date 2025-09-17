@@ -200,7 +200,7 @@ export default function FinalizarAtendimentoPage() {
     }))
   }
 
-  const calcularComissoes = () => {
+  const calcularComissoes = async () => {
     if (!comanda) return { totalComissao: 0, detalhes: [] }
     
     let totalComissao = 0
@@ -210,19 +210,75 @@ export default function FinalizarAtendimentoPage() {
       valor: number
       comissao: number
       vendidoPor?: string
+      percentualComissao?: number
     }> = []
     
-    // Comissão dos serviços (10% para o profissional)
-    comanda.servicos.forEach(servico => {
-      const comissao = servico.preco * servico.quantidade * 0.10
-      totalComissao += comissao
-      detalhes.push({
-        tipo: 'Serviço',
-        item: servico.nome,
-        valor: servico.preco * servico.quantidade,
-        comissao: comissao
-      })
-    })
+    // Buscar comissões específicas dos serviços
+    for (const servico of comanda.servicos) {
+      try {
+        // Buscar dados do serviço no banco para obter comissões
+        const servicoId = (servico as any).servicoId || (servico as any).id
+        const response = await fetch(`/api/services/${servicoId}`)
+        if (response.ok) {
+          const serviceData = await response.json()
+          const valorServico = servico.preco * servico.quantidade
+          
+          // Buscar comissão específica para o profissional
+          const comissaoData = serviceData.commissions?.find((comm: any) => 
+            comm.professionalId === comanda.profissionalId
+          )
+          
+          // Verificar se o profissional é assistente
+          const profResponse = await fetch(`/api/professionals/${comanda.profissionalId}`)
+          let isAssistant = false
+          if (profResponse.ok) {
+            const profData = await profResponse.json()
+            isAssistant = profData.isAssistant || false
+          }
+          
+          let percentualComissao = 10 // Fallback para 10%
+          if (comissaoData) {
+            // Usar comissão de assistente se o profissional for assistente
+            percentualComissao = isAssistant ? comissaoData.assistantCommission : comissaoData.commission
+          }
+          const comissao = valorServico * (percentualComissao / 100)
+          
+          totalComissao += comissao
+          detalhes.push({
+            tipo: 'Serviço',
+            item: servico.nome,
+            valor: valorServico,
+            comissao: comissao,
+            percentualComissao: percentualComissao
+          })
+          
+          console.log(`💰 Comissão do serviço ${servico.nome}: ${percentualComissao}% = R$ ${comissao.toFixed(2)}`)
+        } else {
+          // Fallback para 10% se não conseguir buscar o serviço
+          const comissao = servico.preco * servico.quantidade * 0.10
+          totalComissao += comissao
+          detalhes.push({
+            tipo: 'Serviço',
+            item: servico.nome,
+            valor: servico.preco * servico.quantidade,
+            comissao: comissao,
+            percentualComissao: 10
+          })
+        }
+      } catch (error) {
+        console.error('Erro ao buscar comissão do serviço:', error)
+        // Fallback para 10%
+        const comissao = servico.preco * servico.quantidade * 0.10
+        totalComissao += comissao
+        detalhes.push({
+          tipo: 'Serviço',
+          item: servico.nome,
+          valor: servico.preco * servico.quantidade,
+          comissao: comissao,
+          percentualComissao: 10
+        })
+      }
+    }
     
     // Comissão dos produtos (15% para quem vendeu)
     comanda.produtos.forEach(produto => {
@@ -233,7 +289,8 @@ export default function FinalizarAtendimentoPage() {
         item: produto.nome,
         valor: produto.preco * produto.quantidade,
         comissao: comissao,
-        vendidoPor: produto.vendidoPor || 'Não definido'
+        vendidoPor: produto.vendidoPor || 'Não definido',
+        percentualComissao: 15
       })
     })
     
@@ -250,7 +307,7 @@ export default function FinalizarAtendimentoPage() {
     try {
       // Usar a função calcularValorFinal para obter o valor correto
       const valorFinalCalculado = calcularValorFinal()
-      const { totalComissao, detalhes } = calcularComissoes()
+      const { totalComissao, detalhes } = await calcularComissoes()
       
       console.log('🔄 Finalizando atendimento...')
       console.log('💰 Valor original:', comanda.valorTotal)
@@ -361,6 +418,48 @@ export default function FinalizarAtendimentoPage() {
     }
   }
 
+  const calcularValorFinal = () => {
+    if (!comanda) return 0
+    let valorFinal = comanda.valorTotal
+    
+    // Aplicar desconto
+    if (discountType === 'percentage') {
+      const discountAmount = comanda.valorTotal * (finalizacao.discount / 100)
+      valorFinal -= discountAmount
+    } else {
+      valorFinal -= finalizacao.discount
+    }
+    
+    // Aplicar crédito (sinal)
+    valorFinal -= finalizacao.creditAmount
+    
+    // Garantir que o valor final não seja negativo
+    return Math.max(0, valorFinal)
+  }
+
+  const [comissaoData, setComissaoData] = useState<{
+    totalComissao: number
+    detalhes: Array<{
+      tipo: string
+      item: string
+      valor: number
+      comissao: number
+      vendidoPor?: string
+      percentualComissao?: number
+    }>
+  }>({ totalComissao: 0, detalhes: [] })
+  
+  useEffect(() => {
+    const loadComissaoData = async () => {
+      const data = await calcularComissoes()
+      setComissaoData(data)
+    }
+    loadComissaoData()
+  }, [comanda])
+  
+  const valorFinal = calcularValorFinal()
+  const { totalComissao, detalhes } = comissaoData
+
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen">
@@ -394,30 +493,9 @@ export default function FinalizarAtendimentoPage() {
     )
   }
 
-  const calcularValorFinal = () => {
-    let valorFinal = comanda.valorTotal
-    
-    // Aplicar desconto
-    if (discountType === 'percentage') {
-      const discountAmount = comanda.valorTotal * (finalizacao.discount / 100)
-      valorFinal -= discountAmount
-    } else {
-      valorFinal -= finalizacao.discount
-    }
-    
-    // Aplicar crédito (sinal)
-    valorFinal -= finalizacao.creditAmount
-    
-    // Garantir que o valor final não seja negativo
-    return Math.max(0, valorFinal)
-  }
-  
   const getCurrentSaoPauloTime = () => {
     return new Date().toLocaleString('sv-SE', { timeZone: 'America/Sao_Paulo' }).slice(0, 16)
   }
-
-  const valorFinal = calcularValorFinal()
-  const { totalComissao, detalhes } = calcularComissoes()
 
   return (
     <div className="bg-gray-50 min-h-screen">

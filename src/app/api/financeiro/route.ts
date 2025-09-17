@@ -96,16 +96,45 @@ if (!uri) {
     const comissoesPorProfissional: any[] = []
     const comissoesPorProf = new Map()
     
+    // Buscar todos os serviços para obter comissões específicas
+    const services = await db.collection('services').find({}).toArray()
+    const serviceCommissionsMap = new Map()
+    
+    services.forEach((service: any) => {
+      if (service.commissions && Array.isArray(service.commissions)) {
+        serviceCommissionsMap.set(service._id.toString(), service.commissions)
+      }
+    })
+
     comandasFinalizadas.forEach((comanda: Document) => {
-      // Comissões de serviços (10%)
+      // Comissões de serviços (usando comissões específicas)
       if (comanda.servicos && Array.isArray(comanda.servicos)) {
         comanda.servicos.forEach((servico: Document) => {
           const servicoData = servico as any
           const comandaData = comanda as any
           const profissionalId = comandaData.profissionalId || 'profissional'
           const profissionalNome = comandaData.profissionalNome || profissionalMap.get(profissionalId) || 'Profissional não definido'
-          const comissao = (servicoData.preco || 0) * 0.10
           
+          // Buscar comissão específica do serviço
+          const servicoId = servicoData.servicoId || servicoData.id
+          const serviceCommissions = serviceCommissionsMap.get(servicoId)
+          let percentualComissao = 10 // Fallback para 10%
+          
+          // Verificar se o profissional é assistente
+          const profissional = profissionais.find((prof: any) => prof._id.toString() === profissionalId)
+          const isAssistant = profissional?.isAssistant || false
+          
+          if (serviceCommissions) {
+            const comissaoData = serviceCommissions.find((comm: any) => 
+              comm.professionalId === profissionalId
+            )
+            if (comissaoData) {
+              // Usar comissão de assistente se o profissional for assistente
+              percentualComissao = isAssistant ? comissaoData.assistantCommission : comissaoData.commission
+            }
+          }
+          
+          const comissao = (servicoData.preco || 0) * (percentualComissao / 100)
           
           if (!comissoesPorProf.has(profissionalId)) {
             comissoesPorProf.set(profissionalId, {
@@ -124,6 +153,7 @@ if (!uri) {
             item: servicoData.nome || 'Serviço',
             valor: servicoData.preco || 0,
             comissao: comissao,
+            percentualComissao: percentualComissao,
             data: comandaData.dataFim || comandaData.createdAt
           })
         })

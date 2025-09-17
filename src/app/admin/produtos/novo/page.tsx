@@ -135,16 +135,32 @@ export default function NovoProdutoPage() {
     setLoading(true)
 
     try {
+      console.log('🔄 Iniciando criação do produto...')
+      console.log('📋 Dados do formulário:', formData)
+
+      // Validações básicas
+      if (!formData.name.trim()) {
+        alert('Nome do produto é obrigatório')
+        return
+      }
+
+      if (!formData.price || isNaN(parseFloat(formData.price)) || parseFloat(formData.price) <= 0) {
+        alert('Preço deve ser um número válido e maior que zero')
+        return
+      }
+
       const productData = {
         ...formData,
         price: parseFloat(formData.price),
         originalPrice: parseFloat(formData.price), // Usar o preço como preço original
-        costPrice: formData.costPrice ? parseFloat(formData.costPrice) : 0,
-        commissionValue: formData.commissionValue ? parseFloat(formData.commissionValue) : 0,
-        discount: formData.discount ? parseFloat(formData.discount) : 0,
+        costPrice: formData.costPrice && formData.costPrice !== '' ? parseFloat(formData.costPrice) : 0,
+        commissionValue: formData.commissionValue && formData.commissionValue !== '' ? parseFloat(formData.commissionValue) : 0,
+        discount: formData.discount && formData.discount !== '' ? parseFloat(formData.discount) : 0,
         stock: parseInt(formData.stock) || 0,
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()) : []
       }
+
+      console.log('📦 Dados processados para envio:', productData)
 
       const response = await fetch('/api/products', {
         method: 'POST',
@@ -154,17 +170,21 @@ export default function NovoProdutoPage() {
         body: JSON.stringify(productData)
       })
 
+      console.log('📡 Resposta da API:', response.status, response.ok)
+
       const data = await response.json()
+      console.log('📄 Dados da resposta:', data)
 
       if (response.ok) {
         alert('Produto criado com sucesso!')
         router.push('/admin/produtos')
       } else {
-        alert(`Erro: ${data.error}`)
+        console.error('❌ Erro na API:', data)
+        alert(`Erro: ${data.error || 'Erro desconhecido'}`)
       }
     } catch (error) {
-      console.error('Erro ao criar produto:', error)
-      alert('Erro ao criar produto')
+      console.error('❌ Erro ao criar produto:', error)
+      alert(`Erro ao criar produto: ${error instanceof Error ? error.message : 'Erro desconhecido'}`)
     } finally {
       setLoading(false)
     }

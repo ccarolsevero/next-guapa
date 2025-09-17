@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       canAccessSiteEdit,
       canAccessGoals,
       canAccessReports,
+      isAssistant,
       isActive
     } = body
 
@@ -83,7 +84,8 @@ export async function POST(request: NextRequest) {
         canAccessFinancial: canAccessFinancial || false,
         canAccessSiteEdit: canAccessSiteEdit || false,
         canAccessGoals: canAccessGoals || false,
-        canAccessReports: canAccessReports || false
+        canAccessReports: canAccessReports || false,
+        isAssistant: isAssistant || false
       })
       
       console.log('Funcionário adicionado com sucesso:', newProfessional._id)

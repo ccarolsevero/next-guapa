@@ -77,9 +77,12 @@ export async function GET(request: NextRequest) {
 // POST - Criar novo produto
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔄 Iniciando criação de produto...')
     await connectDB()
     
     const body = await request.json()
+    console.log('📋 Dados recebidos:', body)
+    
     const {
       name,
       description,
@@ -101,19 +104,53 @@ export async function POST(request: NextRequest) {
       sku
     } = body
     
+    console.log('📦 Dados extraídos:', {
+      name,
+      description,
+      price,
+      originalPrice,
+      costPrice,
+      commissionValue,
+      discount,
+      category,
+      imageUrl,
+      stock,
+      isActive,
+      isFeatured,
+      tags,
+      specifications,
+      weight,
+      dimensions,
+      brand,
+      sku
+    })
+    
     // Validações
     if (!name || !price) {
+      console.error('❌ Validação falhou: Nome ou preço ausente')
       return NextResponse.json(
         { error: 'Nome e preço são obrigatórios' },
         { status: 400 }
       )
     }
     
-    if (price < 0) {
+    if (isNaN(price) || price < 0) {
+      console.error('❌ Validação falhou: Preço inválido:', price)
       return NextResponse.json(
-        { error: 'Preço não pode ser negativo' },
+        { error: 'Preço deve ser um número válido e não pode ser negativo' },
         { status: 400 }
       )
+    }
+    
+    // Validar costPrice se fornecido
+    if (costPrice !== undefined && costPrice !== null && costPrice !== '') {
+      if (isNaN(costPrice) || costPrice < 0) {
+        console.error('❌ Validação falhou: Preço de custo inválido:', costPrice)
+        return NextResponse.json(
+          { error: 'Preço de custo deve ser um número válido e não pode ser negativo' },
+          { status: 400 }
+        )
+      }
     }
     
     if (discount && (discount < 0 || discount > 100)) {
@@ -166,17 +203,18 @@ export async function POST(request: NextRequest) {
     }
     
     // Criar produto
-    const product = await Product.create({
+    console.log('🏗️ Criando produto no banco de dados...')
+    const productData = {
       name,
       description,
       price,
       originalPrice: originalPrice || price,
-      costPrice: costPrice || 0,
-      commissionValue: commissionValue || 0,
-      discount: discount || 0,
+      costPrice: costPrice !== undefined && costPrice !== null && costPrice !== '' ? costPrice : 0,
+      commissionValue: commissionValue !== undefined && commissionValue !== null && commissionValue !== '' ? commissionValue : 0,
+      discount: discount !== undefined && discount !== null && discount !== '' ? discount : 0,
       category: category || 'Geral',
       imageUrl,
-      stock: stock || 0,
+      stock: stock !== undefined && stock !== null && stock !== '' ? stock : 0,
       isActive: isActive !== undefined ? isActive : true,
       isFeatured: isFeatured || false,
       tags: tags || [],
@@ -185,7 +223,12 @@ export async function POST(request: NextRequest) {
       dimensions,
       brand,
       sku
-    })
+    }
+    
+    console.log('📦 Dados do produto para criação:', productData)
+    
+    const product = await Product.create(productData)
+    console.log('✅ Produto criado com sucesso:', product._id)
     
     return NextResponse.json(product, { status: 201 })
     
