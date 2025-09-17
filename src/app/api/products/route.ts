@@ -100,8 +100,7 @@ export async function POST(request: NextRequest) {
       specifications,
       weight,
       dimensions,
-      brand,
-      sku
+      brand
     } = body
     
     console.log('📦 Dados extraídos:', {
@@ -121,8 +120,7 @@ export async function POST(request: NextRequest) {
       specifications,
       weight,
       dimensions,
-      brand,
-      sku
+      brand
     })
     
     // Validações
@@ -160,16 +158,6 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    // Verificar se SKU já existe
-    if (sku) {
-      const existingProduct = await Product.findOne({ sku })
-      if (existingProduct) {
-        return NextResponse.json(
-          { error: 'SKU já existe' },
-          { status: 409 }
-        )
-      }
-    }
     
     // Validar se a categoria existe (se fornecida) - criar automaticamente se não existir
     if (category && category !== 'Geral') {
@@ -221,8 +209,7 @@ export async function POST(request: NextRequest) {
       specifications: specifications || {},
       weight,
       dimensions,
-      brand,
-      sku
+      brand
     }
     
     console.log('📦 Dados do produto para criação:', productData)

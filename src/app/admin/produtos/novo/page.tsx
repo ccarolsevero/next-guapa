@@ -33,7 +33,6 @@ export default function NovoProdutoPage() {
     isFeatured: false,
     tags: '',
     brand: '',
-    sku: ''
   })
 
   // Carregar categorias do banco de dados
@@ -370,19 +369,6 @@ export default function NovoProdutoPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  SKU
-                </label>
-                <input
-                  type="text"
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white text-gray-900"
-                  style={{ color: '#000000' }}
-                />
-              </div>
             </div>
 
             <div className="mt-6">
