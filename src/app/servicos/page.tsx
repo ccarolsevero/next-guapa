@@ -37,14 +37,22 @@ export default function ServicosPage() {
   const loadServices = async () => {
     try {
       setLoading(true)
+      console.log('🔄 Carregando serviços da API...')
       const response = await fetch('/api/services')
+      console.log('📡 Resposta da API:', response.status, response.ok)
+      
       if (!response.ok) {
-        throw new Error('Erro ao carregar serviços')
+        throw new Error(`Erro ao carregar serviços: ${response.status}`)
       }
+      
       const data = await response.json()
+      console.log('📦 Dados recebidos da API:', data.length, 'serviços')
+      console.log('📋 Primeiros serviços:', data.slice(0, 3).map(s => ({ name: s.name, category: s.category })))
+      
       setServices(data)
     } catch (error) {
-      console.error('Erro ao carregar serviços:', error)
+      console.error('❌ Erro ao carregar serviços:', error)
+      console.log('🔄 Usando fallback com dados estáticos...')
       // Fallback para dados estáticos se a API falhar
       setServices([
         // Consultoria e Avaliação
