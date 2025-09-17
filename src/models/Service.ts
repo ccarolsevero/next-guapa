@@ -39,7 +39,29 @@ const serviceSchema = new mongoose.Schema({
   isFeatured: {
     type: Boolean,
     default: false
-  }
+  },
+  commissions: [{
+    professionalId: {
+      type: String,
+      required: true
+    },
+    professionalName: {
+      type: String,
+      required: true
+    },
+    commission: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
+    },
+    assistantCommission: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100
+    }
+  }]
 }, {
   timestamps: true,
   collection: 'services'

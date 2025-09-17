@@ -296,7 +296,8 @@ export default function EditarServicoPage() {
         returnDays: service.returnDays,
         order: service.order || 0,
         isFeatured: service.isFeatured || false,
-        isActive: service.isActive !== false
+        isActive: service.isActive !== false,
+        commissions: service.commissions // ✅ Incluir comissões
       }
 
       let response
