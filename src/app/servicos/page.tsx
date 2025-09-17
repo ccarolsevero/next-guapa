@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import LayoutPublic from '../layout-public'
 
+// Forçar revalidação da página
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Service {
   _id: string
   name: string
@@ -38,7 +42,13 @@ export default function ServicosPage() {
     try {
       setLoading(true)
       console.log('🔄 Carregando serviços da API...')
-      const response = await fetch('/api/services')
+      const timestamp = Date.now()
+      const response = await fetch(`/api/services?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       console.log('📡 Resposta da API:', response.status, response.ok)
       
       if (!response.ok) {
